@@ -1,0 +1,137 @@
+/*
+ * 正文渲染样式 = shadcn/typeset 官方排版 + Archer Token 桥接。
+ *
+ * Streamdown 的结构、代码块与交互保持官方实现；typeset 承担块级排版。
+ * 官方 typeset.css 逐字保留，不放宽或重写其选择器；这里只按官方变量入口
+ * 注入 Archer 刻度，并声明 Streamdown 源码的扫描范围。
+ * Streamdown 自带固定字号的元素通过语义属性桥接到桌面刻度。
+ */
+
+@import "./typeset.css";
+
+/* Streamdown 与插件按需生成 Tailwind 工具类；不声明扫描范围时开发态和
+   生产构建都会漏掉这些类名。 */
+@source "../../../../../node_modules/streamdown/dist/*.js";
+@source "../../../../../node_modules/@streamdown/code/dist/*.js";
+@source "../../../../../node_modules/@streamdown/math/dist/*.js";
+@source "../../../../../node_modules/@streamdown/mermaid/dist/*.js";
+@source "../../../../../node_modules/@streamdown/cjk/dist/*.js";
+
+/*
+ * 官方预设：变量入口保持 typeset 命名，值取桌面正文刻度（14 / 24 / 16）。
+ * 颜色变量供 typeset 的运行时 var() 使用；Tailwind 工具类走 @theme inline。
+ */
+.archer-markdown-typeset {
+  --typeset-font-body: var(--font-family-ui);
+  --typeset-font-heading: var(--font-family-ui);
+  --typeset-font-mono: var(--font-family-code);
+  --typeset-size: var(--size-body);
+  --typeset-leading: calc(var(--line-body) / var(--size-body));
+  --typeset-flow: var(--space-prose-block);
+
+  color: var(--text);
+
+  --color-foreground: var(--text);
+  --color-muted-foreground: var(--muted);
+  --color-border: var(--border-default);
+  --color-ring: var(--state-focus);
+  --color-muted: var(--surface-subtle);
+  --color-primary: var(--accent);
+
+  /* Streamdown 使用 rounded-md/lg/xl；在正文容器内对齐 Archer 圆角刻度。 */
+  --radius-md: var(--radius-small);
+  --radius-lg: var(--radius-control);
+  --radius-xl: var(--radius-panel);
+  --radius: var(--radius-control);
+}
+
+/* 官方排版在窄视口将字号乘以 1.125；通过变量抵消倍率，使桌面字号偏好
+   在所有窗口宽度下保持一致，不改动官方样式或标题与代码的相对比例。 */
+@media (width < 48rem) {
+  .archer-markdown-typeset {
+    --typeset-size: calc(var(--size-body) / 1.125);
+  }
+}
+
+/* 官方工具类的固定字号会跳过正文偏好；仅桥接标题和行内代码，
+   保留原生结构、字重与交互，不影响代码块及其工具栏。 */
+.archer-markdown-typeset [data-streamdown="heading-1"] {
+  font-size: var(--size-title);
+  line-height: var(--line-title);
+}
+
+.archer-markdown-typeset [data-streamdown="heading-2"] {
+  font-size: var(--size-section);
+  line-height: var(--line-section);
+}
+
+.archer-markdown-typeset [data-streamdown="heading-3"],
+.archer-markdown-typeset [data-streamdown="heading-4"],
+.archer-markdown-typeset [data-streamdown="heading-5"],
+.archer-markdown-typeset [data-streamdown="heading-6"] {
+  font-size: var(--size-body);
+  line-height: var(--line-body);
+}
+
+.archer-markdown-typeset [data-streamdown="inline-code"] {
+  font-size: var(--size-code);
+}
+
+/* 流式光标由 Streamdown 的 caret 渲染；继承正文色，避免主题切换时出现孤立的纯白或纯黑。 */
+.archer-markdown-typeset [data-streamdown] {
+  color: inherit;
+}
+
+/*
+ * 表格外壳与 typeset 的“裸表格”假设对齐。
+ *
+ * - typeset 假定表格直接排在正文流里，用 table 的 margin-block-start 承担块间距；
+ *   Streamdown 把它放进自己的滚动容器，这条外边距就变成表头上方的一条空白带。
+ *   容器内的表格因此不再自带流间距，间距由外壳的 my-4 统一承担。
+ * - Streamdown 默认叠了三层表面（灰底卡片、内层白卡、表头底色），与正文的克制
+ *   层级冲突；这里只保留单元格分隔线，让表格回到正文，而不是像一个独立控件。
+ * - 复制 / 下载 / 全屏工具栏默认独占一行，会永久抬高表格；改为悬停或键盘聚焦时
+ *   浮在表格右上角，官方操作与图标保持不变。
+ *
+ * 只作用于正文内联表格；全屏对话框由 Streamdown 挂到 body，保持官方样式。
+ */
+.archer-markdown-typeset [data-streamdown="table-wrapper"] {
+  position: relative;
+  gap: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.archer-markdown-typeset [data-streamdown="table-wrapper"] > div:not(:has(> table)) {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 1;
+  padding: 2px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-small);
+  background: var(--surface-raised);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.archer-markdown-typeset [data-streamdown="table-wrapper"]:hover > div:not(:has(> table)),
+.archer-markdown-typeset [data-streamdown="table-wrapper"]:focus-within > div:not(:has(> table)) {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.archer-markdown-typeset [data-streamdown="table-wrapper"] > div:has(> table) {
+  border: 0;
+  background: transparent;
+}
+
+.archer-markdown-typeset [data-streamdown="table-wrapper"] table {
+  margin-block-start: 0;
+}
+
+.archer-markdown-typeset [data-streamdown="table-wrapper"] thead {
+  background: transparent;
+}

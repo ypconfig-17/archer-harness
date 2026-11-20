@@ -1,0 +1,217 @@
+/* 会话行直接展示标题，长标题在文字列省略，不预留图标列。 */
+/* 折叠后从工作区左上角展开侧栏，品牌列只留标记。 */
+.workspace-sidebar-trigger {
+  flex: none;
+  margin-right: var(--space-1);
+}
+
+
+.execution-badge {
+  padding: 1px 6px;
+  border-radius: var(--radius-small);
+  white-space: nowrap;
+  font: var(--type-caption);
+}
+.execution-badge.ok {
+  color: var(--success);
+  background: var(--success-surface);
+}
+.execution-badge.running {
+  color: var(--text);
+  background: var(--accent-subtle);
+}
+.execution-badge.warning {
+  color: var(--warning);
+  background: var(--warning-surface);
+}
+.execution-badge.error {
+  color: var(--danger);
+  background: var(--danger-surface);
+}
+.pending-command-preview {
+  min-width: 0;
+}
+.pending-command-preview pre {
+  margin: 8px 0 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: var(--type-code);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+/* 消息复制入口沿用公共按钮，这里只控制不被时间行挤压。 */
+.message-copy {
+  flex: none;
+}
+.live-execution-rows {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-1);
+}
+.process-message, .process-commentary {
+  min-width: 0;
+}
+.human-record-body {
+  padding: var(--space-2) 0;
+  color: var(--secondary);
+  font: var(--type-ui);
+  overflow-wrap: anywhere;
+}
+
+.human-record-body p {
+  white-space: pre-wrap;
+}
+.human-record-body pre {
+  max-width: 100%;
+  overflow: auto;
+  font: var(--type-code);
+}
+.timeline-interaction, .timeline-operation {
+  min-width: 0;
+}
+.execution-stage-footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--icon-text-gap);
+  margin-top: 0;
+  padding-top: 0;
+  color: var(--secondary);
+  font: var(--type-caption);
+}
+
+/* 当前阶段只强调图标，正文保持辅助层，避免执行过程再次变成彩色卡片。 */
+.execution-stage-footer.is-active > svg,
+.execution-stage-footer.is-active > .ui-spinner {
+  color: var(--accent);
+}
+
+.execution-stage-footer.is-warning > svg {
+  color: var(--warning);
+}
+
+.execution-stage-footer.is-error > svg {
+  color: var(--danger);
+}
+.change-added {
+  color: var(--success);
+  font-variant-numeric: tabular-nums;
+}
+.change-removed {
+  color: var(--danger);
+  font-variant-numeric: tabular-nums;
+}
+.execution-records-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  font: var(--type-caption);
+  text-align: left;
+}
+.execution-records-trigger:hover {
+  color: var(--accent-text);
+}
+.execution-history-dialog {
+  height: min(620px, 80dvh);
+  padding: 0;
+}
+.execution-history-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.execution-history-dialog .live-execution-rows {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  padding: 12px 20px;
+}
+.brand .archer-mark {
+  width: var(--brand-mark-size);
+  height: var(--brand-mark-size);
+}
+.sidebar-service {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 5px;
+  color: var(--muted);
+}
+.sidebar-service .service-dot {
+  margin: 0;
+}
+[data-slot='sidebar'][data-collapsible='icon'] .sidebar-service {
+  display: none;
+}
+.composer-context:empty {
+  display: none;
+}
+@media(max-width:960px) {
+
+  .chat-page.has-inspector {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.home-workspace {
+  overflow-wrap: anywhere;
+  display: flex;
+  align-items: center;
+  gap: var(--icon-text-gap);
+  margin: 0 2px 8px;
+  color: var(--secondary);
+  font: var(--type-caption);
+}
+.composer:hover:not(:focus-within) {
+  border-color: color-mix(in srgb, var(--secondary) 35%, var(--border));
+}
+.home-welcome {
+  text-wrap: balance;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+}
+.home-welcome .archer-mark {
+  width: var(--brand-mark-size);
+  height: var(--brand-mark-size);
+}
+.home-welcome .home-subtitle {
+  flex-basis: 100%;
+  text-align: center;
+  margin: 0;
+}
+.home-welcome h1 {
+  margin: 0;
+  font: var(--type-title);
+}
+.welcome-content {
+  text-align: center;
+}
+.welcome-content > p {
+  margin: 0 auto 28px;
+}
+.welcome-recents {
+  text-align: left;
+}
+
+/* 项目切换入口保持轻量，完整目录由提示承载，长名称不能撑开输入区。 */
+.home-workspace {
+  max-width: 100%;
+  padding: var(--space-1) 0;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.home-workspace:hover:not(:disabled) {
+  color: var(--text);
+}
+.home-composer {
+  background: color-mix(in srgb, var(--surface-composer) 45%, var(--surface));
+}

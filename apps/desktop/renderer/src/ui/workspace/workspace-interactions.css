@@ -1,0 +1,343 @@
+/* 会话行的「…」只在悬浮、聚焦或当前行出现；项目行由官方的 group/menu-item 负责。 */
+.app-sidebar [data-sidebar='menu-sub-item'] [data-sidebar='menu-action'] {
+  opacity: 0;
+}
+
+.app-sidebar [data-sidebar='menu-sub-item']:hover [data-sidebar='menu-action'],
+.app-sidebar [data-sidebar='menu-sub-item']:focus-within [data-sidebar='menu-action'],
+.app-sidebar [data-sidebar='menu-sub-item'] [data-sidebar='menu-action'][aria-expanded='true'] {
+  opacity: 1;
+}
+
+.recovery-records-dialog {
+  padding: var(--surface-padding);
+  overflow: auto;
+}
+
+.recovery-records-dialog p {
+  margin: 12px 0;
+  overflow-wrap: anywhere;
+}
+
+.recovery-record {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+
+@media (hover: none) {
+
+  .chat-menu-trigger {
+    opacity: 1;
+  }
+}
+
+/* 整理只在执行中占一行辅助状态；结束后不保留记录，明细在「上下文」页签。 */
+
+.context-compaction-status {
+  display: flex;
+  align-items: center;
+  gap: var(--icon-text-gap);
+  min-height: var(--line-ui);
+  margin-block: var(--space-2);
+  padding: var(--space-1) 0;
+  color: var(--secondary);
+  font: var(--type-caption);
+}
+
+.context-compaction-status.is-error {
+  color: var(--danger);
+}
+
+.context-compaction-status > .execution-pulse,
+.context-compaction-status > .ui-icon {
+  flex: none;
+}
+
+/* 调用结果在右侧收口，与持续更新的执行阶段保持清晰区分。 */
+
+.execution-history-shell > .file-changes { margin: var(--space-3) var(--space-5); }
+
+/* 历史异常保持可访问，但不占据导航主层级。 */
+
+.sidebar-recovery-entry {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: var(--space-1);
+  min-height: var(--control-height);
+  padding: var(--space-1);
+  border-radius: var(--radius-small);
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+.sidebar-recovery-entry:hover { background: var(--hover); color: var(--warning); }
+
+[data-slot='sidebar'][data-collapsible='icon'] .sidebar-recovery-entry { display: none; }
+
+/* 一轮答复只保留一条结果主线，统计与整理记录进入同一个详情层。 */
+
+.turn-execution-summary,
+.turn-execution-summary > span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font: var(--type-caption);
+}
+
+.turn-attention {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--warning);
+}
+
+.turn-execution-summary { gap: var(--space-3); margin-block: var(--space-3); color: var(--muted); }
+
+/* 紧凑活动沿对话自然排列，不增加执行树、左侧脊线或嵌套工具组。 */
+
+.activity-flow,
+.activity-rows {
+  min-width: 0;
+}
+
+.activity-rows .process-message {
+  margin-block: var(--space-2);
+}
+
+.activity-rows .process-commentary {
+  font: var(--type-body);
+  color: var(--text);
+}
+
+.activity-rows .process-commentary p {
+  margin-block: var(--space-2);
+}
+
+.activity-history {
+  min-width: 0;
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+.activity-history > [data-slot="collapsible-trigger"] {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--activity-row-height);
+  cursor: pointer;
+  list-style: none;
+}
+
+.activity-history > [data-slot="collapsible-trigger"]::-webkit-details-marker { display: none; }
+
+.activity-history[data-open] > [data-slot="collapsible-trigger"] > .ui-icon:first-child { transform: rotate(90deg); }
+
+.activity-notice {
+  margin: var(--space-1) 0;
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+.operation-authorization {
+  display: inline-flex;
+  flex: none;
+  color: var(--muted);
+}
+
+.pending-command-preview .pending-command-subtitle {
+  margin: 0 0 var(--space-3);
+  color: var(--secondary);
+  font: var(--type-caption);
+}
+
+.pending-command-location {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+  color: var(--secondary);
+  font: var(--type-caption);
+}
+
+.pending-command-location dt { color: var(--muted); }
+
+.pending-command-location dd { margin: 0; overflow-wrap: anywhere; min-width: 0; }
+
+.pending-command-preview pre {
+  padding: var(--space-3);
+  margin: 0;
+  max-height: var(--approval-command-max-height);
+  border-radius: var(--radius-small);
+  background: var(--code);
+  color: var(--text);
+  font: var(--type-code);
+}
+
+/* 活动摘要在所有窗口宽度下都只有一行；详情与授权表单不受此约束。 */
+
+.activity-notice { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.activity-history > [data-slot="collapsible-trigger"] { flex-wrap: nowrap; white-space: nowrap; }
+
+/* 历史摘要与当前活动连续排列，避免折叠记录间仍保留大段空白。 */
+
+.transcript > .activity-flow {
+  margin-block: 0;
+}
+
+.composer-dock .composer {
+  background: var(--surface-composer);
+}
+
+.composer-dock .composer textarea {
+  min-height: var(--composer-message-height);
+}
+
+/* 命令保持原文，只降低摘要权重；完整参数仍由原有详情展示。 */
+
+/* 折叠记录与单条调用共用连续节奏，正文边界仍保留独立留白。 */
+
+.transcript > .activity-flow + .timeline-operation,
+.transcript > .timeline-operation + .activity-flow {
+  margin-block: 0;
+}
+
+/* 新对话是主操作：抬起一级表面并带轻投影，与搜索、项目树形成三级层次。 */
+.workbench .app-sidebar .new-chat {
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-control);
+  color: var(--text);
+  border-radius: var(--radius-control);
+  padding-inline: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.workbench .app-sidebar .new-chat kbd { color: inherit; }
+
+.conversation-view { display: flex; flex: 1; flex-direction: column; min-height: 0; position: relative; }
+
+.conversation-view[hidden], .center-inspection-view[hidden] { display: none; }
+
+.center-inspection-view { flex: 1; min-height: 0; overflow: auto; background: var(--panel); }
+
+@media (max-width: 700px) {
+}
+
+/* 中间调试视图拥有完整宽度，筛选仍保持工具栏尺度，不拉伸成表单。 */
+
+.center-inspection-view > .event-panel { padding: var(--space-4) var(--workspace-inset); }
+
+.center-inspection-view .event-view-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3); }
+
+.center-inspection-view .event-filter-select { flex: 0 1 auto; }
+
+.center-inspection-view .event-filter-select select { width: auto; max-width: 100%; }
+
+/* 主对话只保留一行累计摘要；没有底面色块和外框，参数与命令进入活动视图。 */
+
+/* 调试视图共享紧凑导航和阅读表面，工具栏固定，内容独立滚动。 */
+
+.center-inspection-view { container: inspector / inline-size; }
+
+.center-inspection-view .event-view-toolbar { position: static; padding-block: var(--space-3); border-bottom: 1px solid var(--border-soft); }
+
+.center-inspection-view .event-range { margin: 0 auto 0 0; font: var(--type-caption); color: var(--muted); }
+
+.center-inspection-view .event-filter-select { margin: 0; gap: var(--space-2); }
+
+.center-inspection-view .event-filter-select select { flex: none; min-width: 160px; padding-inline: var(--space-2); }
+
+.center-inspection-view .event-interaction-label > span { font: var(--type-code); }
+
+/*
+ * 阅读面与会话列平铺相接：窄栏保留框架底色，主工作区用自身底色和 1px 分界成层，
+ * 不再用外壳留白与圆角把中间托成浮起的对话框。强调色只用于焦点、当前页签与发送等动作。
+ */
+
+.workbench { background: var(--surface-frame); padding: 0; gap: 0; }
+
+.workbench > .workspace {
+  height: 100%;
+  border-left: 1px solid var(--border-default);
+  background: var(--canvas);
+}
+
+.workbench .app-sidebar { background: var(--sidebar); }
+
+.workbench .app-sidebar .brand { font: var(--type-ui); color: var(--text); }
+
+.workbench .app-sidebar .new-chat:hover { background: var(--surface-hover); }
+
+.chat-scroll { padding-top: var(--space-5); }
+
+.conversation-notice { font: var(--type-caption); color: var(--muted); }
+
+.composer-dock { padding-bottom: var(--space-3); }
+
+.composer-dock .composer {
+  padding: var(--space-4);
+  border-color: var(--border);
+  box-shadow: none;
+}
+
+.composer-dock .composer:focus-within { border-color: var(--accent); box-shadow: none; }
+
+.composer-controls { width: 100%; }
+
+.composer-options { flex: 1; }
+
+.composer-options > .composer-controls { display: flex; }
+
+.composer-controls .command-picker { order: -1; margin-right: auto; }
+
+.composer-picker { color: var(--secondary); }
+
+.file-inspector { background: var(--panel); }
+
+@media (max-width: 700px) {
+  .workbench > .workspace { border-left: 0; }
+  .composer-controls .command-picker { margin-right: 0; }
+}
+
+/* 活动片段使用连续导线与内缩区别于公开正文，片段之间保留语义停顿。 */
+.activity-flow {
+  margin-block: var(--space-3);
+  padding: var(--space-2) 0 var(--space-2) var(--space-3);
+  border-left: 2px solid var(--border-soft);
+}
+.activity-flow .activity-rows > * + * {
+  border-top: 1px solid var(--border-soft);
+}
+.activity-flow .activity-notice {
+  margin-block: var(--space-2);
+  padding-left: var(--space-2);
+  font: var(--type-caption);
+}
+
+/* 工作记录仅复用公共记录表面，正文与交互保持不同层级。 */
+.conversation-tool-group { padding-left: 0; }
+.conversation-tool-group > .ui-record-surface + * { margin-top: var(--space-2); }
+.conversation-tool-group .conversation-tool-row { padding-inline: var(--space-3); }
+.current-plan-dock.ui-record-surface { padding-block: 0; margin-bottom: var(--space-2); }
+.current-plan-dock.ui-record-surface > [data-slot="collapsible-trigger"] { flex-wrap: nowrap; }
+.current-plan-dock.ui-record-surface > [data-slot="collapsible-trigger"] > strong { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.current-plan-dock.ui-record-surface ol { padding: var(--space-2) var(--space-3); margin: 0; }
+.pending-interaction {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  background: var(--canvas);
+  padding: var(--space-4);
+  font: var(--type-ui);
+}
+
+/* 计划正文直接落在公共 Plan 结构里，说明段落只补充意图，不另建面板。 */
+.plan-explanation { margin: var(--space-2) 0 0; color: var(--muted); font: var(--type-caption); }
+
+.activity-history > [data-slot="collapsible-trigger"] {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}

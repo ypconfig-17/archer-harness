@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<title>Archer Desktop 尺寸母版</title>
+<style>
+* {
+  box-sizing:border-box
+}
+body {
+  margin:24px;
+  background:#fafafa;
+  color:#252a32;
+  font:14px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif
+}
+h1 {
+  font-size:22px;
+  margin:0
+}
+p.caption {
+  color:#66717e
+}
+.board {
+  display:grid;
+  grid-template-columns:repeat(2,800px);
+  gap:24px
+}
+.sample h2 {
+  font-size:16px;
+  margin:8px 0
+}
+.preview {
+  width:800px;
+  height:500px;
+  overflow:hidden;
+  border-radius:8px;
+  box-shadow:0 2px 12px #00000010
+}
+.window {
+  width:1600px;
+  height:1000px;
+  transform:scale(.5);
+  transform-origin:top left;
+  display:grid;
+  grid-template-columns:44px 236px minmax(0,1fr);
+  position:relative;
+  background:white;
+  border:1px solid #dce0e5;
+  border-radius:12px;
+  overflow:hidden;
+  font-size:14px
+}
+.window.inspector {
+  grid-template-columns:44px 236px minmax(0,1fr) 400px
+}
+.rail {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+  padding:12px 0;
+  background:#f0f2f5;
+  border-right:1px solid #eceef1
+}
+.rail .mark {
+  width:22px;
+  height:22px;
+  margin-bottom:8px;
+  border-radius:6px;
+  background:linear-gradient(135deg,#6a6fd9,#8fd3e8)
+}
+.rail .item {
+  display:grid;
+  place-items:center;
+  width:28px;
+  height:28px;
+  border-radius:6px;
+  color:#66717e;
+  font-size:14px
+}
+.rail .item.selected {
+  background:#e6e9f7;
+  color:#4c55c9
+}
+.rail .settings {
+  margin-top:auto
+}
+.rail .dot {
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:#3f9d6b
+}
+.sidebar {
+  padding:28px 16px;
+  background:#f5f6f8;
+  border-right:1px solid #eceef1;
+  position:relative
+}
+.brand {
+  display:block;
+  font-size:18px;
+  margin-bottom:24px
+}
+.new {
+  border:0;
+  background:transparent;
+  color:#2864dc;
+  font:inherit;
+  padding:8px 0
+}
+.search {
+  margin:12px 0 24px;
+  padding:6px 8px;
+  border:1px solid #dce0e5;
+  border-radius:6px;
+  color:#66717e
+}
+.sidebar small {
+  color:#66717e
+}
+.folder {
+  margin-top:12px;
+  font-weight:500
+}
+.chat,.selected {
+  padding:6px 12px 6px 28px;
+  min-height:32px;
+  border-radius:6px;
+  margin:2px 0
+}
+.selected {
+  background:#eaf0fb
+}
+.sidebar footer {
+  position:absolute;
+  bottom:16px;
+  left:16px;
+  right:16px;
+  color:#66717e
+}
+.sidebar footer div {
+  padding:8px 0
+}
+main {
+  display:flex;
+  flex-direction:column;
+  min-width:0
+}
+.top {
+  height:44px;
+  display:flex;
+  align-items:center;
+  padding:0 24px;
+  gap:16px;
+  border-bottom:1px solid #eceef1
+}
+.top span,.top small {
+  font-size:12px;
+  color:#66717e
+}
+.top small {
+  margin-left:auto
+}
+article {
+  width:100%;
+  max-width:828px;
+  margin:0 auto;
+  padding:32px 24px;
+  flex:1
+}
+.user {
+  float:right;
+  background:#f0f3f8;
+  border-radius:12px;
+  padding:8px 12px;
+  margin-bottom:32px
+}
+.author {
+  clear:both;
+  padding-top:24px;
+  font-weight:500
+}
+.author small {
+  margin-left:8px;
+  color:#66717e;
+  font-weight:400
+}
+article p {
+  margin:16px 0;
+  line-height:24px
+}
+article li {
+  margin:6px 0
+}
+.result {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:16px;
+  margin-top:24px;
+  padding:12px 0;
+  border-block:1px solid #eceef1;
+  font-size:12px
+}
+.success {
+  color:#357b59
+}
+.accent {
+  color:#2864dc
+}
+.warn {
+  color:#956515
+}
+.muted,small {
+  color:#66717e
+}
+.activity {
+  padding:10px 0;
+  color:#66717e;
+  font-size:12px;
+  border-bottom:1px solid #eceef1
+}
+.dock {
+  width:100%;
+  max-width:828px;
+  padding:0 24px 24px;
+  margin:0 auto
+}
+.plan {
+  font-size:12px;
+  padding:8px 0;
+  border-top:1px solid #eceef1
+}
+.composer {
+  border:1px solid #dce0e5;
+  border-radius:12px;
+  padding:12px;
+  color:#66717e
+}
+.composer>div {
+  min-height:32px
+}
+.composer footer {
+  display:flex;
+  gap:12px;
+  align-items:center;
+  margin-top:8px;
+  font-size:12px
+}
+.send {
+  margin-left:auto;
+  background:#2864dc;
+  color:white;
+  border:0;
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  font-size:18px
+}
+.stage {
+  margin-top:24px;
+  font-weight:500
+}
+.stage,.row {
+  padding:10px 0;
+  border-bottom:1px solid #eceef1;
+  display:flex;
+  align-items:center
+}
+.row small,.stage small {
+  margin-left:auto;
+  font-weight:400
+}
+.inspector {
+  display:flex;
+  flex-direction:column;
+  border-left:1px solid #eceef1;
+  background:#fafbfc;
+  min-width:0
+}
+.inspector header {
+  height:44px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 16px;
+  border-bottom:1px solid #eceef1
+}
+.inspector section {
+  padding:16px;
+  flex:1
+}
+.scope,.file {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px
+}
+.scope {
+  margin-bottom:12px
+}
+.file {
+  padding:8px;
+  border-radius:6px
+}
+.inspector h4 {
+  font-weight:500;
+  margin-top:24px
+}
+pre {
+  font:12px/20px Menlo,monospace;
+  overflow:auto
+}
+.added {
+  background:#e9f4ee;
+  display:inline-block;
+  min-width:100%
+}
+.removed {
+  background:#faeeee;
+  display:inline-block;
+  min-width:100%
+}
+.inspector footer {
+  padding:16px;
+  font-size:12px;
+  color:#66717e
+}
+.setting {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:16px;
+  padding:16px 0;
+  border-bottom:1px solid #eceef1
+}
+.control {
+  padding:4px 8px;
+  border:1px solid #dce0e5;
+  border-radius:6px;
+  background:#fafbfc
+}
+
+.window.settings-page {
+  grid-template-columns: 220px minmax(0, 1fr);
+  grid-template-rows: 44px minmax(0, 1fr);
+}
+.settings-page-bar {
+  grid-column: 1 / -1;
+  justify-content: center;
+}
+.view-tabs {
+  display:flex;
+  align-items:flex-end;
+  gap:16px;
+  height:36px;
+  padding:0 24px;
+  border-bottom:1px solid #eceef1;
+  font-size:13px
+}
+.view-tabs b {
+  padding:8px 0;
+  color:#4c55c9;
+  border-bottom:2px solid #4c55c9
+}
+.view-tabs span {
+  padding:8px 0;
+  color:#66717e
+}
+.settings-page-content {
+  width: 800px;
+  max-width: 100%;
+  margin-inline: auto;
+  padding: 28px;
+  box-sizing: border-box;
+}
+.settings-page-content header {
+  margin-bottom: 24px;
+}
+.settings-page-content h3 {
+  font-size: 16px;
+}
+.settings-page-content small {
+  display: block;
+  margin-top: 24px;
+}
+</style>
+<h1>Archer Desktop · 四态尺寸母版</h1>
+<p class="caption">设计示例，不是运行截图。每个窗口基准为 1600 × 1000px，以 50% 同尺度并置；44px 应用窄栏、236px 项目导航、弹性任务区与 400px 文件检查器，正文阅读线 780px。</p>
+<div class="board">
+<section class="sample">
+<h2>01 主对话</h2>
+<div class="preview">
+<div class="window complete">
+<aside class="rail">
+<span class="mark"></span>
+<span class="item selected">✎</span>
+<span class="item">▤</span>
+<span class="settings">⚙</span>
+<span class="dot"></span>
+</aside>
+<aside class="sidebar">
+<b class="brand">Archer</b>
+<button class="new">＋ 新对话</button>
+<div class="search">⌕　搜索对话…</div>
+<small>工作区</small>
+<div class="folder">⌄　archer-harness</div>
+<div class="selected">修复类型约束</div>
+<div class="chat">优化执行流程</div>
+<div class="chat">检查请求边界</div>
+<footer>
+<div>⚙　设置</div>
+<div>● 服务已连接</div>
+<small>历史异常 · 35</small>
+</footer>
+</aside>
+<main>
+<header class="top">
+<b>修复类型约束</b>
+<span>archer-harness</span>
+<small>◫　···</small>
+</header>
+<nav class="view-tabs"><b>会话</b><span>活动</span><span>上下文</span></nav>
+<article>
+<div class="user">修复运行时类型约束，并检查相关测试。</div>
+<div class="author">Archer <small>10:24</small>
+</div>
+<p>已收口请求与结果的类型边界。</p>
+<ul>
+<li>统一成功与失败结果的声明</li>
+<li>保留当前执行与恢复语义</li>
+</ul>
+<div class="result">
+<span class="success">✓ 已完成</span>
+<span class="accent">3 个文件变更</span>
+<span class="warn">1 项需关注</span>
+<span class="muted">详情 ⌄</span>
+</div>
+<div class="activity">›　执行过程 · 12 项活动</div>
+</article>
+<div class="dock">
+<div class="plan">⌄　任务计划　3/3</div>
+<div class="composer">
+<div>继续这段对话…</div>
+<footer>
+<span>DeepSeek V4.1 Flash　⌄</span>
+<span>思考 高　⌄</span>
+<span>每次询问　⌄</span>
+<button class="send">↑</button>
+</footer>
+</div>
+</div>
+</main>
+</div>
+</div>
+</section>
+<section class="sample">
+<h2>02 运行中</h2>
+<div class="preview">
+<div class="window running">
+<aside class="rail">
+<span class="mark"></span>
+<span class="item selected">✎</span>
+<span class="item">▤</span>
+<span class="settings">⚙</span>
+<span class="dot"></span>
+</aside>
+<aside class="sidebar">
+<b class="brand">Archer</b>
+<button class="new">＋ 新对话</button>
+<div class="search">⌕　搜索对话…</div>
+<small>工作区</small>
+<div class="folder">⌄　archer-harness</div>
+<div class="selected">修复类型约束</div>
+<div class="chat">优化执行流程</div>
+<div class="chat">检查请求边界</div>
+<footer>
+<div>⚙　设置</div>
+<div>● 服务已连接</div>
+<small>历史异常 · 35</small>
+</footer>
+</aside>
+<main>
+<header class="top">
+<b>修复类型约束</b>
+<span>archer-harness</span>
+<small>◫　···</small>
+</header>
+<nav class="view-tabs"><b>会话</b><span>活动</span><span>上下文</span></nav>
+<article>
+<div class="user">修复运行时类型约束，并检查相关测试。</div>
+<div class="author">Archer <small>10:24</small>
+</div>
+<p>正在检查类型定义与调用关系。</p>
+<div class="stage">
+<span class="accent">◌</span>　检查类型与调用关系 <small>运行中</small>
+</div>
+<div class="row">✓　读取 agent.ts <small>0.2s</small>
+</div>
+<div class="row">✓　检查调用关系 <small>1.3s</small>
+</div>
+<div class="row">◌　运行类型检查 <small>pnpm typecheck</small>
+</div>
+<div class="activity">›　查看执行详情</div>
+</article>
+<div class="dock">
+<div class="plan">⌄　任务计划　1/3 · 检查类型边界</div>
+<div class="composer">
+<div>添加下一项任务…</div>
+<footer>
+<span>DeepSeek V4.1 Flash　⌄</span>
+<span>思考 高　⌄</span>
+<span>每次询问　⌄</span>
+<button class="send">↑</button>
+</footer>
+</div>
+</div>
+</main>
+</div>
+</div>
+</section>
+<section class="sample">
+<h2>03 检查器打开</h2>
+<div class="preview">
+<div class="window inspector">
+<aside class="rail">
+<span class="mark"></span>
+<span class="item selected">✎</span>
+<span class="item">▤</span>
+<span class="settings">⚙</span>
+<span class="dot"></span>
+</aside>
+<aside class="sidebar">
+<b class="brand">Archer</b>
+<button class="new">＋ 新对话</button>
+<div class="search">⌕　搜索对话…</div>
+<small>工作区</small>
+<div class="folder">⌄　archer-harness</div>
+<div class="selected">修复类型约束</div>
+<div class="chat">优化执行流程</div>
+<div class="chat">检查请求边界</div>
+<footer>
+<div>⚙　设置</div>
+<div>● 服务已连接</div>
+<small>历史异常 · 35</small>
+</footer>
+</aside>
+<main>
+<header class="top">
+<b>修复类型约束</b>
+<span>archer-harness</span>
+<small>◫　···</small>
+</header>
+<nav class="view-tabs"><b>会话</b><span>活动</span><span>上下文</span></nav>
+<article>
+<div class="user">修复运行时类型约束，并检查相关测试。</div>
+<div class="author">Archer <small>10:24</small>
+</div>
+<p>已收口请求与结果的类型边界。</p>
+<ul>
+<li>统一成功与失败结果的声明</li>
+<li>保留当前执行与恢复语义</li>
+</ul>
+<div class="result">
+<span class="success">✓ 已完成</span>
+<span class="accent">3 个文件变更</span>
+<span class="warn">1 项需关注</span>
+<span class="muted">详情 ⌄</span>
+</div>
+<div class="activity">›　执行过程 · 12 项活动</div>
+</article>
+<div class="dock">
+<div class="plan">⌄　任务计划　3/3</div>
+<div class="composer">
+<div>继续这段对话…</div>
+<footer>
+<span>DeepSeek V4.1 Flash　⌄</span>
+<span>思考 高　⌄</span>
+<span>每次询问　⌄</span>
+<button class="send">↑</button>
+</footer>
+</div>
+</div>
+</main>
+<aside class="inspector">
+<header>
+<b class="accent">文件变更</b>
+<span>⤢　×</span>
+</header>
+<section>
+<div class="scope">本轮变更 <small>3 个文件</small>
+</div>
+<div class="file selected">agent.ts <small class="success">+12 −4</small>
+</div>
+<div class="file">runtime.ts <small>+8 −2</small>
+</div>
+<div class="file">agent.test.ts <small>+6 −1</small>
+</div>
+<h4>agent.ts</h4>
+<pre>18  type Result = Success | Failure;
+19
+<span class="removed">20 − return execute();</span>
+<span class="added">21 + const result = await execute();
+22 + return commit(result);</span>
+</pre>
+</section>
+<footer>⤢ 宽屏查看</footer>
+</aside>
+</div>
+</div>
+</section>
+<section class="sample">
+<h2>04 设置工作区</h2>
+<div class="preview">
+<div class="window settings-page">
+<header class="top settings-page-bar">Archer · 设置</header>
+<aside class="sidebar">
+<div>←　返回应用</div>
+<div class="search">⌕　搜索设置…</div>
+<div class="selected">通用设置</div>
+<div>外观与主题</div>
+<div>模型设置</div>
+<div>上下文</div>
+<div>能力来源</div>
+<div>快捷键</div>
+<div>工作区</div>
+<div>关于 Archer</div>
+<footer><small>本机偏好 · 即时保存</small></footer>
+</aside>
+<main class="settings-page-content">
+<header><h3>通用设置</h3><p class="muted">工作区、模型与默认行为</p></header>
+<small>新对话默认值</small>
+<div class="setting">工作区 <span class="control">archer-harness　⌄</span></div>
+<div class="setting">默认模型 <span class="control">DeepSeek V4.1 Flash　⌄</span></div>
+<div class="setting">文件访问 <span class="control">读取与编辑　⌄</span></div>
+<small>启动与语言</small>
+<div class="setting">启动时打开 <span class="control">上次使用的对话　⌄</span></div>
+<div class="setting">界面语言 <span>简体中文</span></div>
+</main>
+</div>
+</div>
+</section>
+</div>
+</html>

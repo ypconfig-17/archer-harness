@@ -1,0 +1,20 @@
+{
+  "defaultProvider": "my-service",
+  "providers": {
+    "my-service": {
+      "displayName": "My model service",
+      "api": "openai-completions",
+      "baseURL": "https://your-model-service.example/v1",
+      "apiKeyEnv": "ARCHER_MODEL_API_KEY",
+      "defaultModel": "your-model-id",
+      "models": [
+        {
+          "id": "your-model-id",
+          "contextWindow": 32768,
+          "maxTokens": 4096,
+          "reasoning": false
+        }
+      ]
+    }
+  }
+}

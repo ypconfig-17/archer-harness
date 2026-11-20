@@ -1,0 +1,32 @@
+.ui-setting-field {
+  display: grid;
+  gap: var(--space-2);
+  margin-block: var(--space-4);
+  min-width: 0;
+}
+.ui-setting-label {
+  color: var(--text);
+  font: var(--type-ui);
+}
+.ui-setting-description {
+  margin: 0;
+  color: var(--muted);
+  font: var(--type-caption);
+}
+.ui-setting-error {
+  margin: 0;
+  color: var(--danger);
+  font: var(--type-caption);
+}
+.ui-setting-group {
+  min-width: 0;
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  border: 0;
+}
+.ui-setting-group > legend {
+  padding: 0;
+  color: var(--text);
+  font: var(--type-ui);
+  font-weight: var(--weight-medium);
+}

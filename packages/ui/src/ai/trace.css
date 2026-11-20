@@ -1,0 +1,296 @@
+/* 基于上游 Trace 的同构行；所有视觉值由 Archer Token 提供。 */
+.ui-trace,
+.ui-trace-collapsible {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+}
+
+.ui-trace-line,
+.ui-trace-collapsible-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  max-width: 100%;
+  min-height: var(--control-height);
+  color: var(--secondary);
+  font: var(--type-ui);
+  text-align: left;
+}
+
+.ui-trace-line {
+  width: 100%;
+}
+
+.ui-trace-collapsible-trigger {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: var(--radius-small);
+  cursor: pointer;
+}
+
+.ui-trace-collapsible-trigger:hover {
+  background: var(--hover);
+}
+.ui-trace-collapsible-trigger:focus-visible {
+  outline: 1px solid var(--state-focus);
+  outline-offset: -1px;
+}
+
+.ui-trace-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--icon-small);
+}
+
+.ui-trace-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 运行标题只做克制的扫光提示；状态事实仍由宿主传入，动画不会自行推进。 */
+.ui-trace-line[data-status='running'] .ui-trace-title {
+  background: linear-gradient(
+    90deg,
+    currentColor 0%,
+    color-mix(in srgb, currentColor 78%, var(--surface-raised)) 50%,
+    currentColor 100%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: ui-trace-shimmer 1.7s linear infinite;
+}
+
+@keyframes ui-trace-shimmer {
+  from {
+    background-position: 220% 0;
+  }
+  to {
+    background-position: -220% 0;
+  }
+}
+
+.ui-trace-description {
+  margin-left: auto;
+  flex: none;
+  max-width: 45%;
+  color: var(--muted);
+  font: var(--type-caption);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.ui-trace-line[data-status='error'] {
+  color: var(--danger);
+}
+.ui-trace-line[data-status='warning'] {
+  color: var(--warning);
+}
+.ui-trace-line[data-status='pending'] {
+  color: var(--muted);
+}
+.ui-trace-line[data-status='running'] {
+  color: var(--accent-text);
+}
+/* 行入口复用触发器排版，但没有展开箭头；禁用时保持位置与字阶。 */
+.ui-trace-action {
+  text-align: left;
+}
+.ui-trace-action:disabled {
+  cursor: default;
+}
+.ui-trace-description[data-tone='ok'] {
+  color: var(--success);
+}
+.ui-trace-description[data-tone='warning'] {
+  color: var(--warning);
+}
+.ui-trace-description[data-tone='error'] {
+  color: var(--danger);
+}
+.ui-trace-chevron {
+  transition: transform 160ms;
+}
+.ui-trace-collapsible-trigger[aria-expanded='true'] > .ui-trace-chevron {
+  transform: rotate(90deg);
+}
+
+.ui-trace-collapsible-content {
+  min-width: 0;
+}
+.ui-trace-collapsible-content[hidden] {
+  display: none;
+}
+.ui-trace-collapsible-content-inner {
+  padding: var(--space-2) 0 var(--space-2) var(--space-5);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--secondary);
+  font: var(--type-ui);
+}
+
+.archer-activity-group,
+.archer-plan {
+  margin-block: var(--space-3);
+}
+.archer-plan progress {
+  display: block;
+  width: 100%;
+  height: var(--space-1);
+  margin-block: var(--space-2) var(--space-3);
+  accent-color: var(--accent);
+}
+.archer-plan.is-completed progress {
+  accent-color: var(--success);
+}
+.archer-plan .ui-trace-line[data-plan-status='completed'] > .ui-trace-icon {
+  color: var(--success);
+}
+.ui-reasoning-text {
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-trace-chevron {
+    transition: none;
+  }
+
+  .ui-trace-line[data-status='running'] .ui-trace-title {
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    animation: none;
+  }
+}
+
+.archer-plan progress {
+  appearance: none;
+  border: 0;
+  border-radius: var(--radius-small);
+  background: var(--border-soft);
+  overflow: hidden;
+}
+.archer-plan progress::-webkit-progress-bar {
+  background: var(--border-soft);
+}
+.archer-plan progress::-webkit-progress-value {
+  background: var(--accent);
+}
+.archer-plan progress::-moz-progress-bar {
+  background: var(--accent);
+}
+.archer-plan.is-completed progress::-webkit-progress-value {
+  background: var(--success);
+}
+.archer-plan.is-completed progress::-moz-progress-bar {
+  background: var(--success);
+}
+
+/* 紧凑阅读沿用上游 Trace 的就近信息与缩进语法，显式启用，不改变既有页面密度。 */
+.ui-trace[data-density='compact'] {
+  gap: var(--space-2);
+}
+.ui-trace[data-density='compact'] .ui-trace-line,
+.ui-trace[data-density='compact'] .ui-trace-collapsible-trigger {
+  min-height: 0;
+  width: fit-content;
+  max-width: 100%;
+  font: var(--type-ui);
+}
+.ui-trace[data-density='compact'] .ui-trace-collapsible-trigger > .ui-trace-line {
+  flex: 0 1 auto;
+}
+.ui-trace[data-density='compact'] .ui-trace-description {
+  margin-left: 0;
+  max-width: none;
+  flex: 0 1 auto;
+}
+.ui-trace[data-density='compact'] .ui-trace-collapsible-content-inner {
+  margin: var(--space-2) 0 var(--space-1) calc(var(--icon-small) / 2);
+  padding: 0 var(--space-1) 0 var(--space-4);
+  border-left: 1px solid var(--border-soft);
+}
+.ui-trace[data-density='compact'] .ui-trace-collapsible-trigger:hover {
+  background: transparent;
+  color: var(--text);
+}
+.ui-trace[data-density='compact'] .ui-code-block {
+  background: var(--surface-subtle);
+  border-color: transparent;
+}
+
+/* 紧凑并非缩小文字：正文沿用全局正文字号，辅助信息才降一级。 */
+.ui-trace[data-density='compact'] .ui-trace-line,
+.ui-trace[data-density='compact'] .ui-trace-collapsible-trigger {
+  font: var(--type-body);
+}
+.ui-trace[data-density='compact'] .ui-trace-line[data-status='pending'] {
+  color: var(--secondary);
+}
+.ui-trace[data-density='compact'] .ui-trace-description {
+  font: var(--type-caption);
+}
+
+/* 版本记录与当前步骤分层；长文本折行，状态保持独立列，不以裸列表重复铺满正文。 */
+.ui-plan-history {
+  margin-top: var(--space-4);
+}
+.ui-plan-history .ui-trace > .ui-trace-collapsible + .ui-trace-collapsible {
+  margin-top: var(--space-3);
+}
+.ui-plan-version-title {
+  margin: 0 0 var(--space-3);
+  color: var(--text);
+  font: var(--type-ui);
+  font-weight: var(--weight-medium);
+}
+.ui-plan-version-steps {
+  display: grid;
+  gap: var(--space-3);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.ui-plan-version-steps > li {
+  display: grid;
+  grid-template-columns: var(--icon-small) minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--space-2);
+  color: var(--secondary);
+  font: var(--type-ui);
+}
+.ui-plan-version-steps > li > span {
+  overflow-wrap: anywhere;
+}
+.ui-plan-version-steps small {
+  color: var(--muted);
+  font: var(--type-caption);
+}
+@media (max-width: 560px) {
+  .ui-plan-version-steps > li {
+    grid-template-columns: var(--icon-small) minmax(0, 1fr);
+  }
+  .ui-plan-version-steps small {
+    grid-column: 2;
+  }
+}
+
+/* 终态计划保留未完成声明，但不再用运行颜色和动画表示仍在执行。 */
+.ui-trace-line[data-plan-status='stopped'] {
+  color: var(--muted);
+}
+
+.ui-trace-action.cn-button {
+  height: auto;
+  white-space: normal;
+}

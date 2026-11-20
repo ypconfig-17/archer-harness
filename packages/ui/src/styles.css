@@ -1,0 +1,254 @@
+@import './theme/shadcn.css';
+@import 'tw-animate-css';
+@import './primitives/navigation.css';
+@import './primitives/layout.css';
+@import './renderers/code.css';
+@import './ai/file-tree.css';
+@import './renderers/diff.css';
+@import './ai/trace.css';
+@import './primitives/surfaces.css';
+@import './ai/content.css';
+@import './ai/prompt-input.css';
+/* 包内组件类名由宿主的 Tailwind 处理；显式声明扫描范围，不依赖自动探测。 */
+@source './';
+/* 只消费宿主语义 Token，不声明第二份主题或重置全局元素。 */
+.archer-agent-turn {
+  min-width: 0;
+  color: var(--text);
+  font: var(--type-body);
+}
+.archer-message-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}
+.archer-message-header time {
+  color: var(--muted);
+  font: var(--type-caption);
+}
+/* 阶段回复与最终正文共用排版基线，不继承活动记录等外层的小字号。 */
+.archer-progress-paragraph,
+.archer-assistant-answer {
+  color: var(--text);
+  font: var(--type-body);
+}
+.archer-progress-paragraph {
+  margin-block: var(--space-3);
+}
+.archer-interaction {
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+}
+.archer-interaction header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+.archer-interaction header strong {
+  font: var(--type-ui);
+  font-weight: var(--weight-medium);
+}
+.archer-interaction-meta {
+  margin-left: auto;
+  color: var(--muted);
+  font: var(--type-caption);
+}
+.archer-interaction footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.archer-viewport-shell {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+.archer-viewport {
+  height: 100%;
+  overflow: auto;
+  overflow-anchor: none;
+}
+.archer-jump-latest {
+  position: absolute;
+  bottom: var(--space-3);
+  left: 50%;
+  transform: translateX(-50%);
+}
+.archer-message-actions {
+  margin-left: auto;
+}
+.archer-turn-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-block: var(--space-4);
+  color: var(--muted);
+  font: var(--type-caption);
+}
+.archer-turn-summary strong {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: var(--weight-medium);
+}
+
+.archer-turn-summary[data-status='running'] .ui-spinner,
+.archer-turn-summary[data-status='stopping'] .ui-spinner {
+  color: var(--accent);
+}
+.archer-turn-summary[data-status='completed'] strong {
+  color: var(--success);
+}
+.archer-turn-summary[data-status='failed'] strong {
+  color: var(--danger);
+}
+.archer-turn-summary[data-tone='running'] strong {
+  color: var(--accent-text);
+}
+.archer-turn-summary[data-tone='warning'] strong {
+  color: var(--warning);
+}
+.archer-turn-summary[data-tone='error'] strong {
+  color: var(--danger);
+}
+.archer-turn-summary[data-tone='muted'] strong {
+  color: var(--muted);
+}
+/* 需关注是紧凑状态短语：整体折到下一行，不能在图标与计数之间断开。 */
+.archer-turn-summary .archer-attention {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  color: var(--warning);
+}
+.archer-turn-summary .archer-turn-meta {
+  color: var(--muted);
+}
+.archer-turn-summary > div {
+  margin-left: auto;
+}
+/* 结束后的详情独占一行，避免被右侧操作区挤成第二列。 */
+.archer-turn-summary > .archer-turn-summary-detail {
+  flex-basis: 100%;
+  margin-left: 0;
+}
+.archer-assistant-answer {
+  margin-top: var(--space-5);
+}
+.archer-answer-results,
+.archer-answer-actions {
+  margin-top: var(--space-2);
+}
+.archer-interaction-record {
+  margin-block: var(--space-3);
+  font: var(--type-caption);
+  color: var(--secondary);
+}
+.archer-interaction-record [data-slot="collapsible-trigger"] {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  min-height: var(--control-height);
+  list-style: none;
+}
+.archer-interaction-record [data-slot="collapsible-trigger"]::-webkit-details-marker {
+  display: none;
+}
+.archer-interaction-record[data-open] > [data-slot="collapsible-trigger"] > .ui-disclosure-chevron {
+  transform: rotate(90deg);
+}
+.archer-interaction-record [data-slot="collapsible-trigger"] > span:not(.archer-interaction-meta) {
+  flex: none;
+}
+.archer-interaction-record [data-slot="collapsible-trigger"] .archer-interaction-meta {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.archer-interaction-record > div {
+  padding: var(--space-3);
+}
+.archer-execution-notice {
+  margin-block: var(--space-3);
+  padding: var(--space-3);
+  border-left: 2px solid var(--warning);
+  font: var(--type-ui);
+}
+.archer-execution-notice[data-kind='error'] {
+  border-color: var(--danger);
+}
+.archer-execution-notice footer {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* 对话记录统一表面：工具、计划、回答历史共用行高、字阶与展开结构。 */
+.ui-record-surface {
+  min-width: 0;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-small);
+  background: var(--panel);
+  color: var(--secondary);
+  font: var(--type-caption);
+}
+.ui-record-surface > [data-slot="collapsible-trigger"] {
+  border-radius: var(--radius-small);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-height);
+  padding: var(--space-1) var(--space-3);
+  list-style: none;
+  cursor: pointer;
+  font: var(--type-caption);
+}
+.ui-record-surface > [data-slot="collapsible-trigger"]::-webkit-details-marker {
+  display: none;
+}
+.ui-record-surface > [data-slot="collapsible-trigger"]:hover {
+  background: var(--hover);
+}
+.ui-record-surface[data-open] > [data-slot="collapsible-trigger"] {
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+.ui-record-surface > [data-slot="collapsible-trigger"] > .ui-icon {
+  flex: none;
+}
+.ui-record-action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-height);
+  color: var(--secondary);
+  font: var(--type-caption);
+}
+
+.ui-message { min-width: 0; font: var(--type-body); color: var(--text); }
+.ui-message[data-role='user'] { width: fit-content; max-width: 85%; margin-left: auto; }
+.ui-message[data-role='user'] > .ui-message-body { padding: var(--space-3); background: var(--bubble); border-radius: var(--radius-panel); }
+.ui-message-body { overflow-wrap: anywhere; }
+.ui-message-actions { display: flex; gap: var(--space-2); margin-top: var(--space-2); }
+
+/* 记录标题共用按钮交互，视觉保持轻量行；明细仍独立承载正文。 */
+:is(.archer-interaction-record, .ui-record-surface) > [data-slot="collapsible-trigger"] {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+}
+
+.archer-conversation-scroll {
+  height: 100%;
+  min-height: 0;
+}

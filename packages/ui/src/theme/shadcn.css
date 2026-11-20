@@ -1,0 +1,308 @@
+/*
+ * shadcn/ui 基础组件桥接层。
+ * 组件结构、类名、变体与交互状态复制自固定 revision 的官方 Base UI 源码，
+ * 见包内 THIRD_PARTY.md；颜色通过 @theme inline 映射到 Archer 语义 Token，
+ * 圆角、密度、字段底色与字体跟随 Archer 设计刻度，不引入第二套主题。
+ */
+
+/* 包内 CSS 可能被宿主单独编译（Vite 开发态按模块处理），
+   @reference 只提供默认主题用于解析 @apply，不重复输出基础样式。 */
+@reference 'tailwindcss';
+
+/* 官方 dark: 变体按 class 切换；桌面主题通过 data-appearance 表达明暗。 */
+@custom-variant dark (&:where([data-appearance='dark'], [data-appearance='dark'] *));
+
+@theme inline {
+  --color-background: var(--canvas);
+  --color-foreground: var(--text);
+  --color-card: var(--surface-raised);
+  --color-card-foreground: var(--text);
+  --color-popover: var(--surface-floating);
+  --color-popover-foreground: var(--text);
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--on-accent);
+  /* 次级动作与旧 Desktop 次级按钮同属控件表面层级，避免两套灰底。 */
+  --color-secondary: var(--control-surface);
+  --color-secondary-foreground: var(--text);
+  --color-muted: var(--surface-subtle);
+  --color-muted-foreground: var(--muted);
+  --color-accent: var(--surface-hover);
+  --color-accent-foreground: var(--text);
+  --color-destructive: var(--danger);
+  --color-border: var(--border-default);
+  --color-input: var(--border-soft);
+  --color-ring: var(--state-focus);
+
+  /* 官方组件也会直接使用中性表面名；单独暴露，避免与 Archer 的 --accent 等别名冲突。 */
+  --color-surface-subtle: var(--surface-subtle);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-active: var(--surface-active);
+  --color-border-default: var(--border-default);
+  --color-border-soft: var(--border-soft);
+  --color-border-strong: var(--border-strong);
+
+  /* 字段与次级按钮和桌面共享同一组中性控件表面，官方组件不另起灰底。 */
+  --color-control-surface: var(--control-surface);
+  --color-control-surface-hover: var(--control-surface-hover);
+  --color-control-border: var(--control-border);
+
+  /* 官方 Streamdown 代码块/表格外壳与 Sidebar 原语共用一组表面名；
+     统一映射到既有中性层，宿主不需要再声明第二套侧栏配色。 */
+  --color-sidebar: var(--surface-subtle);
+  --color-sidebar-foreground: var(--text);
+  --color-sidebar-border: var(--border-soft);
+  --color-sidebar-accent: var(--surface-hover);
+  --color-sidebar-accent-foreground: var(--text);
+  --color-sidebar-ring: var(--state-focus);
+
+
+}
+
+.cn-font-heading {
+  font-family: var(--font-family-ui);
+}
+
+/* 官方 Rhea 规则；仅将圆角替换为 Archer 控件刻度。 */
+.cn-button {
+  @apply focus-visible:border-ring focus-visible:ring-ring/30 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 rounded-[var(--radius-control)] border border-transparent bg-clip-padding text-sm font-medium focus-visible:ring-3 aria-invalid:ring-3 active:not-aria-[haspopup]:translate-y-px [&_svg:not([class*='size-']):not(.ui-icon)]:size-4;
+}
+.cn-button-variant-default {
+  @apply bg-primary text-primary-foreground hover:bg-primary/80;
+}
+.cn-button-variant-outline {
+  @apply border-border bg-background dark:bg-transparent hover:bg-muted hover:text-foreground dark:hover:bg-input/30 aria-expanded:bg-muted aria-expanded:text-foreground;
+}
+.cn-button-variant-secondary {
+  /* 官方悬停混合色依赖 shadcn 的 --secondary / --foreground 变量；
+     Archer 用同名变量表达文字语义，因此改为既有中性悬停 Token。 */
+  @apply bg-secondary text-secondary-foreground hover:bg-surface-hover aria-expanded:bg-secondary aria-expanded:text-secondary-foreground;
+}
+.cn-button-variant-ghost {
+  @apply hover:bg-muted hover:text-foreground dark:hover:bg-muted/50 aria-expanded:bg-muted aria-expanded:text-foreground;
+}
+.cn-button-variant-destructive {
+  @apply bg-destructive/10 hover:bg-destructive/20 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/20 text-destructive focus-visible:border-destructive/40 dark:hover:bg-destructive/30;
+}
+/* 删除等不可逆动作使用实心危险色；危险色本身带前景色，不依赖明暗推导。 */
+.cn-button-variant-destructive-solid {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--on-danger);
+}
+.cn-button-variant-destructive-solid:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 88%, var(--text));
+}
+.cn-button-variant-destructive-solid:active:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 80%, var(--text));
+}
+.cn-button-variant-link {
+  @apply text-primary underline-offset-4 hover:underline;
+}
+.cn-button-size-xs {
+  @apply h-6 gap-1 px-2.5 text-xs has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 [&_svg:not([class*='size-']):not(.ui-icon)]:size-3;
+}
+.cn-button-size-sm {
+  @apply h-7 gap-1 px-3 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2;
+}
+.cn-button-size-default {
+  @apply h-8 gap-1.5 px-3 has-data-[icon=inline-end]:pr-2.5 has-data-[icon=inline-start]:pl-2.5;
+}
+.cn-button-size-lg {
+  @apply h-9 gap-1.5 px-4 has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3;
+}
+.cn-button-size-icon-xs {
+  @apply size-6 [&_svg:not([class*='size-']):not(.ui-icon)]:size-3;
+}
+.cn-button-size-icon-sm {
+  @apply size-7;
+}
+.cn-button-size-icon {
+  @apply size-8;
+}
+.cn-button-size-icon-lg {
+  @apply size-9;
+}
+
+/* 字段底色沿用 Archer 控件表面；官方圆角替换为控件刻度。 */
+.cn-input {
+  @apply bg-control-surface border-transparent focus-visible:border-ring focus-visible:ring-ring/30 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 h-8 rounded-[var(--radius-control)] border px-2.5 py-1 text-base transition-[color,box-shadow] duration-200 file:h-6 file:text-sm file:font-medium focus-visible:ring-3 aria-invalid:ring-3 md:text-sm;
+}
+
+/* 多行字段与单行输入共用表面和焦点环，只增加最小高度。 */
+.cn-textarea {
+  @apply bg-control-surface border-transparent focus-visible:border-ring focus-visible:ring-ring/30 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 min-h-20 w-full rounded-[var(--radius-control)] border px-2.5 py-2 text-base transition-[color,box-shadow] duration-200 placeholder:text-muted-foreground focus-visible:ring-3 aria-invalid:ring-3 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm;
+}
+
+/* 输入区由外层容器提供边界和底色；plain 只保留文本排版。 */
+.cn-textarea[data-variant='plain'] {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.cn-textarea[data-variant='plain']:focus-visible {
+  box-shadow: none;
+}
+
+/* 卡片保留官方组合结构与内部间距变量；圆角、内距和投影使用 Archer 表面刻度。 */
+.cn-card {
+  @apply bg-card text-card-foreground ring-border-default gap-(--card-spacing) overflow-hidden rounded-[var(--radius-panel)] py-(--card-spacing) text-sm shadow-[var(--shadow-composer)] ring-1 [--card-spacing:var(--space-4)] has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:var(--space-3)] *:[img:first-child]:rounded-t-[var(--radius-panel)] *:[img:last-child]:rounded-b-[var(--radius-panel)];
+}
+.cn-card-header {
+  @apply gap-1.5 rounded-t-[var(--radius-panel)] px-(--card-spacing) [.border-b]:pb-(--card-spacing);
+}
+.cn-card-title {
+  @apply text-base font-medium;
+}
+.cn-card-description {
+  @apply text-muted-foreground text-sm;
+}
+.cn-card-content {
+  @apply px-(--card-spacing);
+}
+.cn-card-footer {
+  @apply rounded-b-[var(--radius-panel)] px-(--card-spacing) [.border-t]:pt-(--card-spacing);
+}
+
+/* 滚动区由 Base UI 维护视口与滚动条状态；滚动条占用固定窄槽，不挤压内容排版。 */
+.cn-scroll-area {
+  @apply relative overflow-hidden;
+}
+.cn-scroll-area-viewport {
+  @apply size-full rounded-[inherit];
+}
+.cn-scroll-area-scrollbar {
+  @apply flex touch-none p-px select-none transition-colors duration-150;
+}
+.cn-scroll-area-scrollbar[data-orientation='vertical'] {
+  @apply h-full w-2.5 border-l border-l-transparent;
+}
+.cn-scroll-area-thumb {
+  @apply bg-border relative flex-1 rounded-full;
+}
+.cn-scroll-area-corner {
+  @apply bg-transparent;
+}
+
+/* 官方 Select 触发器保留尺寸、焦点环与占位态；表面沿用字段底色与控件圆角。 */
+.cn-select-trigger {
+  @apply bg-control-surface border-transparent data-placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/30 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive aria-invalid:border-destructive gap-1.5 rounded-[var(--radius-control)] border py-2 px-3 text-sm transition-[color,box-shadow] duration-200 focus-visible:ring-3 aria-invalid:ring-3 data-[size=default]:h-8 data-[size=sm]:h-7 *:data-[slot=select-value]:flex *:data-[slot=select-value]:gap-1.5 [&_svg:not([class*='size-'])]:size-4;
+}
+.cn-select-value {
+  @apply flex flex-1 text-left;
+}
+.cn-select-trigger-icon {
+  @apply text-muted-foreground;
+}
+/* 浮层与菜单共用 Archer 的浮层表面，不使用官方的半透明毛玻璃底。 */
+.cn-select-content,
+.cn-dropdown-menu-content,
+.cn-dropdown-menu-sub-content {
+  @apply bg-popover text-popover-foreground ring-border-soft min-w-36 rounded-[var(--radius-panel)] shadow-[var(--shadow-popover)] ring-1;
+}
+.cn-select-content {
+  @apply data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 duration-100;
+}
+.cn-dropdown-menu-content {
+  @apply data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 min-w-32 p-1 duration-100;
+}
+.cn-select-content-logical,
+.cn-dropdown-menu-content-logical {
+  @apply data-[side=inline-start]:slide-in-from-right-2 data-[side=inline-end]:slide-in-from-left-2;
+}
+.cn-select-label,
+.cn-dropdown-menu-label {
+  @apply text-muted-foreground px-2 py-1 text-xs;
+}
+.cn-select-group {
+  @apply scroll-my-1.5 p-1;
+}
+.cn-select-item,
+.cn-dropdown-menu-item,
+.cn-dropdown-menu-checkbox-item,
+.cn-dropdown-menu-radio-item {
+  @apply gap-2 min-h-7 rounded-[var(--radius-small)] text-sm;
+}
+.cn-select-item {
+  @apply focus:bg-accent focus:text-accent-foreground data-highlighted:bg-accent data-highlighted:text-accent-foreground py-1.5 pr-8 pl-2 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2;
+}
+.cn-dropdown-menu-item {
+  @apply focus:bg-accent focus:text-accent-foreground data-highlighted:bg-accent data-highlighted:text-accent-foreground px-2 py-1.5;
+}
+.cn-dropdown-menu-checkbox-item,
+.cn-dropdown-menu-radio-item {
+  @apply focus:bg-accent focus:text-accent-foreground data-highlighted:bg-accent data-highlighted:text-accent-foreground py-1.5 pr-8 pl-2;
+}
+.cn-select-item-indicator,
+.cn-dropdown-menu-item-indicator {
+  @apply absolute right-2 flex items-center justify-center;
+}
+.cn-select-item-text {
+  @apply flex flex-1 gap-2;
+}
+.cn-select-separator,
+.cn-dropdown-menu-separator {
+  @apply bg-border -mx-1 my-1 h-px;
+}
+.cn-select-scroll-up-button,
+.cn-select-scroll-down-button {
+  @apply bg-popover z-10 flex cursor-default items-center justify-center py-1 [&_svg:not([class*='size-'])]:size-4;
+}
+.cn-dropdown-menu-shortcut {
+  @apply text-muted-foreground ml-auto text-xs tracking-widest;
+}
+
+
+/* 官方 Input Group：容器承担表面与焦点环，内部字段只保留排版。 */
+.cn-input-group {
+  @apply bg-surface-subtle border-transparent h-8 rounded-[var(--radius-control)] border transition-[color,box-shadow] duration-200 has-[[data-slot=input-group-control]:focus-visible]:border-ring has-[[data-slot=input-group-control]:focus-visible]:ring-ring/30 has-[[data-slot=input-group-control]:focus-visible]:ring-3 has-[[data-slot][aria-invalid=true]]:border-destructive has-[[data-slot][aria-invalid=true]]:ring-destructive/20 has-[[data-slot][aria-invalid=true]]:ring-3 has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col;
+}
+.cn-input-group-addon {
+  @apply text-muted-foreground h-auto gap-2 py-1.5 text-sm font-medium group-data-[disabled=true]/input-group:opacity-50 [&>svg:not([class*='size-'])]:size-4;
+}
+.cn-input-group-addon-align-inline-start {
+  @apply pl-2;
+}
+.cn-input-group-addon-align-inline-end {
+  @apply pr-2;
+}
+.cn-input-group-addon-align-block-start {
+  @apply px-2.5 pt-2 [.border-b]:pb-2;
+}
+.cn-input-group-addon-align-block-end {
+  @apply px-2.5 pb-2 [.border-t]:pt-2;
+}
+.cn-input-group-button {
+  @apply gap-2 rounded-[var(--radius-control)] text-sm;
+}
+.cn-input-group-button-size-xs {
+  @apply h-6 gap-1 rounded-[var(--radius-small)] px-1.5 [&>svg:not([class*='size-'])]:size-3.5;
+}
+.cn-input-group-button-size-icon-xs {
+  @apply size-6 rounded-[var(--radius-small)] p-0 has-[>svg]:p-0;
+}
+.cn-input-group-button-size-icon-sm {
+  @apply size-8 rounded-[var(--radius-control)] p-0 has-[>svg]:p-0;
+}
+.cn-input-group-text {
+  @apply text-muted-foreground gap-2 text-sm [&_svg:not([class*='size-'])]:size-4;
+}
+.cn-input-group-input,
+.cn-input-group-textarea {
+  @apply rounded-none border-0 bg-transparent shadow-none ring-0 focus-visible:ring-0 aria-invalid:ring-0;
+}
+.cn-input-group-textarea {
+  @apply py-2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cn-button {
+    transition: none;
+  }
+
+  .cn-button:active:not([aria-haspopup]) {
+    transform: none;
+  }
+}

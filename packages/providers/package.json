@@ -1,0 +1,26 @@
+{
+  "name": "@archer/providers",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "工作环境文件、Shell 与任务工具 Provider",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@archer/contracts": "workspace:*",
+    "@archer/camp": "workspace:*"
+  }
+}

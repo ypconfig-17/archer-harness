@@ -1,0 +1,101 @@
+/* Prompt Input 附件条目：与输入区共用控件刻度，不引入第二套表面。 */
+.ui-prompt-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.ui-prompt-attachment {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 220px;
+  height: var(--control-height);
+  padding: 0 var(--space-1);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-small);
+  background: var(--panel);
+  color: var(--secondary);
+  font: var(--type-caption);
+}
+
+/* 缩略图保留原图宽高比：超宽截图不再被裁成 1:1 的小方块，最多占 88px。 */
+.ui-prompt-attachment img {
+  width: auto;
+  max-width: 88px;
+  height: 24px;
+  flex: none;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.ui-prompt-attachment-icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--muted);
+}
+
+.ui-prompt-attachment-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-prompt-attachment-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.ui-prompt-attachment-remove:hover {
+  background: var(--control-surface-hover);
+  color: var(--text);
+}
+
+.ui-prompt-attachment-preview-trigger {
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  gap: var(--space-1);
+}
+
+/* 浮层经 Portal 离开输入区裁剪范围，大图保持比例并受视口约束。 */
+.ui-prompt-preview-positioner {
+  z-index: 100;
+}
+
+.ui-prompt-image-hover {
+  padding: var(--space-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-panel);
+  background: var(--panel);
+  box-shadow: var(--shadow-popover);
+}
+
+.ui-prompt-image-hover img {
+  display: block;
+  max-width: min(320px, 80vw);
+  max-height: 240px;
+  object-fit: contain;
+}
+
+.ui-prompt-image-viewer img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  max-height: 70vh;
+  object-fit: contain;
+}

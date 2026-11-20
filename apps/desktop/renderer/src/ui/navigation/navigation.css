@@ -1,0 +1,463 @@
+/* 导航列宽由公共 Resizable 承担；Sidebar 提供导航结构与移动端抽屉。 */
+.app-sidebar {
+  padding: var(--space-4) var(--space-3) 0;
+}
+
+/* 选择器需压过后导入的 .workbench .app-sidebar，macOS 才能透出系统毛玻璃。 */
+[data-platform='darwin'] .workbench .app-sidebar {
+  padding-top: 46px;
+  background: color-mix(in srgb, var(--sidebar) 68%, transparent);
+}
+
+/* Provider 只提供导航上下文，实际列宽交给公共 Resizable 面板。 */
+.workbench-provider {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.workbench [data-slot='sidebar-container'][data-side='left'] {
+  /* 官方容器只声明 border-r，未给颜色；v4 默认 currentColor 会画成一条深色线。 */
+  border-right-color: var(--border-soft);
+}
+
+[data-platform='darwin'] .workbench [data-slot='sidebar-container'][data-side='left'] {
+  border-right-color: transparent;
+}
+
+/* Windows 让出 40px 系统标题栏区域，固定容器不能覆盖拖拽带。 */
+[data-platform='win32'] .workbench [data-slot='sidebar-container'] {
+  top: 40px;
+  height: calc(100svh - 40px);
+}
+
+.workbench [data-slot='sidebar-gap'] {
+  flex: none;
+}
+
+[data-slot='sidebar'][data-collapsible='icon'] .app-sidebar {
+  padding-inline: 8px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: var(--control-touch-size);
+  padding: 0 var(--space-2);
+  margin-bottom: 0;
+}
+
+.brand strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: var(--type-section);
+  letter-spacing: -.45px;
+}
+
+.brand-wordmark {
+  white-space: nowrap;
+}
+
+.archer-mark {
+  display: inline-block;
+  width: var(--icon-brand);
+  height: var(--icon-brand);
+  flex: none;
+  background: url("/archer-mark.svg") center / contain no-repeat;
+}
+
+kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 19px;
+  padding: 0 5px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-small);
+  background: var(--panel);
+  color: var(--muted);
+  font: var(--type-caption);
+  letter-spacing: .02em;
+}
+
+.new-chat {
+  display: flex;
+  align-items: center;
+  gap: var(--icon-text-gap);
+  min-height: var(--control-height);
+  padding: var(--space-1) var(--space-2);
+  margin: var(--space-1) 0;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--text);
+  /* 与搜索、项目、会话同一字阶，主操作靠表面和字重而不是大 1px 区分。 */
+  font: var(--type-ui);
+  font-weight: var(--weight-medium);
+  text-align: left;
+}
+
+.new-chat kbd {
+  margin-left: auto;
+  background: transparent;
+  border-color: transparent;
+  color: var(--secondary);
+}
+
+/* 搜索常驻浅表面，读起来是输入框而不是又一行导航。 */
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--icon-text-gap);
+  min-height: var(--control-height);
+  padding: 0 var(--nav-row-inset);
+  margin-top: var(--space-1);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--muted);
+  transition: border-color var(--motion-feedback) ease, color var(--motion-feedback) ease;
+}
+
+.search:hover {
+  border-color: var(--border-default);
+  color: var(--secondary);
+}
+
+/* 聚焦只换描边颜色，不换底色也不叠光圈，避免点击瞬间整块跳变。 */
+.search:focus-within {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.search input {
+  width: 100%;
+  height: auto;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  /* 外层 .search 已经是输入框本体：官方 Input 的底色、内距和圆角不再叠加。 */
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  font-size: var(--size-ui);
+  line-height: var(--line-ui);
+}
+
+/* 焦点态只由外层描边表达，输入本体不画第二圈光环。 */
+.search input:focus-visible {
+  box-shadow: none;
+}
+
+.search input::placeholder {
+  color: var(--muted);
+}
+
+.conversation-nav {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: 8px;
+}
+
+/*
+ * 项目树与会话列表使用官方 Sidebar 组合件（Group / Menu / MenuItem / MenuButton /
+ * MenuAction / MenuBadge / MenuSub / Collapsible）；这里只补充 Archer 的状态语义，
+ * 不再维护第二套行、分组与折叠样式。
+ */
+
+/* 侧栏图标与 14–16px 的导航文字相称；折叠箭头保持小尺寸。 */
+.app-sidebar [data-sidebar='menu-button'] > svg:not(.icon-mini),
+.app-sidebar .new-chat > svg,
+.app-sidebar .search > svg,
+.app-sidebar .settings-entry > svg,
+.app-sidebar [data-sidebar='group-action'] > svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* 分组标题是分区标签：更小、更重、带字距，避免和导航行混在一起。 */
+.app-sidebar [data-sidebar='group-label'] {
+  font-size: var(--size-navigation);
+  font-weight: var(--weight-semibold);
+  letter-spacing: .04em;
+  color: var(--secondary);
+}
+
+/* 普通悬停保持中性，选中对话使用浅强调色以跟随外观偏好。 */
+.app-sidebar [data-sidebar='menu-button']:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.app-sidebar [data-sidebar='menu-sub-button']:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+/* 当前项目只在与运行状态同族的强调色上留一处提示：箭头。 */
+.app-sidebar [data-sidebar='menu-button'][data-active] > svg:first-child {
+  color: var(--accent-muted);
+}
+
+.app-sidebar [data-sidebar='menu-button'][data-active] {
+  background: var(--surface-selected);
+  color: var(--text);
+  font-weight: var(--weight-medium);
+}
+
+.app-sidebar [data-sidebar='menu-sub-button'][data-active] {
+  background: var(--accent-subtle);
+  color: var(--text);
+  font-weight: var(--weight-regular);
+}
+
+.app-sidebar [data-sidebar='menu-button'][data-active]:hover {
+  background: var(--surface-active);
+}
+
+.app-sidebar [data-sidebar='menu-sub-button'][data-active]:hover {
+  background: var(--accent-subtle-hover);
+}
+
+/* 目录复用统一字阶，以缩进和 medium 区分层级，避免放大后压过会话内容。 */
+.app-sidebar [data-sidebar='menu-button'] {
+  min-height: var(--nav-row-height);
+  font: var(--type-folder);
+  color: var(--text);
+  /* 行高允许随文字大小偏好增长，避免固定高度裁切文字。 */
+  height: auto;
+  padding-block: var(--space-1);
+}
+
+.app-sidebar [data-sidebar='menu-sub-button'] {
+  width: 100%;
+  transform: none;
+  min-height: var(--nav-row-height);
+  font-size: var(--size-ui);
+  line-height: var(--line-ui);
+  /* 选中状态也保持正文常规字重，避免切换会话时文字视觉跳动。 */
+  font-weight: var(--weight-regular);
+  color: var(--secondary);
+  height: auto;
+  padding-block: 3px;
+  /* 行尾为状态、排队数和「…」菜单预留固定空间，悬停时不挤动标题。 */
+  padding-right: calc(var(--space-2) + var(--space-6) + var(--icon-small));
+}
+
+.app-sidebar [data-slot='sidebar-menu-badge'] {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 行尾动作与徽标共用右缘：徽标让出一格，避免叠在「…」上。 */
+.app-sidebar [data-sidebar='menu-button'] ~ [data-slot='sidebar-menu-badge'],
+.app-sidebar [data-sidebar='menu-sub-button'] ~ [data-slot='sidebar-menu-badge'] {
+  right: calc(var(--space-2) + 18px);
+}
+
+/* 分组头只汇总已读取会话的运行数量，不推断目录本身是否忙。 */
+.workspace-running {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--size-caption);
+  line-height: var(--line-caption);
+}
+
+/* 标题末端透明渐隐，不叠加底色，明暗主题和选中背景下均保持一致。 */
+.chat-title {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: clip;
+  mask-image: linear-gradient(to right, #000 calc(100% - var(--space-2)), transparent);
+}
+
+/* 排队数量用轻量底色与标题分开，不参与标题省略。 */
+.chat-queued {
+  font-size: var(--size-caption);
+  line-height: var(--line-caption);
+  padding: 0 4px;
+  border-radius: var(--radius-small);
+  background: var(--surface-active);
+  color: var(--secondary);
+}
+
+.chat-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.chat-dot.running {
+  background: var(--accent);
+  animation: pulse 1.3s infinite;
+}
+
+.chat-dot.paused {
+  background: var(--warning);
+}
+
+.nav-empty {
+  font-size: var(--size-caption);
+  color: var(--muted);
+  text-align: center;
+  padding: 30px 0;
+  line-height: var(--line-caption);
+}
+
+.sidebar-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) 0 var(--space-2);
+}
+
+.settings-entry {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: var(--icon-text-gap);
+  min-height: var(--control-height);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-control);
+  color: var(--secondary);
+  font: var(--type-ui);
+}
+
+.settings-entry:hover {
+  background: var(--control-surface-hover);
+  color: var(--text);
+}
+
+.settings-entry kbd {
+  margin-left: auto;
+  border-color: transparent;
+  background: transparent;
+}
+
+.service-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  margin: 0 8px 0 4px;
+  background: var(--muted);
+}
+
+.service-dot.online {
+  background: var(--success);
+}
+
+.service-dot.offline {
+  background: var(--danger);
+}
+
+
+/* 状态与排队数共用官方徽标槽，独立于行尾菜单并允许悬停说明。 */
+.app-sidebar .chat-indicators {
+  top: 50%;
+  transform: translateY(-50%);
+  gap: var(--space-1);
+  pointer-events: auto;
+}
+
+.chat-status-dot {
+  display: inline-block;
+  width: calc(var(--space-1) + 2px);
+  height: calc(var(--space-1) + 2px);
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--info);
+}
+
+.chat-status-dot.waiting,
+.chat-status-dot.cancelling {
+  background: var(--warning);
+}
+
+.chat-status-dot.failed {
+  background: var(--danger);
+}
+
+/* 状态固定最右侧，悬停菜单在其左侧出现，始终保留空间以避免标题跳动。 */
+.app-sidebar .chat-row > .chat-indicators {
+  right: var(--space-2);
+  padding: 0;
+  gap: var(--space-6);
+  pointer-events: none;
+}
+
+.chat-status-slot {
+  width: var(--icon-small);
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--muted);
+}
+
+.app-sidebar .chat-row [data-sidebar='menu-action'] {
+  right: calc(var(--space-2) + var(--icon-small) + var(--space-1));
+}
+
+.app-sidebar .chat-row.has-queue [data-sidebar='menu-sub-button'] {
+  padding-right: calc(var(--space-2) + var(--space-6) + var(--icon-small) + var(--space-5));
+}
+
+.app-sidebar .chat-indicators > .chat-queued,
+.app-sidebar .chat-indicators > .chat-status-slot {
+  pointer-events: auto;
+}
+
+/* 点击选中只显示中性底色，键盘焦点使用行内细描边，不撑出紫色外环。 */
+.app-sidebar .chat-row [data-sidebar='menu-sub-button']:focus {
+  box-shadow: none;
+  outline: none;
+}
+
+.app-sidebar .chat-row [data-sidebar='menu-sub-button']:focus-visible {
+  outline: 1px solid var(--muted);
+  outline-offset: -2px;
+}
+
+/* 覆盖共享侧栏的末子元素 truncate，标题在遮罩内直接裁切。 */
+.app-sidebar .chat-row .chat-title {
+  text-overflow: clip;
+}
+
+
+/* 公共面板提供实际宽度，Sidebar 保留导航与移动端抽屉语义，不再使用 fixed 占位。 */
+.navigation-panels,
+.navigation-panel,
+.application-panel {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+.navigation-panel > [data-slot='sidebar'] {
+  height: 100%;
+}
+.navigation-panel [data-slot='sidebar-gap'] {
+  display: none;
+}
+.workbench .navigation-panel [data-slot='sidebar-container'] {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  height: 100%;
+  transition: none;
+}
+.application-panel > .workspace {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+}

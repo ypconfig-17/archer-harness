@@ -1,0 +1,5 @@
+/* 能力条目在设置页按卡片展示，名称与说明占据剩余宽度。 */
+.provider-capability-copy {
+  flex: 1;
+  min-width: 0;
+}

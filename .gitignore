@@ -1,0 +1,27 @@
+node_modules/
+dist/
+coverage/
+.pnpm-store/
+.env
+.env.local
+*.local
+.DS_Store
+.idea/
+.qoder-input-images/
+
+/data/*
+!/data/.gitignore
+
+# 运行时用户数据与本地模型配置，不进入版本库
+apps/server/data/
+
+# 本机开发指导、过程记录与验收材料，不进入公开源码
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+.cursor/
+.qoder/
+docs/audits/
+docs/validation/
+docs/todo/
+docs/design/desktop-neutral-baseline-prompt.txt

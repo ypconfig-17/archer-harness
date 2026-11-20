@@ -1,0 +1,369 @@
+.workspace-show-more {
+  display: block;
+  padding: var(--space-1) var(--space-2) var(--space-1) calc(var(--nav-indent) + var(--icon-ui) + var(--icon-text-gap));
+  font-size: var(--size-ui);
+  color: var(--muted);
+  line-height: var(--line-ui);
+}
+.workspace-show-more:hover {
+  color: var(--text);
+}
+/* 检查面板的拖动与键盘调整共用宽度偏好。 */
+.connection-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--workspace-inset);
+  background: var(--notice-warning);
+  border-bottom: 1px solid var(--notice-warning-border);
+  flex-shrink: 0;
+}
+.connection-banner div {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.connection-banner span {
+  color: var(--secondary);
+  font-size: var(--size-caption);
+  line-height: var(--line-caption);
+}
+/* 连接提示沿用基础 link 按钮，只保证单行不换行。 */
+.connection-banner button {
+  white-space: nowrap;
+}
+/* 对话中的自然语言说明与能力执行记录分别排版，异常摘要保持可见。 */
+.turn-boundary {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  border-top: 1px solid var(--border-soft);
+  padding-top: 10px;
+  color: var(--muted);
+  font-size: var(--size-caption);
+  line-height: var(--line-caption);
+}
+.process-attention {
+  color: var(--warning);
+}
+.execution-pulse {
+  animation: pulse 1.6s infinite;
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid var(--border-soft);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+}
+.execution-muted {
+  color: var(--muted);
+  font-size: var(--size-caption);
+  margin: 0;
+  line-height: var(--line-caption);
+}
+.execution-raw {
+  color: var(--muted);
+  font-size: var(--size-caption);
+  margin-top: 12px;
+  line-height: var(--line-caption);
+}
+.execution-output {
+  position: relative;
+  margin: 6px 0;
+}
+.execution-output > pre {
+  max-height: 360px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: var(--space-3) var(--space-6) var(--space-3) var(--space-3);
+  margin: 0;
+  border: 0;
+  border-radius: var(--radius-small);
+  background: var(--code);
+  font: var(--type-code);
+}
+.execution-output > button:not(.output-expand) {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  padding: 4px;
+  color: var(--muted);
+  border-radius: var(--radius-small);
+}
+.output-expand {
+  position: static;
+  font-size: var(--size-caption);
+  color: var(--accent-text);
+  margin-top: 5px;
+  line-height: var(--line-caption);
+}
+.terminal-caption, .diff-caption {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: var(--size-caption);
+  color: var(--secondary);
+  overflow-wrap: anywhere;
+  line-height: var(--line-caption);
+}
+.terminal-stderr > small {
+  color: var(--danger);
+  font-size: var(--size-caption);
+  line-height: var(--line-caption);
+}
+.diff-caption code {
+  word-break: break-all;
+}
+.diff-totals {
+  color: var(--muted);
+  font: var(--type-code);
+  margin: 8px 0;
+}
+.applied-diff {
+  background: var(--canvas);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-small);
+  max-height: 420px;
+  overflow: auto;
+  font: var(--type-code);
+  margin: 6px 0;
+}
+.diff-line {
+  display: block;
+  min-height: 1.7em;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 0 10px;
+}
+.diff-line > span {
+  display: inline-block;
+  width: 16px;
+  user-select: none;
+}
+.diff-line.added {
+  background: var(--success-surface);
+  color: var(--success);
+}
+.diff-line.removed {
+  background: var(--danger-surface);
+  color: var(--danger);
+}
+/* 关闭态由 InteractionRecord 收成一行；展开后按执行与用量分组，不把统计表面带进正文。 */
+.turn-fact-groups {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+}
+.turn-fact-group h4 {
+  margin: 0 0 var(--space-2);
+  color: var(--muted);
+  font: var(--type-caption);
+  font-weight: var(--weight-medium);
+}
+.turn-fact-group dl {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+.turn-fact-group dl > div {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: var(--space-3);
+}
+.turn-fact-group dt {
+  color: var(--muted);
+}
+.turn-fact-group dd {
+  margin: 0;
+  color: var(--secondary);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+/* 模型名是标识符，用代码字体与正文数字区分。 */
+.turn-fact-model {
+  font: var(--type-code);
+  overflow-wrap: anywhere;
+}
+.turn-fact-empty {
+  margin: 0;
+  color: var(--muted);
+}
+.turn-detail-note {
+  margin: var(--space-3) 0 0;
+  color: var(--muted);
+}
+.conversation-column {
+  position: relative;
+}
+.jump-latest {
+  align-self: center;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-height);
+  padding: var(--space-1) var(--space-3);
+  margin: var(--space-2) 0;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-popover);
+  background: var(--panel);
+  color: var(--secondary);
+  font: var(--type-caption);
+}
+.pending-interaction {
+  padding: var(--space-4);
+  margin-bottom: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--panel);
+  font: var(--type-ui);
+}
+.pending-interaction header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pending-interaction p {
+  margin: 10px 0;
+  line-height: var(--line-ui);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.pending-interaction pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: var(--size-caption);
+  max-height: 160px;
+  overflow: auto;
+  line-height: var(--line-caption);
+}
+.pending-interaction textarea {
+  display: block;
+  width: 100%;
+  min-height: 56px;
+  max-height: 140px;
+  resize: vertical;
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  background: var(--control-surface);
+  padding: 8px;
+  background: var(--canvas);
+  color: var(--text);
+  margin-top: 8px;
+}
+.pending-options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  flex-direction: column;
+  align-items: stretch;
+}
+.pending-option {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  text-align: left;
+  font: var(--type-ui);
+  overflow-wrap: anywhere;
+}
+.pending-option[data-selected] {
+  border-color: var(--accent);
+  background: var(--accent-subtle);
+  color: var(--text);
+}
+.pending-answer-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  color: var(--secondary);
+  font-size: var(--size-caption);
+  line-height: var(--line-caption);
+}
+.pending-details {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: var(--size-caption);
+  line-height: var(--line-caption);
+}
+.pending-details > [data-slot="collapsible-trigger"] {
+  cursor: pointer;
+}
+.composer-context {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px 12px;
+  margin-bottom: 8px;
+}
+.pending-secondary-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+}
+.reconcile-check {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 10px;
+  color: var(--secondary);
+}
+@media(prefers-reduced-motion: reduce) {
+
+  .execution-pulse {
+    animation: none;
+  }
+}
+/* 窄窗口内工具栏自然换行，授权文字可读，发送与停止操作始终可见。 */
+.composer-options {
+  overflow: visible;
+  flex-wrap: wrap;
+}
+.composer-options .composer-controls {
+  flex-wrap: wrap;
+  overflow: visible;
+  width: 100%;
+}
+.composer-options .composer-picker {
+  flex-shrink: 0;
+}
+.composer-options .composer-picker:first-child {
+  flex: 0 1 auto;
+  max-width: 100%;
+}
+.composer-options .composer-picker:first-child [data-slot='select-value'] {
+  min-width: 60px;
+  max-width: 160px;
+}
+.home-subtitle {
+  color: var(--secondary);
+  font: var(--type-body);
+  margin-top: 12px;
+}
+
+/* 授权以单层容器承载判断信息，程序聚焦不叠加外环。 */
+.pending-interaction:focus { outline: none; }
+.pending-interaction:focus-visible { outline: 1px solid var(--border); outline-offset: var(--space-1); }
+.pending-command-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: auto;
+  padding: var(--space-1) var(--space-2);
+  background: var(--subtle);
+  color: var(--secondary);
+  border-radius: var(--radius-small);
+  font: var(--type-caption);
+}
+.pending-command-location dt { display: inline-flex; align-items: center; gap: var(--space-2); }
+.pending-command-preview pre { border: 1px solid var(--border-soft); }

@@ -1,0 +1,39 @@
+{
+  "name": "archer-harness",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.25.0",
+  "description": "TypeScript monorepo for an agent harness with an independent runtime core",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r build && pnpm -r typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "dev:server": "pnpm --filter @archer/server dev",
+    "dev:desktop": "pnpm --filter @archer/desktop dev",
+    "start:desktop": "pnpm --filter @archer/desktop start",
+    "cli": "pnpm --filter @archer/cli dev",
+    "clean": "pnpm -r exec rm -rf dist"
+  },
+  "devDependencies": {
+    "@archer/handler": "workspace:*",
+    "@archer/memory": "workspace:*",
+    "@archer/skills": "workspace:*",
+    "@archer/ui": "workspace:*",
+    "@eslint/js": "^9.39.5",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.39.5",
+    "jsdom": "^31.0.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.72.0",
+    "vitest": "^3.2.7",
+    "zod": "^4.6.7"
+  }
+}

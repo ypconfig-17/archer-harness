@@ -1,0 +1,294 @@
+/* 只读内容组件：来源、引用、建议、堆栈与测试结果都只组织宿主数据。 */
+.ui-sources,
+.ui-stack-trace,
+.ui-test-results {
+  min-width: 0;
+  margin-block: var(--space-3);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-panel);
+  background: var(--surface-raised);
+  color: var(--text);
+  box-shadow: var(--shadow-composer);
+  font: var(--type-ui);
+}
+
+.ui-sources > [data-slot="collapsible-trigger"],
+.ui-stack-trace > [data-slot="collapsible-trigger"],
+.ui-test-results > [data-slot="collapsible-trigger"] {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-height);
+  padding: var(--space-1) var(--space-3);
+  list-style: none;
+  cursor: pointer;
+}
+
+
+.ui-sources > [data-slot="collapsible-trigger"]:hover,
+.ui-stack-trace > [data-slot="collapsible-trigger"]:hover,
+.ui-test-results > [data-slot="collapsible-trigger"]:hover {
+  background: var(--hover);
+}
+
+.ui-sources[data-open] > [data-slot="collapsible-trigger"],
+.ui-stack-trace[data-open] > [data-slot="collapsible-trigger"],
+.ui-test-results[data-open] > [data-slot="collapsible-trigger"] {
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.ui-sources > [data-slot="collapsible-trigger"] > span,
+.ui-stack-trace > [data-slot="collapsible-trigger"] > strong,
+.ui-test-results > [data-slot="collapsible-trigger"] > strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-sources > [data-slot="collapsible-trigger"] > small,
+.ui-stack-trace > [data-slot="collapsible-trigger"] > small,
+.ui-test-results > [data-slot="collapsible-trigger"] > span,
+.ui-test-results > [data-slot="collapsible-trigger"] > small {
+  flex: none;
+  color: var(--muted);
+  font: var(--type-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-test-results > [data-slot="collapsible-trigger"] > .ui-test-failed {
+  color: var(--danger);
+}
+
+.ui-disclosure-chevron {
+  flex: none;
+  margin-left: auto;
+  transition: transform 160ms;
+}
+
+.ui-sources[data-open] > [data-slot="collapsible-trigger"] > .ui-disclosure-chevron,
+.ui-stack-trace[data-open] > [data-slot="collapsible-trigger"] > .ui-disclosure-chevron,
+.ui-test-results[data-open] > [data-slot="collapsible-trigger"] > .ui-disclosure-chevron {
+  transform: rotate(90deg);
+}
+
+.ui-sources > [data-slot="collapsible-content"] > ol,
+.ui-stack-frames,
+.ui-test-suite > ol {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  list-style: none;
+}
+
+.ui-source > a,
+.ui-source > div {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-small);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.ui-source > a:hover {
+  background: var(--hover);
+}
+
+.ui-source-index {
+  flex: none;
+  min-width: 1.5em;
+  color: var(--muted);
+  font: var(--type-caption);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.ui-source-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ui-source-copy > strong {
+  font-weight: var(--weight-medium);
+}
+
+.ui-source-copy > small {
+  color: var(--secondary);
+  font: var(--type-caption);
+}
+
+.ui-source-url {
+  color: var(--muted);
+  font: var(--type-caption);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-inline-citation {
+  color: var(--accent-text);
+  font: var(--type-caption);
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+  text-underline-offset: 2px;
+  vertical-align: super;
+}
+
+a.ui-inline-citation:hover {
+  text-decoration: underline;
+}
+
+span.ui-inline-citation {
+  cursor: default;
+}
+
+.ui-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-block: var(--space-3);
+}
+
+.ui-suggestion {
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
+}
+
+.ui-stack-frames {
+  padding-top: var(--space-1);
+}
+
+.ui-stack-frame {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--border-soft);
+  font: var(--type-code);
+}
+
+.ui-stack-frame:last-child {
+  border-bottom: 0;
+}
+
+.ui-stack-frame-index {
+  flex: none;
+  width: 1.5em;
+  color: var(--muted);
+  font: var(--type-caption);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.ui-stack-frame > code {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-stack-frame-location {
+  min-width: 0;
+  margin-left: auto;
+  color: var(--muted);
+  font: var(--type-caption);
+  overflow-wrap: anywhere;
+}
+
+.ui-stack-empty,
+.ui-test-empty {
+  margin: 0;
+  padding: var(--space-3);
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+.ui-test-results-body {
+  padding: var(--space-2) var(--space-3) var(--space-3);
+}
+
+.ui-test-suite > h3 {
+  margin: var(--space-2) 0 0;
+  color: var(--muted);
+  font: var(--type-caption);
+  font-weight: var(--weight-regular);
+}
+
+.ui-test-suite > ol {
+  padding-inline: 0;
+}
+
+.ui-test-case {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.ui-test-case:last-child {
+  border-bottom: 0;
+}
+
+.ui-test-case-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+.ui-test-case[data-status='passed'] .ui-test-case-status {
+  color: var(--success);
+}
+
+.ui-test-case[data-status='failed'] .ui-test-case-status {
+  color: var(--danger);
+}
+
+.ui-test-case[data-status='running'] .ui-test-case-status {
+  color: var(--accent-text);
+}
+
+.ui-test-case-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ui-test-case > small {
+  color: var(--muted);
+  font: var(--type-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-test-case-detail {
+  grid-column: 1 / -1;
+  padding-left: calc(1.5em + var(--space-2));
+  color: var(--secondary);
+  font: var(--type-caption);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-disclosure-chevron {
+    transition: none;
+  }
+}
+
+/* 折叠标题保持既有密度，按钮交互与展开状态由公共原语提供。 */
+:is(.ui-sources, .ui-stack-trace, .ui-test-results) > [data-slot="collapsible-trigger"] {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+}

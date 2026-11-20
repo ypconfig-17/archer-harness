@@ -1,0 +1,414 @@
+/* Explorer 只负责文档布局，组件视觉继续由 @archer/ui 与全局 Token 提供。 */
+.component-explorer {
+  height: 100dvh;
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  background: var(--canvas);
+  color: var(--text);
+  font: var(--type-body);
+}
+/* 官方 Sidebar 作为静态栏使用；文档页只补充间距与列宽。 */
+.explorer-provider {
+  height: 100dvh;
+}
+.explorer-provider > .component-explorer {
+  flex: 1;
+  min-width: 0;
+}
+.explorer-sidebar {
+  padding: var(--space-4);
+}
+.explorer-sidebar [data-slot='sidebar-header'] > strong {
+  font: var(--type-ui);
+  font-weight: var(--weight-medium);
+}
+.explorer-sidebar [data-slot='sidebar-header'] > p,
+.explorer-sidebar [data-slot='sidebar-footer'] > p {
+  color: var(--muted);
+  font: var(--type-caption);
+  margin-block: var(--space-2);
+}
+.explorer-sidebar [data-slot='sidebar-group'] {
+  margin-top: var(--space-4);
+}
+.explorer-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.explorer-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: var(--shell-header-height);
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--border-soft);
+  font: var(--type-caption);
+  color: var(--muted);
+}
+.explorer-reader {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-5);
+}
+.component-page {
+  max-width: 960px;
+  margin-inline: auto;
+}
+.explorer-page-title {
+  margin-bottom: var(--space-5);
+}
+.explorer-page-title > span {
+  font: var(--type-caption);
+  color: var(--muted);
+}
+.explorer-page-title h1 {
+  font: var(--type-title);
+  font-weight: var(--weight-medium);
+  margin-block: var(--space-2);
+}
+.explorer-page-title p {
+  color: var(--secondary);
+  margin: 0;
+}
+.explorer-tabs {
+  display: flex;
+  gap: var(--space-4);
+  border-bottom: 1px solid var(--border-soft);
+  margin-bottom: var(--space-4);
+}
+.explorer-tabs > button {
+  min-height: var(--control-height);
+  padding: var(--space-2) var(--space-1);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font: var(--type-ui);
+  cursor: pointer;
+  transition: color 160ms ease, border-color 160ms ease;
+}
+.explorer-tabs > button[aria-selected="true"] {
+  border-bottom-color: var(--accent);
+  color: var(--text);
+}
+.explorer-tabs > button:focus-visible {
+  outline: 2px solid var(--state-focus);
+  outline-offset: 2px;
+}
+.component-page [role="tabpanel"][hidden] {
+  display: none;
+}
+.explorer-preview [data-slot='sidebar'] {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-composer);
+  overflow: hidden;
+}
+.explorer-preview [data-slot='card'],
+.explorer-preview .ui-setting-group {
+  width: min(100%, 460px);
+}
+.explorer-preview p {
+  margin-block: var(--space-3);
+}
+.explorer-preview .ui-setting-description,
+.explorer-preview .ui-setting-error {
+  margin: 0;
+}
+.example-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.example-control {
+  width: min(100%, 260px);
+}
+.example-control .ui-select,
+.example-control .cn-select-trigger {
+  width: 100%;
+}
+.example-stack {
+  display: grid;
+  gap: var(--space-3);
+}
+.example-facts {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding-left: var(--space-4);
+  color: var(--secondary);
+  font: var(--type-ui);
+}
+.example-surface {
+  padding: var(--space-4);
+}
+.example-sidebar {
+  max-width: 280px;
+  height: 320px;
+}
+.example-sidebar-provider {
+  height: 100%;
+}
+.example-sidebar [data-slot='sidebar'] {
+  width: 100%;
+}
+.example-viewport {
+  display: flex;
+  height: 260px;
+  margin-top: var(--space-3);
+  border: 1px solid var(--border-soft);
+  padding: var(--space-3);
+}
+/* 文档页样式只作用于文档正文；预览框里的示例必须保留组件自身的排版层级。 */
+.component-page h2:not(.preview-frame *) {
+  margin-top: var(--space-5);
+  font: var(--type-ui);
+  font-weight: var(--weight-medium);
+}
+.explorer-table-wrap {
+  max-width: 100%;
+  overflow: auto;
+}
+.component-page table:not(.preview-frame *) {
+  width: 100%;
+  border-collapse: collapse;
+  font: var(--type-ui);
+  text-align: left;
+}
+.component-page th:not(.preview-frame *),
+.component-page td:not(.preview-frame *) {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border-soft);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.component-page th:not(.preview-frame *) {
+  color: var(--muted);
+  font: var(--type-caption);
+}
+.component-page code:not(.preview-frame *) {
+  font: var(--type-code);
+}
+.component-page a:not(.preview-frame *) {
+  color: var(--accent-text);
+}
+.explorer-text-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-text);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+[data-coverage="已实现"] {
+  color: var(--success);
+}
+[data-coverage="部分实现"] {
+  color: var(--warning);
+}
+[data-coverage="未实现"] {
+  color: var(--muted);
+}
+.explorer-pattern {
+  display: flex;
+  flex-direction: column;
+  height: 650px;
+  min-height: 0;
+}
+.pattern-content {
+  padding: var(--space-5);
+}
+.ai-user {
+  width: fit-content;
+  max-width: 85%;
+  margin-left: auto;
+  background: var(--bubble);
+  padding: var(--space-3);
+  border-radius: var(--radius-panel);
+}
+.ai-composer {
+  flex: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-composer);
+  padding: var(--space-3);
+  margin: var(--space-3);
+}
+.ai-composer textarea {
+  width: 100%;
+  resize: none;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: var(--type-body);
+}
+.demo-file-workspace,
+.demo-settings-provider {
+  display: block;
+  min-height: 0;
+}
+.demo-settings-sidebar {
+  width: 100%;
+}
+.demo-settings-workspace {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(0, 3fr);
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+.demo-file-workspace > div,
+.demo-settings-workspace > div {
+  min-width: 0;
+}
+.demo-file-workspace .ui-code-block {
+  margin-top: var(--space-2);
+}
+@media (max-width: 760px) {
+  .component-explorer {
+    grid-template-columns: 180px minmax(0, 1fr);
+  }
+  .explorer-sidebar {
+    padding: var(--space-2);
+  }
+  .explorer-reader {
+    padding: var(--space-3);
+  }
+  .explorer-toolbar {
+    flex-wrap: wrap;
+    padding: var(--space-3);
+  }
+  .demo-file-workspace,
+  .demo-settings-provider {
+  display: block;
+  min-height: 0;
+}
+.demo-settings-sidebar {
+  width: 100%;
+}
+.demo-settings-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 480px) {
+  .component-explorer {
+    grid-template-columns: 140px minmax(0, 1fr);
+  }
+}
+
+.explorer-component-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: var(--space-3);
+}
+.explorer-component-grid > button {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-panel);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: var(--type-ui);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--shadow-composer);
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+.explorer-component-grid > button:hover {
+  border-color: var(--accent-border);
+  background: var(--surface-hover);
+}
+.explorer-component-grid > button:focus-visible {
+  outline: 2px solid var(--state-focus);
+  outline-offset: 2px;
+}
+.explorer-component-grid strong {
+  font-weight: var(--weight-medium);
+}
+.explorer-component-grid span,
+.explorer-origin {
+  color: var(--secondary);
+  overflow-wrap: anywhere;
+}
+.explorer-component-grid small,
+.explorer-page-title .explorer-origin {
+  color: var(--muted);
+  font: var(--type-caption);
+}
+.explorer-component-grid .explorer-family-exports {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* 完整 Trace 示例使用对话阅读列；局部 API 示例不再撑满整块画布。 */
+.explorer-preview .trace-turn-question {
+  width: fit-content;
+  max-width: 90%;
+  margin: 0 0 var(--space-5) auto;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-panel);
+  background: var(--surface-subtle);
+  color: var(--text);
+}
+.trace-turn-answer {
+  margin-block: var(--space-4);
+  font: var(--type-body);
+}
+
+/* AI 独立组件共用阅读列与文字层级，宿主画布不替代组件自身的视觉规则。 */
+.explorer-preview .ai-example-intro {
+  margin: 0 0 var(--space-4);
+  color: var(--text);
+  font: var(--type-body);
+}
+.explorer-preview .ai-example-note {
+  margin: var(--space-4) 0 0;
+  color: var(--muted);
+  font: var(--type-caption);
+}
+.ai-example-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+/* 文件树演示按上游比例收敛树干宽度；组件本身保持全宽，供检查器侧栏使用。 */
+.file-tree-demo-tree {
+  width: 100%;
+  max-width: 320px;
+  margin-inline: auto;
+  padding-block: var(--space-5);
+}
+
+/* AI 文档以完整对话的比例展示，不把小型轨迹拉伸成工作台。 */
+.explorer-preview .plan-turn-feedback {
+  margin-block: var(--space-4);
+  color: var(--text);
+  font: var(--type-body);
+}
+.plan-turn-demo .archer-plan {
+  margin-block: 0;
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .explorer-tabs > button,
+  .explorer-component-grid > button {
+    transition: none;
+  }
+}
+
+/* 目录入口复用公共按钮，内容布局仍按目录职责排列。 */
+.explorer-component-grid > .cn-button {
+  height: auto;
+  white-space: normal;
+}

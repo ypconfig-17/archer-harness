@@ -1,0 +1,1181 @@
+{
+  "methodology": "Separate hidden Electron window, original preload/auth, backend mutation requests blocked. React development StrictMode. Official React Profiler injected into in-memory module responses, function invocation counters and projection timers. An idle real conversation, virtual localStorage, synthetic Store-level progress/events; padded scenario adds 5000 filtered local facts while preserving visible messages. No Agent execution or backend writes. Hidden-window rendering is not a paint/FPS benchmark.",
+  "metadata": {
+    "backendBefore": {
+      "active": false,
+      "seq": 2576
+    },
+    "events": 1000,
+    "nodes": 178,
+    "visibility": "visible"
+  },
+  "sizes": [
+    {
+      "requested": "loaded",
+      "actual": 2578
+    },
+    {
+      "requested": "padded",
+      "actual": 7598
+    }
+  ],
+  "backendAfter": {
+    "active": false,
+    "seq": 2576
+  },
+  "sourceChangesDuringCapture": [],
+  "scroll": {
+    "before": {
+      "height": 28490,
+      "top": 27925.5,
+      "x": 762,
+      "y": 363
+    },
+    "after": {
+      "height": 28420,
+      "top": 23925.5
+    }
+  },
+  "nodesAfter": 6217,
+  "phases": {
+    "events-loaded": {
+      "eventsAfter": 2598,
+      "functionInvocations": {
+        "ActivityFlow": 400,
+        "AgentDetail": 40,
+        "ComposerControls": 40,
+        "ConversationActivity": 640,
+        "DraftComposerSendButton": 40,
+        "DraftComposerTextarea": 40,
+        "EventTimeline": 40,
+        "FinalAnswer": 320,
+        "PublicFeedback": 1080
+      },
+      "notifications": {
+        "event-store": 20,
+        "query-agent-observerOptionsUpdated": 20,
+        "query-agent-observerResultsUpdated": 8,
+        "query-agent-turns-observerOptionsUpdated": 20,
+        "query-agent-turns-observerResultsUpdated": 4,
+        "query-agent-turns-updated": 4,
+        "query-agent-updated": 4,
+        "query-agents-observerResultsUpdated": 4,
+        "query-agents-updated": 4,
+        "query-model-settings-observerOptionsUpdated": 40
+      },
+      "reactRenderPerCommit": {
+        "FinalAnswer": {
+          "count": 160,
+          "totalMs": 126.200000166893,
+          "p50Ms": 0.6000000238418579,
+          "p95Ms": 2.1999999284744263,
+          "maxMs": 3.4000000953674316
+        },
+        "PublicFeedback": {
+          "count": 540,
+          "totalMs": 10.400000214576721,
+          "p50Ms": 0,
+          "p95Ms": 0.10000002384185791,
+          "maxMs": 0.20000004768371582
+        },
+        "EventTimeline": {
+          "count": 20,
+          "totalMs": 1159.500000834465,
+          "p50Ms": 37.40000021457672,
+          "p95Ms": 121.89999973773956,
+          "maxMs": 151.60000038146973
+        },
+        "DraftComposerTextarea": {
+          "count": 20,
+          "totalMs": 0.8999999761581421,
+          "p50Ms": 0,
+          "p95Ms": 0.10000002384185791,
+          "maxMs": 0.10000002384185791
+        },
+        "ComposerControls": {
+          "count": 40,
+          "totalMs": 16.699999570846558,
+          "p50Ms": 0.10000002384185791,
+          "p95Ms": 0.7999999523162842,
+          "maxMs": 2.399999976158142
+        },
+        "DraftComposerSendButton": {
+          "count": 20,
+          "totalMs": 1.1000001430511475,
+          "p50Ms": 0,
+          "p95Ms": 0.10000002384185791,
+          "maxMs": 0.20000004768371582
+        },
+        "AgentDetail": {
+          "count": 40,
+          "totalMs": 1377.1000012159348,
+          "p50Ms": 0.19999992847442627,
+          "p95Ms": 131.89999985694885,
+          "maxMs": 173.80000030994415
+        },
+        "App": {
+          "count": 40,
+          "totalMs": 1378.4000012874603,
+          "p50Ms": 0.19999992847442627,
+          "p95Ms": 131.9999998807907,
+          "maxMs": 173.80000030994415
+        }
+      },
+      "projections": {
+        "activitySections": {
+          "calls": 40,
+          "maxInput": 479,
+          "maxMs": 11.399999976158142,
+          "totalMs": 25.799999356269836
+        },
+        "buildItems": {
+          "calls": 120,
+          "maxInput": 2598,
+          "maxMs": 3.299999952316284,
+          "totalMs": 35.90000021457672
+        },
+        "planRecords": {
+          "calls": 80,
+          "maxInput": 444,
+          "maxMs": 10.600000023841858,
+          "totalMs": 23.499999403953552
+        },
+        "taskChanges": {
+          "calls": 720,
+          "maxInput": 110,
+          "maxMs": 0.10000002384185791,
+          "totalMs": 11.00000011920929
+        },
+        "turnNavEntries": {
+          "calls": 40,
+          "maxInput": 9,
+          "maxMs": 0.20000004768371582,
+          "totalMs": 3.699999690055847
+        },
+        "turnPresentations": {
+          "calls": 40,
+          "maxInput": 507,
+          "maxMs": 0.30000007152557373,
+          "totalMs": 4.300000190734863
+        },
+        "workspaceGroups": {
+          "calls": 40,
+          "maxInput": 50,
+          "maxMs": 0.10000002384185791,
+          "totalMs": 0.29999983310699463
+        }
+      },
+      "longTasks": {
+        "count": 20,
+        "totalMs": 1943,
+        "p50Ms": 70,
+        "p95Ms": 190,
+        "maxMs": 227
+      },
+      "inputToNextRaf": {
+        "count": 0,
+        "totalMs": 0,
+        "p50Ms": null,
+        "p95Ms": null,
+        "maxMs": 0
+      },
+      "browserMs": {
+        "ScriptDuration": 1855.5700000000002,
+        "LayoutDuration": 0.0,
+        "RecalcStyleDuration": 0.0,
+        "TaskDuration": 2006.7280000000007
+      }
+    },
+    "events-padded": {
+      "eventsAfter": 7618,
+      "functionInvocations": {
+        "ActivityFlow": 400,
+        "AgentDetail": 40,
+        "ComposerControls": 40,
+        "ConversationActivity": 640,
+        "DraftComposerSendButton": 40,
+        "DraftComposerTextarea": 40,
+        "EventTimeline": 40,
+        "FinalAnswer": 320,
+        "PublicFeedback": 1080
+      },
+      "notifications": {
+        "event-store": 20,
+        "query-agent-observerOptionsUpdated": 20,
+        "query-agent-observerResultsUpdated": 8,
+        "query-agent-turns-observerOptionsUpdated": 20,
+        "query-agent-turns-observerResultsUpdated": 4,
+        "query-agent-turns-updated": 4,
+        "query-agent-updated": 4,
+        "query-agents-observerResultsUpdated": 4,
+        "query-agents-updated": 4,
+        "query-model-settings-observerOptionsUpdated": 40
+      },
+      "reactRenderPerCommit": {
+        "FinalAnswer": {
+          "count": 160,
+          "totalMs": 117.89999949932098,
+          "p50Ms": 0.5,
+          "p95Ms": 2.0999999046325684,
+          "maxMs": 5.400000095367432
+        },
+        "PublicFeedback": {
+          "count": 540,
+          "totalMs": 10.100000381469727,
+          "p50Ms": 0,
+          "p95Ms": 0.10000002384185791,
+          "maxMs": 0.20000004768371582
+        },
+        "EventTimeline": {
+          "count": 20,
+          "totalMs": 1046.2999995946884,
+          "p50Ms": 36.199999928474426,
+          "p95Ms": 121.80000019073486,
+          "maxMs": 124.29999959468842
+        },
+        "DraftComposerTextarea": {
+          "count": 20,
+          "totalMs": 0.6999999284744263,
+          "p50Ms": 0,
+          "p95Ms": 0.10000002384185791,
+          "maxMs": 0.10000002384185791
+        },
+        "ComposerControls": {
+          "count": 40,
+          "totalMs": 15.100000381469727,
+          "p50Ms": 0.20000004768371582,
+          "p95Ms": 0.7000000476837158,
+          "maxMs": 0.7999999523162842
+        },
+        "DraftComposerSendButton": {
+          "count": 20,
+          "totalMs": 1.0999999046325684,
+          "p50Ms": 0,
+          "p95Ms": 0.10000002384185791,
+          "maxMs": 0.20000004768371582
+        },
+        "AgentDetail": {
+          "count": 40,
+          "totalMs": 1261.5999993085861,
+          "p50Ms": 0.20000004768371582,
+          "p95Ms": 132.60000014305115,
+          "maxMs": 144.19999969005585
+        },
+        "App": {
+          "count": 40,
+          "totalMs": 1261.7999993562698,
+          "p50Ms": 0.20000004768371582,
+          "p95Ms": 132.60000014305115,
+          "maxMs": 144.19999969005585
+        }
+      },
+      "projections": {
+        "activitySections": {
+          "calls": 40,
+          "maxInput": 479,
+          "maxMs": 0.6000000238418579,
+          "totalMs": 13.700000166893005
+        },
+        "buildItems": {
+          "calls": 120,
+          "maxInput": 7618,
+          "maxMs": 0.7000000476837158,
+          "totalMs": 45.80000054836273
+        },
+        "planRecords": {
+          "calls": 80,
+          "maxInput": 444,
+          "maxMs": 0.3999999761581421,
+          "totalMs": 11.40000033378601
+        },
+        "taskChanges": {
+          "calls": 720,
+          "maxInput": 110,
+          "maxMs": 0.20000004768371582,
+          "totalMs": 10.600000023841858
+        },
+        "turnNavEntries": {
+          "calls": 40,
+          "maxInput": 9,
+          "maxMs": 0.20000004768371582,
+          "totalMs": 5.300000429153442
+        },
+        "turnPresentations": {
+          "calls": 40,
+          "maxInput": 5527,
+          "maxMs": 0.2999999523162842,
+          "totalMs": 6.599999785423279
+        },
+        "workspaceGroups": {
+          "calls": 40,
+          "maxInput": 50,
+          "maxMs": 0.10000002384185791,
+          "totalMs": 0.10000002384185791
+        }
+      },
+      "longTasks": {
+        "count": 20,
+        "totalMs": 1748,
+        "p50Ms": 69,
+        "p95Ms": 166,
+        "maxMs": 176
+      },
+      "inputToNextRaf": {
+        "count": 0,
+        "totalMs": 0,
+        "p50Ms": null,
+        "p95Ms": null,
+        "maxMs": 0
+      },
+      "browserMs": {
+        "ScriptDuration": 1676.1929999999995,
+        "LayoutDuration": 0.0,
+        "RecalcStyleDuration": 0.0,
+        "TaskDuration": 1816.0869999999995
+      }
+    },
+    "idle": {
+      "eventsAfter": 1500,
+      "functionInvocations": {
+        "ActivityFlow": 44,
+        "AgentDetail": 14,
+        "ComposerControls": 12,
+        "ConversationActivity": 68,
+        "DraftComposerSendButton": 12,
+        "DraftComposerTextarea": 12,
+        "EventTimeline": 12,
+        "FinalAnswer": 44,
+        "Markdown[static]": 18,
+        "PublicFeedback": 204
+      },
+      "notifications": {
+        "event-store": 2,
+        "progress-store": 1,
+        "query-agent-observerOptionsUpdated": 6,
+        "query-agent-observerResultsUpdated": 3,
+        "query-agent-turns-observerOptionsUpdated": 6,
+        "query-agent-turns-observerResultsUpdated": 1,
+        "query-agent-turns-updated": 1,
+        "query-agent-updated": 1,
+        "query-agents-observerResultsUpdated": 1,
+        "query-agents-updated": 1,
+        "query-model-settings-observerOptionsUpdated": 12,
+        "query-model-settings-observerResultsUpdated": 1
+      },
+      "reactRenderPerCommit": {
+        "PublicFeedback": {
+          "count": 102,
+          "totalMs": 62.899999380111694,
+          "p50Ms": 0,
+          "p95Ms": 1.0999999046325684,
+          "maxMs": 39.40000009536743
+        },
+        "FinalAnswer": {
+          "count": 22,
+          "totalMs": 66.60000002384186,
+          "p50Ms": 0.7000000476837158,
+          "p95Ms": 20.399999976158142,
+          "maxMs": 22
+        },
+        "EventTimeline": {
+          "count": 8,
+          "totalMs": 407.100000500679,
+          "p50Ms": 23.199999928474426,
+          "p95Ms": 200.700000166893,
+          "maxMs": 200.700000166893
+        },
+        "DraftComposerTextarea": {
+          "count": 6,
+          "totalMs": 0.30000007152557373,
+          "p50Ms": 0,
+          "p95Ms": 0.20000004768371582,
+          "maxMs": 0.20000004768371582
+        },
+        "ComposerControls": {
+          "count": 10,
+          "totalMs": 10.200000286102295,
+          "p50Ms": 0.7000000476837158,
+          "p95Ms": 4.600000023841858,
+          "maxMs": 4.600000023841858
+        },
+        "DraftComposerSendButton": {
+          "count": 6,
+          "totalMs": 0.7000000476837158,
+          "p50Ms": 0.10000002384185791,
+          "p95Ms": 0.20000004768371582,
+          "maxMs": 0.20000004768371582
+        },
+        "AgentDetail": {
+          "count": 11,
+          "totalMs": 513.9000008106232,
+          "p50Ms": 29.40000021457672,
+          "p95Ms": 228.80000030994415,
+          "maxMs": 228.80000030994415
+        },
+        "App": {
+          "count": 11,
+          "totalMs": 514.000000834465,
+          "p50Ms": 29.40000021457672,
+          "p95Ms": 228.80000030994415,
+          "maxMs": 228.80000030994415
+        }
+      },
+      "projections": {
+        "activitySections": {
+          "calls": 4,
+          "maxInput": 276,
+          "maxMs": 1.100000023841858,
+          "totalMs": 1.7999999523162842
+        },
+        "buildItems": {
+          "calls": 12,
+          "maxInput": 1500,
+          "maxMs": 2.3000000715255737,
+          "totalMs": 5.200000166893005
+        },
+        "planRecords": {
+          "calls": 8,
+          "maxInput": 263,
+          "maxMs": 0.6999999284744263,
+          "totalMs": 1.0999997854232788
+        },
+        "taskChanges": {
+          "calls": 92,
+          "maxInput": 86,
+          "maxMs": 0.5,
+          "totalMs": 4.5000001192092896
+        },
+        "turnNavEntries": {
+          "calls": 4,
+          "maxInput": 9,
+          "maxMs": 0.7000000476837158,
+          "totalMs": 1.0000001192092896
+        },
+        "turnPresentations": {
+          "calls": 4,
+          "maxInput": 279,
+          "maxMs": 0.20000004768371582,
+          "totalMs": 0.20000004768371582
+        },
+        "workspaceGroups": {
+          "calls": 4,
+          "maxInput": 18,
+          "maxMs": 0.10000002384185791,
+          "totalMs": 0.20000004768371582
+        }
+      },
+      "longTasks": {
+        "count": 6,
+        "totalMs": 977,
+        "p50Ms": 120,
+        "p95Ms": 336,
+        "maxMs": 336
+      },
+      "inputToNextRaf": {
+        "count": 0,
+        "totalMs": 0,
+        "p50Ms": null,
+        "p95Ms": null,
+        "maxMs": 0
+      },
+      "browserMs": {
+        "ScriptDuration": 552.548,
+        "LayoutDuration": 22.405,
+        "RecalcStyleDuration": 30.774,
+        "TaskDuration": 1358.466
+      }
+    },
+    "input": {
+      "eventsAfter": 2576,
+      "functionInvocations": {
+        "ActivityFlow": 128,
+        "AgentDetail": 22,
+        "ComposerControls": 18,
+        "ConversationActivity": 198,
+        "DraftComposerSendButton": 54,
+        "DraftComposerTextarea": 54,
+        "EventTimeline": 18,
+        "FinalAnswer": 112,
+        "Markdown[static]": 36,
+        "PublicFeedback": 430
+      },
+      "notifications": {
+        "event-store": 4,
+        "input-event": 21,
+        "query-agent-observerOptionsUpdated": 9,
+        "query-agent-observerResultsUpdated": 8,
+        "query-agent-turns-observerOptionsUpdated": 9,
+        "query-agent-turns-observerResultsUpdated": 4,
+        "query-agent-turns-updated": 4,
+        "query-agent-updated": 4,
+        "query-agents-observerResultsUpdated": 2,
+        "query-agents-updated": 2,
+        "query-model-settings-observerOptionsUpdated": 18
+      },
+      "reactRenderPerCommit": {
+        "DraftComposerTextarea": {
+          "count": 27,
+          "totalMs": 1.6999999284744263,
+          "p50Ms": 0.09999990463256836,
+          "p95Ms": 0.20000004768371582,
+          "maxMs": 0.20000004768371582
+        },
+        "DraftComposerSendButton": {
+          "count": 27,
+          "totalMs": 3.399999976158142,
+          "p50Ms": 0.10000002384185791,
+          "p95Ms": 0.30000007152557373,
+          "maxMs": 0.3999999761581421
+        },
+        "AgentDetail": {
+          "count": 34,
+          "totalMs": 712.1999999284744,
+          "p50Ms": 0.20000004768371582,
+          "p95Ms": 140.90000009536743,
+          "maxMs": 158.50000023841858
+        },
+        "App": {
+          "count": 34,
+          "totalMs": 712.2999999523163,
+          "p50Ms": 0.20000004768371582,
+          "p95Ms": 140.90000009536743,
+          "maxMs": 158.50000023841858
+        },
+        "PublicFeedback": {
+          "count": 216,
+          "totalMs": 38.10000026226044,
+          "p50Ms": 0,
+          "p95Ms": 0.6000000238418579,
+          "maxMs": 9.799999952316284
+        },
+        "FinalAnswer": {
+          "count": 58,
+          "totalMs": 120.49999904632568,
+          "p50Ms": 0.5999999046325684,
+          "p95Ms": 11.599999904632568,
+          "maxMs": 22.100000023841858
+        },
+        "EventTimeline": {
+          "count": 13,
+          "totalMs": 621.4000005722046,
+          "p50Ms": 28.700000286102295,
+          "p95Ms": 141.60000014305115,
+          "maxMs": 141.60000014305115
+        },
+        "ComposerControls": {
+          "count": 16,
+          "totalMs": 7.199999690055847,
+          "p50Ms": 0.5999999046325684,
+          "p95Ms": 0.9000000953674316,
+          "maxMs": 0.9000000953674316
+        }
+      },
+      "projections": {
+        "activitySections": {
+          "calls": 8,
+          "maxInput": 478,
+          "maxMs": 0.6999999284744263,
+          "totalMs": 2.5999999046325684
+        },
+        "buildItems": {
+          "calls": 24,
+          "maxInput": 2576,
+          "maxMs": 1.100000023841858,
+          "totalMs": 7.199999809265137
+        },
+        "planRecords": {
+          "calls": 16,
+          "maxInput": 443,
+          "maxMs": 0.3999999761581421,
+          "totalMs": 2.1999999284744263
+        },
+        "taskChanges": {
+          "calls": 260,
+          "maxInput": 110,
+          "maxMs": 0.19999992847442627,
+          "totalMs": 5.399999499320984
+        },
+        "turnNavEntries": {
+          "calls": 8,
+          "maxInput": 9,
+          "maxMs": 0.20000004768371582,
+          "totalMs": 0.7999999523162842
+        },
+        "turnPresentations": {
+          "calls": 8,
+          "maxInput": 486,
+          "maxMs": 0.2999999523162842,
+          "totalMs": 0.9000000953674316
+        },
+        "workspaceGroups": {
+          "calls": 8,
+          "maxInput": 49,
+          "maxMs": 0,
+          "totalMs": 0
+        }
+      },
+      "longTasks": {
+        "count": 11,
+        "totalMs": 1543,
+        "p50Ms": 160,
+        "p95Ms": 259,
+        "maxMs": 259
+      },
+      "inputToNextRaf": {
+        "count": 21,
+        "totalMs": 1019.8000001907349,
+        "p50Ms": 31.200000047683716,
+        "p95Ms": 144.80000007152557,
+        "maxMs": 219
+      },
+      "browserMs": {
+        "ScriptDuration": 984.375,
+        "LayoutDuration": 21.459,
+        "RecalcStyleDuration": 741.832,
+        "TaskDuration": 2408.4410000000003
+      }
+    },
+    "scroll": {
+      "eventsAfter": 7618,
+      "functionInvocations": {
+        "ActivityFlow": 20,
+        "AgentDetail": 2,
+        "ComposerControls": 2,
+        "ConversationActivity": 32,
+        "DraftComposerSendButton": 2,
+        "DraftComposerTextarea": 2,
+        "EventTimeline": 2,
+        "FinalAnswer": 16,
+        "PublicFeedback": 54
+      },
+      "notifications": {
+        "query-agent-observerOptionsUpdated": 1,
+        "query-agent-observerResultsUpdated": 6,
+        "query-agent-turns-observerOptionsUpdated": 1,
+        "query-agent-turns-observerResultsUpdated": 2,
+        "query-agent-turns-updated": 2,
+        "query-agent-updated": 3,
+        "query-agents-observerResultsUpdated": 2,
+        "query-agents-updated": 2,
+        "query-model-settings-observerOptionsUpdated": 2
+      },
+      "reactRenderPerCommit": {
+        "FinalAnswer": {
+          "count": 8,
+          "totalMs": 11.200000286102295,
+          "p50Ms": 1.3000000715255737,
+          "p95Ms": 2.5,
+          "maxMs": 2.5
+        },
+        "PublicFeedback": {
+          "count": 27,
+          "totalMs": 1.499999761581421,
+          "p50Ms": 0.09999990463256836,
+          "p95Ms": 0.10000002384185791,
+          "maxMs": 0.20000004768371582
+        },
+        "EventTimeline": {
+          "count": 1,
+          "totalMs": 101.70000004768372,
+          "p50Ms": 101.70000004768372,
+          "p95Ms": 101.70000004768372,
+          "maxMs": 101.70000004768372
+        },
+        "DraftComposerTextarea": {
+          "count": 1,
+          "totalMs": 0,
+          "p50Ms": 0,
+          "p95Ms": 0,
+          "maxMs": 0
+        },
+        "ComposerControls": {
+          "count": 2,
+          "totalMs": 0.6000000238418579,
+          "p50Ms": 0,
+          "p95Ms": 0.6000000238418579,
+          "maxMs": 0.6000000238418579
+        },
+        "DraftComposerSendButton": {
+          "count": 1,
+          "totalMs": 0.10000002384185791,
+          "p50Ms": 0.10000002384185791,
+          "p95Ms": 0.10000002384185791,
+          "maxMs": 0.10000002384185791
+        },
+        "AgentDetail": {
+          "count": 2,
+          "totalMs": 114.90000009536743,
+          "p50Ms": 0.10000002384185791,
+          "p95Ms": 114.80000007152557,
+          "maxMs": 114.80000007152557
+        },
+        "App": {
+          "count": 2,
+          "totalMs": 114.90000009536743,
+          "p50Ms": 0.10000002384185791,
+          "p95Ms": 114.80000007152557,
+          "maxMs": 114.80000007152557
+        }
+      },
+      "projections": {
+        "taskChanges": {
+          "calls": 34,
+          "maxInput": 110,
+          "maxMs": 0.10000002384185791,
+          "totalMs": 0.6000001430511475
+        }
+      },
+      "longTasks": {
+        "count": 1,
+        "totalMs": 134,
+        "p50Ms": 134,
+        "p95Ms": 134,
+        "maxMs": 134
+      },
+      "inputToNextRaf": {
+        "count": 0,
+        "totalMs": 0,
+        "p50Ms": null,
+        "p95Ms": null,
+        "maxMs": 0
+      },
+      "browserMs": {
+        "ScriptDuration": 139.9789999999985,
+        "LayoutDuration": 2.561000000000008,
+        "RecalcStyleDuration": 45.1760000000001,
+        "TaskDuration": 264.21200000000056
+      }
+    },
+    "stream-input-loaded": {
+      "eventsAfter": 2578,
+      "functionInvocations": {
+        "ActivityFlow": 800,
+        "AgentDetail": 102,
+        "ComposerControls": 80,
+        "ConversationActivity": 1280,
+        "DraftComposerSendButton": 122,
+        "DraftComposerTextarea": 122,
+        "EventTimeline": 80,
+        "FinalAnswer": 640,
+        "Markdown[streaming]": 80,
+        "PublicFeedback": 2160
+      },
+      "notifications": {
+        "input-event": 21,
+        "progress-store": 40,
+        "query-agent-observerOptionsUpdated": 40,
+        "query-agent-observerResultsUpdated": 16,
+        "query-agent-turns-observerOptionsUpdated": 40,
+        "query-agent-turns-observerResultsUpdated": 8,
+        "query-agent-turns-updated": 8,
+        "query-agent-updated": 8,
+        "query-agents-observerResultsUpdated": 4,
+        "query-agents-updated": 4,
+        "query-health-observerResultsUpdated": 2,
+        "query-health-updated": 2,
+        "query-model-settings-observerOptionsUpdated": 80
+      },
+      "reactRenderPerCommit": {
+        "FinalAnswer": {
+          "count": 320,
+          "totalMs": 254.09999811649323,
+          "p50Ms": 0.5999999046325684,
+          "p95Ms": 2.200000047683716,
+          "maxMs": 8.200000047683716
+        },
+        "PublicFeedback": {
+          "count": 1080,
+          "totalMs": 73.99999976158142,
+          "p50Ms": 0,
+          "p95Ms": 0.10000002384185791,
+          "maxMs": 2.5
+        },
+        "EventTimeline": {
+          "count": 40,
+          "totalMs": 2121.5999999046326,
+          "p50Ms": 34.90000009536743,
+          "p95Ms": 137.59999990463257,
+          "maxMs": 152
+        },
+        "DraftComposerTextarea": {
+          "count": 61,
+          "totalMs": 2.4000003337860107,
+          "p50Ms": 0,
+          "p95Ms": 0.10000002384185791,
+          "maxMs": 0.20000004768371582
+        },
+        "ComposerControls": {
+          "count": 80,
+          "totalMs": 33.40000009536743,
+          "p50Ms": 0.3999999761581421,
+          "p95Ms": 0.8999999761581421,
+          "maxMs": 1.399999976158142
+        },
+        "DraftComposerSendButton": {
+          "count": 61,
+          "totalMs": 5.699999570846558,
+          "p50Ms": 0.10000002384185791,
+          "p95Ms": 0.20000004768371582,
+          "maxMs": 0.5
+        },
+        "AgentDetail": {
+          "count": 101,
+          "totalMs": 2466.899999499321,
+          "p50Ms": 0.20000004768371582,
+          "p95Ms": 124.29999995231628,
+          "maxMs": 176
+        },
+        "App": {
+          "count": 101,
+          "totalMs": 2467.499999642372,
+          "p50Ms": 0.20000004768371582,
+          "p95Ms": 124.39999997615814,
+          "maxMs": 176
+        }
+      },
+      "projections": {
+        "taskChanges": {
+          "calls": 1360,
+          "maxInput": 110,
+          "maxMs": 0.30000007152557373,
+          "totalMs": 24.29999876022339
+        }
+      },
+      "longTasks": {
+        "count": 44,
+        "totalMs": 3744,
+        "p50Ms": 63,
+        "p95Ms": 197,
+        "maxMs": 221
+      },
+      "inputToNextRaf": {
+        "count": 21,
+        "totalMs": 948.2999997138977,
+        "p50Ms": 41.89999997615814,
+        "p95Ms": 52.700000047683716,
+        "maxMs": 79.29999995231628
+      },
+      "browserMs": {
+        "ScriptDuration": 3342.263000000001,
+        "LayoutDuration": 19.901999999999997,
+        "RecalcStyleDuration": 919.4969999999998,
+        "TaskDuration": 4706.066
+      }
+    },
+    "stream-loaded": {
+      "eventsAfter": 2578,
+      "functionInvocations": {
+        "ActivityFlow": 800,
+        "AgentDetail": 96,
+        "ComposerControls": 80,
+        "ConversationActivity": 1280,
+        "DraftComposerSendButton": 80,
+        "DraftComposerTextarea": 80,
+        "EventTimeline": 80,
+        "FinalAnswer": 640,
+        "Markdown[streaming]": 80,
+        "PublicFeedback": 2160
+      },
+      "notifications": {
+        "progress-store": 40,
+        "query-agent-observerOptionsUpdated": 40,
+        "query-agent-observerResultsUpdated": 12,
+        "query-agent-turns-observerOptionsUpdated": 40,
+        "query-agent-turns-observerResultsUpdated": 6,
+        "query-agent-turns-updated": 6,
+        "query-agent-updated": 6,
+        "query-agents-observerResultsUpdated": 4,
+        "query-agents-updated": 4,
+        "query-model-settings-observerOptionsUpdated": 80
+      },
+      "reactRenderPerCommit": {
+        "FinalAnswer": {
+          "count": 320,
+          "totalMs": 222.99999976158142,
+          "p50Ms": 0.5,
+          "p95Ms": 2,
+          "maxMs": 3.799999952316284
+        },
+        "PublicFeedback": {
+          "count": 1080,
+          "totalMs": 71.80000019073486,
+          "p50Ms": 0,
+          "p95Ms": 0.10000002384185791,
+          "maxMs": 6.200000047683716
+        },
+        "EventTimeline": {
+          "count": 40,
+          "totalMs": 1858.700000166893,
+          "p50Ms": 34.5,
+          "p95Ms": 103.79999995231628,
+          "maxMs": 128.00000023841858
+        },
+        "DraftComposerTextarea": {
+          "count": 40,
+          "totalMs": 1.1999999284744263,
+          "p50Ms": 0,
+          "p95Ms": 0.10000002384185791,
+          "maxMs": 0.10000002384185791
+        },
+        "ComposerControls": {
+          "count": 80,
+          "totalMs": 34.89999842643738,
+          "p50Ms": 0.5,
+          "p95Ms": 0.8999999761581421,
+          "maxMs": 2.399999976158142
+        },
+        "DraftComposerSendButton": {
+          "count": 40,
+          "totalMs": 2.6000003814697266,
+          "p50Ms": 0.10000002384185791,
+          "p95Ms": 0.10000002384185791,
+          "maxMs": 0.30000007152557373
+        },
+        "AgentDetail": {
+          "count": 80,
+          "totalMs": 2163.500000357628,
+          "p50Ms": 0.6000000238418579,
+          "p95Ms": 118.39999997615814,
+          "maxMs": 145.60000026226044
+        },
+        "App": {
+          "count": 80,
+          "totalMs": 2163.6000003814697,
+          "p50Ms": 0.6000000238418579,
+          "p95Ms": 118.39999997615814,
+          "maxMs": 145.60000026226044
+        }
+      },
+      "projections": {
+        "taskChanges": {
+          "calls": 1360,
+          "maxInput": 110,
+          "maxMs": 0.20000004768371582,
+          "totalMs": 20.99999988079071
+        }
+      },
+      "longTasks": {
+        "count": 40,
+        "totalMs": 3133,
+        "p50Ms": 62,
+        "p95Ms": 150,
+        "maxMs": 179
+      },
+      "inputToNextRaf": {
+        "count": 0,
+        "totalMs": 0,
+        "p50Ms": null,
+        "p95Ms": null,
+        "maxMs": 0
+      },
+      "browserMs": {
+        "ScriptDuration": 2973.007,
+        "LayoutDuration": 10.259000000000004,
+        "RecalcStyleDuration": 38.190000000000055,
+        "TaskDuration": 3351.3289999999997
+      }
+    },
+    "stream-padded": {
+      "eventsAfter": 7598,
+      "functionInvocations": {
+        "ActivityFlow": 800,
+        "AgentDetail": 94,
+        "ComposerControls": 80,
+        "ConversationActivity": 1280,
+        "DraftComposerSendButton": 80,
+        "DraftComposerTextarea": 80,
+        "EventTimeline": 80,
+        "FinalAnswer": 640,
+        "Markdown[streaming]": 80,
+        "PublicFeedback": 2160
+      },
+      "notifications": {
+        "progress-store": 40,
+        "query-agent-observerOptionsUpdated": 40,
+        "query-agent-observerResultsUpdated": 12,
+        "query-agent-turns-observerOptionsUpdated": 40,
+        "query-agent-turns-observerResultsUpdated": 6,
+        "query-agent-turns-updated": 6,
+        "query-agent-updated": 6,
+        "query-agents-observerResultsUpdated": 4,
+        "query-agents-updated": 4,
+        "query-model-settings-observerOptionsUpdated": 80
+      },
+      "reactRenderPerCommit": {
+        "FinalAnswer": {
+          "count": 320,
+          "totalMs": 216.2999997138977,
+          "p50Ms": 0.5999999046325684,
+          "p95Ms": 2,
+          "maxMs": 2.9000000953674316
+        },
+        "PublicFeedback": {
+          "count": 1080,
+          "totalMs": 57.799999952316284,
+          "p50Ms": 0,
+          "p95Ms": 0.10000002384185791,
+          "maxMs": 1.899999976158142
+        },
+        "EventTimeline": {
+          "count": 40,
+          "totalMs": 1839.4000016450882,
+          "p50Ms": 34.299999833106995,
+          "p95Ms": 108.200000166893,
+          "maxMs": 136.30000042915344
+        },
+        "DraftComposerTextarea": {
+          "count": 40,
+          "totalMs": 0.8999999761581421,
+          "p50Ms": 0,
+          "p95Ms": 0.10000002384185791,
+          "maxMs": 0.10000002384185791
+        },
+        "ComposerControls": {
+          "count": 80,
+          "totalMs": 29.90000009536743,
+          "p50Ms": 0.20000004768371582,
+          "p95Ms": 0.8000000715255737,
+          "maxMs": 0.9000000953674316
+        },
+        "DraftComposerSendButton": {
+          "count": 40,
+          "totalMs": 2.5999999046325684,
+          "p50Ms": 0.09999990463256836,
+          "p95Ms": 0.10000002384185791,
+          "maxMs": 0.3999999761581421
+        },
+        "AgentDetail": {
+          "count": 80,
+          "totalMs": 2126.1000015735626,
+          "p50Ms": 0.20000004768371582,
+          "p95Ms": 118.70000004768372,
+          "maxMs": 152.20000040531158
+        },
+        "App": {
+          "count": 80,
+          "totalMs": 2126.2000015974045,
+          "p50Ms": 0.20000004768371582,
+          "p95Ms": 118.70000004768372,
+          "maxMs": 152.20000040531158
+        }
+      },
+      "projections": {
+        "taskChanges": {
+          "calls": 1360,
+          "maxInput": 110,
+          "maxMs": 0.20000004768371582,
+          "totalMs": 21.299999475479126
+        }
+      },
+      "longTasks": {
+        "count": 40,
+        "totalMs": 3035,
+        "p50Ms": 61,
+        "p95Ms": 154,
+        "maxMs": 184
+      },
+      "inputToNextRaf": {
+        "count": 0,
+        "totalMs": 0,
+        "p50Ms": null,
+        "p95Ms": null,
+        "maxMs": 0
+      },
+      "browserMs": {
+        "ScriptDuration": 2887.39,
+        "LayoutDuration": 9.986999999999997,
+        "RecalcStyleDuration": 0.0,
+        "TaskDuration": 3236.6679999999983
+      }
+    }
+  },
+  "independentInputReference": {
+    "metadata": {
+      "backendBefore": {
+        "active": false,
+        "seq": 1331
+      },
+      "events": 1331,
+      "nodes": 261,
+      "visibility": "visible"
+    },
+    "backendAfter": {
+      "active": false,
+      "seq": 1331
+    },
+    "result": {
+      "eventsAfter": 1331,
+      "functionInvocations": {
+        "DraftComposerSendButton": 42,
+        "DraftComposerTextarea": 42
+      },
+      "notifications": {
+        "query-agent-observerResultsUpdated": 4,
+        "query-agent-turns-observerResultsUpdated": 2,
+        "query-agent-turns-updated": 2,
+        "query-agent-updated": 2
+      },
+      "reactRenderPerCommit": {
+        "DraftComposerTextarea": {
+          "count": 21,
+          "totalMs": 5.100000023841858,
+          "p50Ms": 0.20000004768371582,
+          "p95Ms": 0.40000009536743164,
+          "maxMs": 0.6000000238418579
+        },
+        "DraftComposerSendButton": {
+          "count": 21,
+          "totalMs": 8.799999952316284,
+          "p50Ms": 0.3999999761581421,
+          "p95Ms": 0.5999999046325684,
+          "maxMs": 1.100000023841858
+        },
+        "AgentDetail": {
+          "count": 21,
+          "totalMs": 14.600000023841858,
+          "p50Ms": 0.6000000238418579,
+          "p95Ms": 0.9000000953674316,
+          "maxMs": 1.8000000715255737
+        },
+        "App": {
+          "count": 21,
+          "totalMs": 14.799999833106995,
+          "p50Ms": 0.6999999284744263,
+          "p95Ms": 0.9000000953674316,
+          "maxMs": 1.8000000715255737
+        }
+      },
+      "projections": {},
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0,
+        "p50Ms": null,
+        "p95Ms": null,
+        "maxMs": 0
+      },
+      "inputToNextRaf": {
+        "count": 21,
+        "totalMs": 253.200000166893,
+        "p50Ms": 12.200000047683716,
+        "p95Ms": 13.600000023841858,
+        "maxMs": 13.600000023841858
+      },
+      "browserMs": {
+        "ScriptDuration": 33.803,
+        "LayoutDuration": 7.555,
+        "RecalcStyleDuration": 211.34,
+        "TaskDuration": 318.47900000000004
+      }
+    },
+    "limitation": "Different idle conversation (1331 events); qualitative subscription-boundary reference, not same-size timing comparison."
+  },
+  "limitations": [
+    "Idle and input phases in final capture include automatic historical backfill; do not interpret as independent typing benchmarks.",
+    "React Profiler actualDuration is inclusive rendering time associated with commits, not DOM commit-phase duration. Nested scopes must not be summed.",
+    "Function invocation counts include development StrictMode.",
+    "5000 padded facts are filtered execution.configured notices; visible message count does not grow.",
+    "Store-level synthetic updates bypass real SSE parsing/validation; backend mutation requests are blocked.",
+    "Next-rAF timing is not paint or IME latency.",
+    "Raw CPU profiles and per-commit samples are local /tmp/archer-renderer-final* artifacts."
+  ]
+}

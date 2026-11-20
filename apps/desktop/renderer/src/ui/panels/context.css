@@ -1,0 +1,923 @@
+/* 上下文扫描页：顶部请求指标，左栏字符条带与分组条目，右栏请求事实；分栏可拖动。 */
+.context-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--panel);
+}
+
+.context-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--workspace-inset) var(--space-3);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.context-head-mark {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-small);
+  background: var(--accent-subtle);
+  color: var(--accent-text);
+}
+
+.context-head-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.context-head-text h2 {
+  margin: 0;
+  font: var(--type-section);
+}
+
+.context-head-text p {
+  margin: 0;
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+/* 请求选择、位置与翻页保持单行；加载范围另起一行，不挤压标题。 */
+.context-request {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1) var(--space-2);
+  max-width: 56%;
+}
+
+.context-select {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+.context-select select {
+  flex: none;
+  min-width: 168px;
+}
+
+.context-position {
+  color: var(--secondary);
+  font: var(--type-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.context-range {
+  flex-basis: 100%;
+  margin: 0;
+  text-align: right;
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+.context-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: var(--space-3) var(--workspace-inset) var(--space-2);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+/* 指标只分层展示数值与来源，不使用卡片外框。 */
+.context-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  padding-left: var(--space-4);
+  border-left: 1px solid var(--border-soft);
+}
+
+.context-metric:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.context-metric-label {
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+.context-metric-value {
+  color: var(--text);
+  font: var(--type-section);
+  font-variant-numeric: tabular-nums;
+}
+
+.context-metric-note {
+  overflow: hidden;
+  color: var(--muted);
+  font: var(--type-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.context-views-tabs {
+  margin: 0 var(--workspace-inset);
+}
+
+.context-views {
+  flex: 1;
+  min-height: 0;
+}
+
+.context-views[hidden] {
+  display: none;
+}
+
+.context-split {
+  height: 100%;
+}
+
+.context-split-panel {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 分栏面板是行内 flex 容器，滚动区必须显式伸展，否则只按内容宽度收起，在面板右侧留下空白。 */
+.context-scroll {
+  flex: 1;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.context-scan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4) var(--space-5) var(--workspace-inset);
+}
+
+.context-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.context-section-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.context-section-head h3 {
+  margin: 0;
+  color: var(--text);
+  font: var(--type-folder);
+}
+
+.context-section-note {
+  margin-left: auto;
+  color: var(--muted);
+  font: var(--type-caption);
+  text-align: right;
+}
+
+/* 区块标题本身是折叠触发器；只让箭头让位给折叠状态，不额外加按钮底框。 */
+.context-section-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-small);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.context-section-trigger:hover h3 {
+  color: var(--accent-text);
+}
+
+.context-section-trigger:focus-visible {
+  outline: 2px solid var(--state-focus);
+  outline-offset: 2px;
+}
+
+.context-section-chevron {
+  color: var(--muted);
+  transition: transform 160ms ease;
+}
+
+.context-section-trigger[data-panel-open] .context-section-chevron {
+  transform: rotate(90deg);
+}
+
+/* 横向条带只用 CSS 宽度表达占比；颜色从语义 Token 读取，随主题与强调色一起变化。 */
+.context-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.context-bar-row {
+  display: grid;
+  grid-template-columns: 8px minmax(120px, 1.1fr) minmax(90px, 1.6fr) 88px;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: 5px var(--space-2);
+  border: 0;
+  border-radius: var(--radius-small);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.context-bar-row:hover {
+  background: var(--hover);
+}
+
+.context-bar-row:focus-visible {
+  outline: 2px solid var(--state-focus);
+  outline-offset: -2px;
+}
+
+.context-bar-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.context-bar-label {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.context-bar-label > span:first-child {
+  color: var(--text);
+  font: var(--type-ui);
+}
+
+.context-bar-note {
+  overflow: hidden;
+  color: var(--muted);
+  font: var(--type-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.context-bar-track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--subtle);
+}
+
+.context-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.context-bar-value {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  color: var(--text);
+  font: var(--type-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.context-bar-chars {
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+.context-bar-dot.is-conversation,
+.context-bar-fill.is-conversation {
+  background: var(--accent-default);
+}
+
+.context-bar-dot.is-results,
+.context-bar-fill.is-results {
+  background: var(--success);
+}
+
+.context-bar-dot.is-declarations,
+.context-bar-fill.is-declarations {
+  background: var(--warning);
+}
+
+.context-bar-dot.is-system,
+.context-bar-fill.is-system {
+  background: var(--info);
+}
+
+.context-bar-dot.is-references,
+.context-bar-fill.is-references {
+  background: var(--danger);
+}
+
+/* Token 趋势：柱高取真实 usage，分段只用请求快照字符占比，不引入图表库。 */
+.context-trend .context-section-head {
+  flex-wrap: wrap;
+  row-gap: var(--space-1);
+}
+
+.context-trend-window {
+  width: 116px;
+  margin-left: auto;
+}
+
+.context-trend-window select {
+  width: 100%;
+}
+
+.context-trend-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* 摘要只占一行，让图表拿到整行宽度；当前值与顶部指标重复，不再做大号卡片。 */
+.context-trend-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+.context-trend-summary-label,
+.context-trend-summary-unit {
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+.context-trend-summary-value {
+  color: var(--text);
+  font: var(--type-ui);
+  font-variant-numeric: tabular-nums;
+}
+
+.context-trend-delta {
+  margin-left: auto;
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+.context-trend-delta.is-down {
+  color: var(--success);
+}
+
+.context-trend-delta.is-up {
+  color: var(--warning);
+}
+
+.context-trend-chart {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  grid-template-rows: 132px auto;
+  gap: 0 var(--space-2);
+  min-width: 0;
+  padding-top: var(--space-5);
+}
+
+.context-trend-axis {
+  display: flex;
+  grid-column: 1;
+  grid-row: 1;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  color: var(--muted);
+  font: var(--type-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.context-trend-plot {
+  position: relative;
+  display: grid;
+  grid-column: 2;
+  grid-row: 1;
+  grid-template-columns: repeat(var(--trend-count), minmax(0, 1fr));
+  align-items: end;
+  min-width: 0;
+}
+
+.context-trend-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-small) var(--radius-small) 0 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.context-trend-bar:hover {
+  background: var(--hover);
+}
+
+.context-trend-bar:focus-visible {
+  outline: 2px solid var(--state-focus);
+  outline-offset: -2px;
+}
+
+.context-trend-stack {
+  display: flex;
+  flex-direction: column;
+  width: min(62%, 34px);
+  min-height: 2px;
+  overflow: hidden;
+  border-radius: 3px;
+}
+
+.context-trend-bar.is-current .context-trend-stack {
+  outline: 1px solid var(--accent-default);
+  outline-offset: 1px;
+}
+
+.context-trend-seg {
+  display: block;
+  width: 100%;
+}
+
+.context-trend-missing {
+  width: min(62%, 34px);
+  height: 2px;
+  border-top: 1px dashed var(--border-soft);
+}
+
+.context-trend-seg.is-conversation {
+  background: var(--accent-default);
+}
+
+.context-trend-seg.is-results {
+  background: var(--success);
+}
+
+.context-trend-seg.is-declarations {
+  background: var(--warning);
+}
+
+.context-trend-seg.is-system {
+  background: var(--info);
+}
+
+.context-trend-seg.is-references {
+  background: var(--danger);
+}
+
+.context-trend-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.context-trend-overlay svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.context-trend-overlay polyline {
+  fill: none;
+  stroke: var(--accent-default);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.context-trend-dot {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent-default);
+  transform: translate(-50%, -50%);
+}
+
+.context-trend-dot.is-current {
+  width: 7px;
+  height: 7px;
+}
+
+.context-trend-badge {
+  position: absolute;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--accent-default);
+  color: var(--accent-foreground);
+  font: var(--type-caption);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  transform: translate(-50%, -135%);
+}
+
+/* 最近与最早请求的柱贴近边界，气泡改为向内对齐，不越过图表右缘。 */
+.context-trend-badge.is-end {
+  transform: translate(-100%, -135%);
+}
+
+.context-trend-badge.is-start {
+  transform: translate(0, -135%);
+}
+
+.context-trend-empty {
+  margin: 0;
+  padding: var(--space-4) var(--space-2);
+  color: var(--muted);
+  font: var(--type-caption);
+  text-align: center;
+}
+
+.context-trend-labels {
+  display: grid;
+  grid-column: 2;
+  grid-row: 2;
+  grid-template-columns: repeat(var(--trend-count), minmax(0, 1fr));
+  padding-top: var(--space-1);
+  color: var(--muted);
+  font: var(--type-caption);
+  text-align: center;
+}
+
+/* 序号允许溢出窄单元格；抽稀步长已保证可见标签之间不会重叠。 */
+.context-trend-labels span {
+  white-space: nowrap;
+}
+
+.context-trend-labels .is-current {
+  color: var(--text);
+}
+
+.context-trend-labels .is-sparse {
+  visibility: hidden;
+}
+
+.context-trend-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+.context-trend-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.context-entries-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.context-search {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 180px;
+  color: var(--secondary);
+}
+
+.context-search input {
+  width: 100%;
+  min-width: 0;
+}
+
+.context-groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.context-group {
+  border-top: 1px solid var(--border-soft);
+}
+
+.context-group-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-1);
+  border: 0;
+  border-radius: var(--radius-small);
+  background: transparent;
+  color: var(--secondary);
+  font: var(--type-ui);
+  text-align: left;
+  cursor: pointer;
+}
+
+.context-group-trigger:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.context-group-trigger:focus-visible {
+  outline: 2px solid var(--state-focus);
+  outline-offset: -2px;
+}
+
+.context-group-title {
+  color: var(--text);
+}
+
+.context-group-count {
+  margin-left: auto;
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+.context-group-chevron {
+  color: var(--muted);
+  transition: transform 160ms ease;
+}
+
+.context-group-trigger[data-panel-open] .context-group-chevron {
+  transform: rotate(90deg);
+}
+
+.context-group-body {
+  padding: 0 0 var(--space-2) var(--space-4);
+}
+
+.context-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.context-row {
+  padding-block: 3px;
+  text-align: left;
+}
+
+.context-row:hover {
+  background: var(--hover);
+}
+
+.context-row[aria-pressed='true'] {
+  background: var(--accent-subtle);
+}
+
+.context-row-meta {
+  max-width: 160px;
+  overflow: hidden;
+  color: var(--muted);
+  font: var(--type-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.context-inspector {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4) var(--space-5);
+}
+
+.context-inspector-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* 右栏各事实块用细分割线分层，不堆叠卡片和阴影。 */
+.context-inspector-block + .context-inspector-block {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-soft);
+}
+
+.context-inspector-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.context-inspector-head h3 {
+  margin: 0;
+  color: var(--text);
+  font: var(--type-folder);
+}
+
+/* 详情标题只接收程序化焦点供读屏定位，不显示输入框式焦点框。 */
+.context-detail-title:focus {
+  outline: none;
+}
+
+.context-state {
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+.context-detail-subtitle {
+  margin: var(--space-1) 0 0;
+  color: var(--muted);
+  font: var(--type-caption);
+  font-weight: var(--weight-medium);
+}
+
+.context-detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.context-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+}
+
+.context-facts > div {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr);
+  gap: var(--space-2);
+  font: var(--type-caption);
+}
+
+.context-facts dt {
+  color: var(--muted);
+}
+
+.context-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--secondary);
+}
+
+.context-note {
+  margin: 0;
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+.context-identity {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font: var(--type-code);
+}
+
+.context-json {
+  max-height: 320px;
+  margin: 0;
+  padding: 6px 8px;
+  overflow: auto;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-small);
+  background: var(--subtle);
+  font: var(--type-code);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.context-raw > [data-slot="collapsible-trigger"] {
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 2px 0;
+  color: var(--muted);
+  font: var(--type-caption);
+  cursor: pointer;
+}
+
+.context-raw pre {
+  max-height: 260px;
+  margin: 4px 0 0;
+  padding: 6px 8px;
+  overflow: auto;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-small);
+  background: var(--subtle);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.context-steps {
+  margin: 6px 0 0;
+  padding-left: var(--space-4);
+  color: var(--secondary);
+  font: var(--type-caption);
+}
+
+.context-tool-calls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.context-tool-call {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-small);
+}
+
+.context-tool-call > header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text);
+}
+
+.context-tool-call .context-json {
+  max-height: 200px;
+}
+
+.context-raw-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--workspace-inset) var(--space-5);
+}
+
+/* 原始内容由外层滚动区承担滚动，JSON 本身不再截断。 */
+.context-raw-json {
+  max-height: none;
+}
+
+.context-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 240px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.context-empty h3 {
+  margin: 0;
+  color: var(--text);
+  font: var(--type-ui);
+  font-weight: var(--weight-medium);
+}
+
+.context-empty p {
+  margin: 0;
+  font: var(--type-caption);
+}
+
+@media (max-width: 1080px) {
+  .context-request {
+    max-width: 100%;
+    justify-content: flex-start;
+  }
+
+  .context-range {
+    text-align: left;
+  }
+
+  .context-bar-row {
+    grid-template-columns: 8px minmax(110px, 1fr) 88px;
+  }
+
+  .context-bar-track {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .context-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2) 0;
+  }
+
+  .context-metric:nth-child(3) {
+    padding-left: 0;
+    border-left: 0;
+  }
+}

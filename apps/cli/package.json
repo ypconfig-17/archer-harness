@@ -1,0 +1,32 @@
+{
+  "name": "@archer/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Archer Harness \u547d\u4ee4\u884c\u5165\u53e3\uff0c\u652f\u6301\u672c\u5730 Archer \u4e0e\u8fdc\u7a0b Server",
+  "bin": {
+    "archer": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@archer/client": "workspace:*",
+    "@archer/contracts": "workspace:*",
+    "@archer/inference-pi": "workspace:*",
+    "@archer/runtime": "workspace:*",
+    "@archer/storage": "workspace:*",
+    "@clack/prompts": "^1.8.1",
+    "commander": "^15.0.0",
+    "dotenv": "^17.2.4",
+    "@archer/providers": "workspace:*",
+    "@archer/skills": "workspace:*",
+    "@archer/camp": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15"
+  }
+}
