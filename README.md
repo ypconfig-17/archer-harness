@@ -48,6 +48,12 @@ export async function run<E, T, R>(
 
 写入授权、提交顺序和崩溃恢复由 Runtime 与执行管线处理。Camp 通过 Contract 校验 Provider 声明，并按固定能力引用解析实现。新增工具、技能或推理 Provider 通常沿用同一个 `run` 函数。 [Kernel 源码](packages/kernel/src/run.ts) · [Provider 与能力契约](docs/architecture/capability-contracts.md)
 
+Runtime 的 `runCommands` 是实际接入点。Generator 按顺序交出 `SessionCommand`，Runtime 处理命令并返回后续命令。Generator 的暂停只存在于当前进程。重启时，Runtime 从 Journal 回放已提交的事实，再重建需要执行的工作。可以沿着下面三个入口核对这条链路。
+
+- [Runtime 命令交接](packages/runtime/src/archer/session-runtime.ts#L990)
+- [Kernel 异常与清理测试](tests/kernel/run.test.ts)
+- [文件写入与重启恢复测试](tests/archer/fs-write-recovery.test.ts)
+
 ## 当前能力
 
 - 持续会话、多轮输入、后续任务队列与运行中引导。

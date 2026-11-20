@@ -18,18 +18,16 @@ run<E, T, R>(
   program: Generator<E, T, R>,
   handler: (effect: E) => R | PromiseLike<R>,
 ): Promise<T>;
-
-perform<T, E = unknown>(effect: E): Generator<E, T, unknown>;
 ```
 
 `run` 顺序处理 yield。Handler 失败交给流程的 catch/finally；流程自身抛出的异常直接传播，不能被误当成 Handler 异常再次注入。Kernel 不捕获异常后自动重试，不把结果未知伪装成失败。
 
-`perform` 是 `yield*` 的类型辅助，不为结果提供运行时保证。实际载荷、授权与结果必须由 Handler 校验。辅助 Generator 是进程对象，不可作为 JSON Effect 载荷保存。
+`R` 是该流程所有恢复值的统一类型。异构 Effect 与各自结果的对应关系由 Contracts 和 Handler 表达。若 `throw` 使流程进入继续 yield 的 `finally`，驱动会交接新的意图，清理结束后未捕获的异常继续向外传播。
 
 ```ts
-function* workflow(): Generator<string, string, unknown> {
-  const text = yield* perform<string, string>('read');
-  return yield* perform<string, string>(`save:${text}`);
+function* workflow(): Generator<string, string, string> {
+  const text = yield 'read';
+  return yield `save:${text}`;
 }
 
 const result = await run(workflow(), handler);
@@ -56,3 +54,5 @@ Archer 只承诺从 Agent 事件日志恢复会话、消息、队列、Turn、�
 - 回放本身不执行外部副作用；外部资源的当前内容仍需重新检查。
 
 恢复决定、重试许可、取消及凭证管理属于 Runtime。实现与 Handler 组合见 [执行管线](execution-pipeline.md)，会话事实见 [Agent 设计](agent-design.md)，串行提交与中断处理见 [Runtime 设计](runtime-design.md)。
+
+使用 `pnpm exec vitest run tests/kernel/run.test.ts tests/archer/fs-write-recovery.test.ts` 验证控制权交接、异常传播与文件写入恢复。

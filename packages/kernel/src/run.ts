@@ -16,8 +16,3 @@ export async function run<E, T, R>(
   }
   return step.value;
 }
-
-/** 用 yield* 为单个执行意图声明返回值类型；运行时结果校验由 Handler 负责。 */
-export function* perform<T, E = unknown>(effect: E): Generator<E, T, unknown> {
-  return (yield effect) as T;
-}
