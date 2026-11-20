@@ -5,6 +5,10 @@ Archer Harness 是一个用 TypeScript 编写的实验性 Agent 执行框架，�
 - **将 Agent Loop 的驱动、决策与执行解耦。** Kernel 只负责 Generator 的控制权交接。Agent 根据事实作出决策，Runtime 提交执行意图、调用能力并记录结果。
 - **用 Camp 管理类型化能力。** 一个 Provider 可以贡献多个能力。工具、技能、推理和日志各自通过版本化 Contract 声明接口，Camp 统一校验声明、解析能力并管理资源。
 
+![Archer 桌面端的会话页面，显示一轮任务的答复、调用次数和执行详情入口。](docs/design/desktop-session.png)
+
+桌面端会话展示任务答复与调用摘要，可从「执行详情」继续查看记录。
+
 ## Agent Loop 解耦与最小内核
 
 一个 Agent Loop 会反复决定下一步、执行操作，再把结果带入下一轮。Archer 拆开了驱动、决策和执行。Agent 用已提交事实、新输入和显式上下文做纯决策，Effect 表达待执行意图，Runtime 与 Handler 负责授权、调用与提交。Kernel 的 `run` 只在 Generator 与 Handler 之间传递意图、结果和异常。
@@ -49,6 +53,10 @@ Contract 声明版本、可序列化元数据和进程内接口。Provider 通�
 | Journal | `ids`、`read`、`append` | 枚举日志、读取事实与提交事件 |
 
 例如，本地技能 Provider 为每个技能声明一个 `Skill.load`，同时提供一个 `Tool.invoke` 读取参考资源。两种能力由同一个 Provider 提供，各自保留调用语义。 [本地技能 Provider 源码](packages/skills/src/index.ts#L90)
+
+![Archer 设置中的能力来源页，按 Provider 显示工具、技能、推理准备、推理和日志能力。](docs/design/desktop-capability-sources.png)
+
+桌面端「能力来源」展示宿主已接入的 Provider、能力类型和用途。
 
 模型按 Function Calling 名称发起调用，Runtime 将其绑定到含 Provider ID、能力 ID、Contract ID 和来源 revision 的 `CapabilityRef`。执行和恢复沿用该引用。若需要重新分发而原来源无法解析，调用会进入阻塞状态，避免被交给同名的新实现。 [能力身份与资源生命周期](docs/architecture/capability-contracts.md#固定身份)
 
