@@ -24,17 +24,7 @@ flowchart TD
 
 ## 最小内核的实际代码
 
-```mermaid
-flowchart LR
-    Program["Program · Generator"]
-    Kernel["Kernel · run"]
-    Handler["Handler"]
-
-    Program -->|"yield 意图"| Kernel
-    Kernel -->|"next(结果) 或 throw(异常)"| Program
-    Kernel -->|"交给 Handler 处理"| Handler
-    Handler -->|"返回结果或抛出异常"| Kernel
-```
+<img src="docs/design/kernel-control-flow.png" width="688" alt="Generator 通过 yield 交出意图，Kernel 交给 Handler，再用 next 传回结果或用 throw 传回异常。">
 
 下面是 Kernel 的完整 `run` 函数。Generator 交出一个意图，Kernel 调用传入的 Handler，再把结果或异常交回 Generator。
 
