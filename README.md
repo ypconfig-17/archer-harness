@@ -1,26 +1,13 @@
 # Archer Harness
 
-**Agent 写入了文件，进程却在记下结果前退出。重启后，要再写一次吗？** Archer 会从日志恢复为「结果未知」，保留这次调用供核对，避免重复写入。
+Archer Harness 是一个用 TypeScript 编写的实验性 Agent 执行框架，提供桌面应用和 HTTP/SSE 服务。项目围绕两个设计展开。
 
-Archer Harness 是一个用 TypeScript 编写的实验性 Agent 执行框架，提供桌面应用和 HTTP/SSE 服务。它把模型请求、能力调用和恢复依据放在可核对的执行链上。
+- **将 Agent Loop 的驱动、决策与执行解耦。** Kernel 只负责 Generator 的控制权交接。Agent 根据事实作出决策，Runtime 提交执行意图、调用能力并记录结果。
+- **用 Camp 管理类型化能力。** 一个 Provider 可以贡献多个能力。工具、技能、推理和日志各自通过版本化 Contract 声明接口，Camp 统一校验声明、解析能力并管理资源。
 
-## Archer 如何执行一次文件写入
+## Agent Loop 解耦与最小内核
 
-Agent 根据已提交事实、新输入和显式上下文作出决策。相同的输入得到相同的决策。Runtime 先记录写入意图和开始事实，再调用固定的 Provider 能力。执行结果提交后，桌面可据此展示调用活动和文件变更回执。
-
-```mermaid
-flowchart TD
-    A["已提交事实与新输入"] --> B["Agent 产出调用意图"]
-    B --> C["Runtime 提交意图与开始事实"]
-    C --> D["Provider 执行文件写入"]
-    D --> E["结果已确认，提交结果"]
-    D --> F["进程中断，结果无法确认"]
-    F --> G["恢复为未知，检查文件后对账"]
-```
-
-恢复时，已经提交的结果直接从日志读取。只有开始事实的写入进入「结果未知」，等待检查磁盘后对账。测试模拟了结果尚未追加到日志，以及结果已追加但确认丢失两种情况，并验证重启时不会重写文件。 [文件写入恢复测试](tests/archer/fs-write-recovery.test.ts#L238) · [执行与恢复](docs/architecture/runtime-design.md)
-
-## 最小内核的实际代码
+一个 Agent Loop 会反复决定下一步、执行操作，再把结果带入下一轮。Archer 拆开了驱动、决策和执行。Agent 用已提交事实、新输入和显式上下文做纯决策，Effect 表达待执行意图，Runtime 与 Handler 负责授权、调用与提交。Kernel 的 `run` 只在 Generator 与 Handler 之间传递意图、结果和异常。
 
 <img src="docs/design/kernel-control-flow.png" width="688" alt="Generator 通过 yield 交出意图，Kernel 交给 Handler，再用 next 传回结果或用 throw 传回异常。">
 
@@ -50,6 +37,37 @@ export async function run<E, T, R>(
 
 Runtime 通过 `runCommands` 接入驱动，由执行管线处理授权和提交。Generator 在当前进程内暂停。重启时，Runtime 从 Journal 回放已提交事实，再重建待执行工作。 [Runtime 调用点](packages/runtime/src/archer/session-runtime.ts#L990)
 
+## Camp、Contract 与 Provider 的能力体系
+
+Contract 声明版本、可序列化元数据和进程内接口。Provider 通过 `offer(contract, metadata, implementation)` 贡献能力，Camp 校验声明、按引用解析实现并管理资源生命周期。调用方通过对应契约使用能力，接入同一契约的新实现通常无需改动 Kernel。 [标准契约与注册实现](packages/camp/src/index.ts#L21) · [能力契约设计](docs/architecture/capability-contracts.md)
+
+| 能力 | 接口 | 用途 |
+| --- | --- | --- |
+| Tool | `invoke` | 执行文件读写等操作 |
+| Skill | `load` | 按需加载技能正文 |
+| Inference | `infer` | 发起模型推理 |
+| Journal | `ids`、`read`、`append` | 枚举日志、读取事实与提交事件 |
+
+例如，本地技能 Provider 为每个技能声明一个 `Skill.load`，同时提供一个 `Tool.invoke` 读取参考资源。两种能力由同一个 Provider 提供，各自保留调用语义。 [本地技能 Provider 源码](packages/skills/src/index.ts#L90)
+
+模型按 Function Calling 名称发起调用，Runtime 将其绑定到含 Provider ID、能力 ID、Contract ID 和来源 revision 的 `CapabilityRef`。执行和恢复沿用该引用。若需要重新分发而原来源无法解析，调用会进入阻塞状态，避免被交给同名的新实现。 [能力身份与资源生命周期](docs/architecture/capability-contracts.md#固定身份)
+
+## 文件写入中断后的恢复验证
+
+这两个边界在一次文件写入中汇合。Agent 作出调用决策，Runtime 提交意图和开始事实，然后按固定引用调用文件 Provider。执行结果提交后，桌面可据此展示调用活动和文件变更回执。
+
+```mermaid
+flowchart TD
+    A["已提交事实与新输入"] --> B["Agent 产出调用意图"]
+    B --> C["Runtime 提交意图与开始事实"]
+    C --> D["Provider 执行文件写入"]
+    D --> E["结果已确认，提交结果"]
+    D --> F["进程中断，结果无法确认"]
+    F --> G["恢复为未知，检查文件后对账"]
+```
+
+恢复时，已经提交的结果直接从日志读取。只有开始事实的写入进入「结果未知」，等待检查磁盘后对账。测试模拟了结果尚未追加到日志，以及结果已追加但确认丢失两种情况，并验证重启时不会重写文件。 [文件写入恢复测试](tests/archer/fs-write-recovery.test.ts#L238) · [执行与恢复](docs/architecture/runtime-design.md)
+
 ## 当前能力
 
 - 持续会话、多轮输入、后续任务队列与运行中引导。
@@ -78,26 +96,11 @@ pnpm dev:server
 
 默认监听 `127.0.0.1:3000`。模型凭据、会话数据和个人技能不应提交到仓库。Shell 使用宿主权限，不是沙箱；桌面默认逐次询问命令。
 
-## 核心概念
-
-| 概念 | 职责 |
-| --- | --- |
-| Camp | 管理 Provider 声明、能力引用、契约校验和资源生命周期 |
-| Contract | 分离可序列化能力元数据与进程内实现接口 |
-| Effect | 显式表达 Agent 的执行意图 |
-| Agent | 从已提交事实折叠状态，执行纯决策 |
-| Runtime | 串行提交事实并执行能力，处理取消与恢复 |
-| Kernel | 只交接 Generator 的 yield / next / throw |
-
 ## 设计取舍
 
 ### 同一会话串行提交，Prompt 编译在锁外完成
 
 同一 Agent 的输入接收、幂等检查、队列消费、决策和提交按顺序进行。编译 Prompt 前，Runtime 在锁内捕获会话版本，再释放锁。编译完成后重新加锁检查版本，取消、停止或版本变化会使旧结果失效。这样，准备 Prompt 期间仍能接收输入和取消请求，同时避免旧 Prompt 推进已经变化的会话。 [Runtime 串行执行与恢复](docs/architecture/runtime-design.md)
-
-### 工具名用于模型调用，能力引用用于执行与恢复
-
-模型看到的是标准 Function Calling 名称。Runtime 在执行意图中固定 `CapabilityRef`，记录 Provider ID、能力 ID、Contract ID 和来源 revision。即使两个实现暴露相同工具名，恢复时也要按完整引用解析。匹配不到原来源时，调用明确进入阻塞状态。这能避免恢复时把旧调用交给同名的新实现。 [能力身份与资源生命周期](docs/architecture/capability-contracts.md)
 
 ### 将上下文整理记录到当次推理
 
