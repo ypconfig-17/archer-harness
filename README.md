@@ -4,23 +4,49 @@
 
 项目使用 TypeScript，提供桌面应用、CLI 和 HTTP/SSE 服务。
 
-Archer 探索可追溯的 Agent 执行：调用能力前提交意图，调用后记录结果；结果未知时明确等待对账，重启后依据日志事实恢复，不猜测外部操作是否发生。
+## Archer 如何执行一次文件写入
 
-## 为什么做 Archer
+Agent 从已提交的事实折叠出会话状态，再根据新输入与显式上下文作出决策。给定相同输入，可以验证决策是否一致。模型回复和工具结果由外部提供，再作为输入交回 Agent。
 
-Agent 执行文件修改或命令时，调用超时、连接中断和进程退出都可能让结果变得不确定。Archer 围绕这些边界组织执行与恢复，让使用者能查清执行意图、已确认结果和仍需对账的事项。
+以一次文件写入为例，Runtime 先提交调用意图和开始事实，再通过固定的能力引用调用 Provider。拿到结果后，Runtime 把结果写回日志。桌面上的调用活动和文件变更回执来自这些已提交事实。
 
-| 特点 | 实际价值 |
-| --- | --- |
-| 执行可追溯 | 调用能力前提交意图与开始事实，之后记录结果或未知状态，区分“计划执行”和“已确认完成” |
-| 恢复有边界 | 重启不重复执行已成功的副作用；未知写入等待对账，不把超时当作未执行 |
-| 能力接入与内核分离 | Provider 通过 Contract 接入，新增工具、技能或推理实现通常无需修改 Kernel |
-| 纯决策与执行分离 | 给定相同事实、输入与显式上下文，可验证相同决策，便于测试与定位问题；模型输出作为显式外部输入 |
-| 上下文可检查 | 除最终答复外，还能查看已提交的模型请求快照、调用结果、用量和上下文整理事实 |
+```mermaid
+flowchart TD
+    A["已提交事实与新输入"] --> B["Agent 产出调用意图"]
+    B --> C["Runtime 提交意图与开始事实"]
+    C --> D["Provider 执行文件写入"]
+    D --> E["结果已确认，提交结果"]
+    D --> F["进程中断，结果无法确认"]
+    F --> G["恢复为未知，检查文件后对账"]
+```
 
-例如，工具写入文件后进程退出，结果尚未确认：恢复时会保留未知状态，等待检查真实文件后对账。系统不会把它当成确定失败而自动再写一次。具体边界和验证见[架构总览](docs/architecture/kernel.md)与[执行和恢复](docs/architecture/runtime-design.md)。
+如果文件已写入，进程却在提交结果前退出，重启只能确认这次调用已经开始。Archer 会保留未知状态，等待核对磁盘上的实际内容，避免自动重试覆盖文件。已确认成功的写入可直接从日志恢复结果。 [执行与恢复](docs/architecture/runtime-design.md)
 
-最小内核保护的是职责边界：Kernel 只交接 Generator 的控制权，不认识 Effect、Agent、日志、授权或恢复。提交、执行、授权和恢复的复杂性由对应模块承担；内核职责小，并不代表整个系统没有复杂性。
+## 最小内核的实际代码
+
+下面是 Kernel 的完整 `run` 函数。Generator 交出一个意图，Kernel 调用传入的 Handler，再把结果或异常交回 Generator。
+
+```ts
+export async function run<E, T, R>(
+  program: Generator<E, T, R>,
+  handler: (effect: E) => R | PromiseLike<R>,
+): Promise<T> {
+  let step = program.next();
+  while (!step.done) {
+    let result: R;
+    try {
+      result = await handler(step.value);
+    } catch (error: unknown) {
+      step = program.throw(error);
+      continue;
+    }
+    step = program.next(result);
+  }
+  return step.value;
+}
+```
+
+写入授权、提交顺序和崩溃恢复由 Runtime 与执行管线处理。Camp 通过 Contract 校验 Provider 声明，并按固定能力引用解析实现。新增工具、技能或推理 Provider 通常沿用同一个 `run` 函数。 [Kernel 源码](packages/kernel/src/run.ts) · [Provider 与能力契约](docs/architecture/capability-contracts.md)
 
 ## 当前能力
 
