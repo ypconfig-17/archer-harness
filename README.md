@@ -82,7 +82,7 @@ pnpm dev:server
 
 默认监听 `127.0.0.1:3000`。模型凭据、会话数据和个人技能不应提交到仓库。Shell 使用宿主权限，不是沙箱；桌面默认逐次询问命令。
 
-## 核心设计
+## 核心概念
 
 | 概念 | 职责 |
 | --- | --- |
@@ -94,6 +94,20 @@ pnpm dev:server
 | Kernel | 只交接 Generator 的 yield / next / throw |
 
 接入 Provider 通常无需修改 Kernel。模型只接收标准函数声明和上下文，不直接探索内部能力容器。
+
+## 其他设计取舍
+
+### 同一会话串行提交，Prompt 编译在锁外完成
+
+同一 Agent 的输入接收、幂等检查、队列消费、决策和提交按顺序进行。编译 Prompt 前，Runtime 在锁内捕获会话版本，再释放锁。编译完成后重新加锁检查版本，取消、停止或版本变化会使旧结果失效。这样，准备 Prompt 期间仍能接收输入和取消请求，同时避免旧 Prompt 推进已经变化的会话。 [Runtime 串行执行与恢复](docs/architecture/runtime-design.md)
+
+### 工具名用于模型调用，能力引用用于执行与恢复
+
+模型看到的是标准 Function Calling 名称。Runtime 在执行意图中固定 `CapabilityRef`，记录 Provider ID、能力 ID、Contract ID 和来源 revision。即使两个实现暴露相同工具名，恢复时也要按完整引用解析。匹配不到原来源时，调用明确进入阻塞状态。这能避免恢复时把旧调用交给同名的新实现。 [能力身份与资源生命周期](docs/architecture/capability-contracts.md)
+
+### 将上下文整理记录到当次推理
+
+任务固定上下文 Profile 快照。窗口足够时保留历史原文。需要摘要时，摘要只能替换完整的旧助手与工具交互，原始历史仍保存在日志中。实际使用的 Profile 版本和整理步骤随推理结果记录，便于在桌面端检查当时的请求如何形成。普通推理和摘要请求共用用量预算。 [上下文 Profile 设计](docs/decisions/context-profile-engine.md)
 
 ## 范围与限制
 
