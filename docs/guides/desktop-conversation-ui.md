@@ -105,7 +105,8 @@
 ## 实现与验证
 
 - `ConversationActivity`、`ActivityGroup`、`PlanEventRow`、`HumanRecord`、`ExecutionSummary` 位于 `apps/desktop/renderer/src/ui/workspace/EventTimeline.tsx`；`CurrentPlan` 位于同目录的 `CurrentPlan.tsx`；活动页由 `apps/desktop/renderer/src/ui/panels/EventPanel.tsx` 承担。
-- `tests/desktop/renderer/execution-timeline.test.ts` 覆盖段落切分、折叠顺序、失败可见、计划事件行、摘要、人工交互与原始推理隐藏；`reading-layout.test.ts` 覆盖零调用摘要、默认收起与活动入口；`accent-usage.test.ts` 覆盖当前步骤的浅强调。
+- `tests/desktop/renderer/execution-timeline.test.ts` 覆盖段落切分、折叠顺序、失败可见、计划事件行、摘要、人工交互与原始推理隐藏；`reading-layout.test.ts` 覆盖零调用摘要、默认收起与活动入口。
+- 运行 `pnpm test tests/desktop/renderer/accent-usage.test.ts` 可验证当前阶段的着色。测试读取计算后的颜色，确认图标与加载指示器使用主题强调色，正文保持辅助色。
 - 静态渲染测试证明投影与结构，不代替 Electron 对字号、密度、键盘、滚动与窄窗口的视觉验收。
 
 ### 输入附件

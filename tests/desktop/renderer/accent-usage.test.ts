@@ -1,5 +1,6 @@
 /** 强调色必须落到正式主页组件，而不只存在于设置预览与 Token 定义。 */
 import { readFileSync } from 'node:fs';
+import { JSDOM } from 'jsdom';
 import { expect, it } from 'vitest';
 
 const directory = new URL('../../../apps/desktop/renderer/src/ui/', import.meta.url);
@@ -44,8 +45,34 @@ const HOME_RULES: Array<[string, string, string]> = [
   ['workspace/conversation.css', '.activity.is-running', '--accent-text'],
   ['workspace/conversation.css', '.management-state.running', '--accent-text'],
   ['workspace/workspace-content.css', '.execution-badge.running', '--accent-subtle'],
-  ['workspace/workspace-content.css', '.execution-stage-footer.is-active > svg', '--accent'],
 ];
+
+it('当前阶段的图标和加载指示器跟随强调色，正文保持辅助色', () => {
+  // 通过 CSS 级联验证着色结果，让分组选择器与独立规则接受同样的行为检查。
+  const { window } = new JSDOM(`
+    <div class="execution-stage-footer is-active">
+      <svg></svg>
+      <span class="ui-spinner"></span>
+      <span>等待模型响应…</span>
+    </div>
+  `);
+  try {
+    const { document } = window;
+    const style = document.createElement('style');
+    style.textContent = read('workspace/workspace-content.css');
+    document.head.append(style);
+    document.documentElement.style.setProperty('--accent', 'rgb(31, 103, 123)');
+    document.documentElement.style.setProperty('--secondary', 'rgb(92, 97, 101)');
+
+    const stage = document.querySelector('.execution-stage-footer')!;
+    const [icon, spinner, label] = Array.from(stage.children);
+    expect(window.getComputedStyle(icon).color).toBe('rgb(31, 103, 123)');
+    expect(window.getComputedStyle(spinner).color).toBe('rgb(31, 103, 123)');
+    expect(window.getComputedStyle(label).color).toBe('rgb(92, 97, 101)');
+  } finally {
+    window.close();
+  }
+});
 
 /** 视图页签与 Turn 摘要已收敛到 @archer/ui，强调色断言跟随组件所在文件。 */
 const LIBRARY_ACCENT_RULES: Array<[string, string, string]> = [

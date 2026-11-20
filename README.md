@@ -1,14 +1,12 @@
 # Archer Harness
 
-一个探索可靠执行边界的实验性 Agent Harness：以最小 Generator 内核交接控制权，以类型化能力连接 Provider，以已提交事实追踪执行并支持恢复。
+**Agent 写入了文件，进程却在记下结果前退出。重启后，要再写一次吗？** Archer 会从日志恢复为「结果未知」，保留这次调用供核对，避免重复写入。
 
-项目使用 TypeScript，提供桌面应用、CLI 和 HTTP/SSE 服务。
+Archer Harness 是一个用 TypeScript 编写的实验性 Agent 执行框架，提供桌面应用和 HTTP/SSE 服务。它把模型请求、能力调用和恢复依据放在可核对的执行链上。
 
 ## Archer 如何执行一次文件写入
 
-Agent 从已提交的事实折叠出会话状态，再根据新输入与显式上下文作出决策。给定相同输入，可以验证决策是否一致。模型回复和工具结果由外部提供，再作为输入交回 Agent。
-
-以一次文件写入为例，Runtime 先提交调用意图和开始事实，再通过固定的能力引用调用 Provider。拿到结果后，Runtime 把结果写回日志。桌面上的调用活动和文件变更回执来自这些已提交事实。
+Agent 根据已提交事实、新输入和显式上下文作出决策。相同的输入得到相同的决策。Runtime 先记录写入意图和开始事实，再调用固定的 Provider 能力。执行结果提交后，桌面可据此展示调用活动和文件变更回执。
 
 ```mermaid
 flowchart TD
@@ -20,13 +18,13 @@ flowchart TD
     F --> G["恢复为未知，检查文件后对账"]
 ```
 
-如果文件已写入，进程却在提交结果前退出，重启只能确认这次调用已经开始。Archer 会保留未知状态，等待核对磁盘上的实际内容，避免自动重试覆盖文件。已确认成功的写入可直接从日志恢复结果。 [执行与恢复](docs/architecture/runtime-design.md)
+恢复时，已经提交的结果直接从日志读取。只有开始事实的写入进入「结果未知」，等待检查磁盘后对账。测试模拟了结果尚未追加到日志，以及结果已追加但确认丢失两种情况，并验证重启时不会重写文件。 [文件写入恢复测试](tests/archer/fs-write-recovery.test.ts#L238) · [执行与恢复](docs/architecture/runtime-design.md)
 
 ## 最小内核的实际代码
 
 <img src="docs/design/kernel-control-flow.png" width="688" alt="Generator 通过 yield 交出意图，Kernel 交给 Handler，再用 next 传回结果或用 throw 传回异常。">
 
-下面是 Kernel 的完整 `run` 函数。Generator 交出一个意图，Kernel 调用传入的 Handler，再把结果或异常交回 Generator。
+下面是 Kernel 的完整 `run` 函数。
 
 ```ts
 export async function run<E, T, R>(
@@ -48,13 +46,9 @@ export async function run<E, T, R>(
 }
 ```
 
-写入授权、提交顺序和崩溃恢复由 Runtime 与执行管线处理。Camp 通过 Contract 校验 Provider 声明，并按固定能力引用解析实现。新增工具、技能或推理 Provider 通常沿用同一个 `run` 函数。 [Kernel 源码](packages/kernel/src/run.ts) · [Provider 与能力契约](docs/architecture/capability-contracts.md)
+这里的 `try` 只包住 Handler 调用。Handler 失败时，Kernel 用 `program.throw(error)` 把异常交回 Generator，由流程决定是否捕获。流程在 `program.next(result)` 中抛出的异常直接向调用方传播。 [Kernel 源码](packages/kernel/src/run.ts) · [异常与清理测试](tests/kernel/run.test.ts)
 
-Runtime 的 `runCommands` 是实际接入点。Generator 按顺序交出 `SessionCommand`，Runtime 处理命令并返回后续命令。Generator 的暂停只存在于当前进程。重启时，Runtime 从 Journal 回放已提交的事实，再重建需要执行的工作。可以沿着下面三个入口核对这条链路。
-
-- [Runtime 命令交接](packages/runtime/src/archer/session-runtime.ts#L990)
-- [Kernel 异常与清理测试](tests/kernel/run.test.ts)
-- [文件写入与重启恢复测试](tests/archer/fs-write-recovery.test.ts)
+Runtime 通过 `runCommands` 接入驱动，由执行管线处理授权和提交。Generator 在当前进程内暂停。重启时，Runtime 从 Journal 回放已提交事实，再重建待执行工作。 [Runtime 调用点](packages/runtime/src/archer/session-runtime.ts#L990)
 
 ## 当前能力
 
@@ -76,12 +70,6 @@ pnpm dev:desktop
 
 首次启动默认使用确定性的 Mock 推理，用于验证界面与执行链路，不会调用真实模型。要完成实际任务，请先按[首次运行与模型配置](docs/guides/getting-started.md)配置模型服务，再选择一个存在的绝对工作目录。
 
-本地 CLI：
-
-```bash
-pnpm cli run -w /absolute/project "查看项目架构"
-```
-
 独立服务：
 
 ```bash
@@ -101,9 +89,7 @@ pnpm dev:server
 | Runtime | 串行提交事实并执行能力，处理取消与恢复 |
 | Kernel | 只交接 Generator 的 yield / next / throw |
 
-接入 Provider 通常无需修改 Kernel。模型只接收标准函数声明和上下文，不直接探索内部能力容器。
-
-## 其他设计取舍
+## 设计取舍
 
 ### 同一会话串行提交，Prompt 编译在锁外完成
 
@@ -121,12 +107,12 @@ pnpm dev:server
 
 这是持续演进中的实验项目，当前不承诺持久化格式兼容。升级前请备份数据；不兼容日志会被隔离，不会自动迁移。
 
+- CLI 暂不作为正式使用入口。
 - 单进程内每 Agent 最多一个活跃 Turn，每 Turn 最多一个在途 Effect。
 - 不提供分布式调度、并行 Effect、子 Agent 或动态代码安装。
 - 超时和取消不证明副作用未发生；未知写入不会自动重试，不承诺外部操作 exactly-once。
 - 上下文整理保留原始历史，但摘要的语义完整性仍需验证；Token 估算和预算不是费用硬保证。
-- 当前本地验证环境为 macOS；Windows / Linux 尚未建立自动验证矩阵。
-- 当前验证聚焦执行顺序、事实提交与恢复不变量；尚无与其他框架的速度、Token 消耗或任务成功率对比证据，不宣称这些指标领先。
+- 桌面窗口在 macOS 验证，Windows 和 Linux 桌面体验仍需实机验证。
 
 ## 文档与开发
 
@@ -142,7 +128,7 @@ pnpm test
 pnpm lint
 ```
 
-GitHub CI 配置为在 Linux 上验证安装、构建、类型、测试与 lint；桌面窗口、真实模型服务和其他平台仍需单独验证。所有包保持私有发布标记，源码开放不代表 npm 发布。
+GitHub CI 在 Linux 上检查依赖安装、构建、类型、测试与 lint。真实模型和 Electron 窗口需独立验收。 [GitHub Actions](https://github.com/ypconfig-17/archer-harness/actions/workflows/ci.yml)
 
 ## 许可证
 

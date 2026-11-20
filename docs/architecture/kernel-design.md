@@ -55,4 +55,4 @@ Archer 只承诺从 Agent 事件日志恢复会话、消息、队列、Turn、�
 
 恢复决定、重试许可、取消及凭证管理属于 Runtime。实现与 Handler 组合见 [执行管线](execution-pipeline.md)，会话事实见 [Agent 设计](agent-design.md)，串行提交与中断处理见 [Runtime 设计](runtime-design.md)。
 
-使用 `pnpm exec vitest run tests/kernel/run.test.ts tests/archer/fs-write-recovery.test.ts` 验证控制权交接、异常传播与文件写入恢复。
+使用 `pnpm exec vitest run tests/kernel/run.test.ts tests/archer/fs-write-recovery.test.ts` 验证控制权交接、异常传播与文件写入恢复。Kernel 的测试还验证了首次求值意图失败和空意图序列，两种情况都不会调用 Handler。

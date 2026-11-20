@@ -49,8 +49,12 @@ describe('Generator Runner', () => {
 
   it('首次 next 抛错时直接传播，不调用 Handler 或 throw', async () => {
     const error = new Error('initial');
-    function* task(): Generator<never, void, unknown> {
+    function firstIntent(): never {
       throw error;
+    }
+    function* task(): Generator<never, void, unknown> {
+      // 首次求值意图时就抛错，确保 Generator 尚未把控制权交给 Handler。
+      yield firstIntent();
     }
     const program = task();
     const injected = vi.spyOn(program, 'throw');
@@ -83,11 +87,12 @@ describe('Generator Runner', () => {
   });
 
   it('没有意图时直接返回，不调用 Handler', async () => {
-    function* task(): Generator<never, number, unknown> {
+    function* task(intents: readonly string[]): Generator<string, number, unknown> {
+      yield* intents;
       return 42;
     }
     const handler = vi.fn();
-    expect(await run(task(), handler)).toBe(42);
+    expect(await run(task([]), handler)).toBe(42);
     expect(handler).not.toHaveBeenCalled();
   });
 });
