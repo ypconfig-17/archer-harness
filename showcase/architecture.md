@@ -8,6 +8,28 @@ Archer 把 Agent Loop 中的决策、执行与能力供给分别交给 Agent、R
 
 `try` 只覆盖 `await handler(step.value)`。Handler 失败时，异常经 `program.throw(error)` 回到 Generator，流程可以捕获异常，也可以在 `finally` 中继续交出清理意图。Generator 在 `program.next(result)` 里抛出的异常直接传播给调用方。这条边界保留了 Generator 的原生控制语义，Runtime 可以在外层统一处理执行故障。 [异常边界测试](../tests/kernel/run.test.ts)
 
+## 固定管线保护执行顺序
+
+执行策略以洋葱式 Handler 包装器组合。Archer 的生产管线在一个入口固定装配，当前末端执行 `INFER` 和 `CALL`。以下是装配函数中的实际代码。 [管线装配源码](../packages/handler/src/execution-pipeline.ts#L11)
+
+```ts
+return createDispatcher({ INFER: executeInference, CALL: call }, [
+  withHumanInteraction,
+  withJournal,
+  withAuthorization,
+  ...(onEffectExecuted ? [withAudit(onEffectExecuted)] : []),
+]);
+```
+
+| 包装器 | 执行边界 |
+| --- | --- |
+| `withHumanInteraction` | 合法的人工请求先提交等待事实，随后结束本次驱动 |
+| `withJournal` | 确认开始后进入内层，有结果时再提交结果 |
+| `withAuthorization` | 能力调用前检查固定目标、输入和命令授权 |
+| `withAudit` | 可选的进程内观察，在结果提交前报告调用用时与返回状态 |
+
+顺序本身有意义。人工等待处于外层，所以它可以在执行开始前结束本次驱动。开始提交没有确认时，内层能力调用不会发生；结果提交失败会向 Runtime 传播，由 Runtime 处理故障隔离。测试分别覆盖这两个提交边界，以及人工等待和观测回调的顺序。 [管线行为测试](../tests/handler/execution-pipeline.test.ts#L120)
+
 ## 已提交事实定义恢复的边界
 
 Agent 根据同一批事实、新输入和显式上下文推导下一步。模型回复与能力结果作为外部输入回到流程。Runtime 用会话的预期序号提交决策产生的事实，并在能力调用前提交意图与开始事实。生成器暂停的位置只存在于当前进程，重启后的工作由已提交事实重新构建。 [Runtime 提交入口](../packages/runtime/src/archer/session-runtime.ts#L356) · [状态回放测试](../tests/agent/replay.test.ts#L34)

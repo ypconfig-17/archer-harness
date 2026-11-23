@@ -1,8 +1,9 @@
 # Archer Harness
 
-Archer Harness 是一个用 TypeScript 编写的实验性 Agent 执行框架，提供桌面应用和 HTTP/SSE 服务。项目围绕两个设计展开。
+Archer Harness 是一个用 TypeScript 编写的实验性 Agent 执行框架，提供桌面应用和 HTTP/SSE 服务。它将 Agent 的控制流、执行策略与外部能力分开，让决策可独立验证，外部操作可追溯，进程重启后能依据已提交事实恢复。
 
-- **将 Agent Loop 的驱动、决策与执行解耦。** Kernel 只负责 Generator 的控制权交接。Agent 根据事实作出决策，Runtime 提交执行意图、调用能力并记录结果。
+- **最小 Generator 内核。** 当模型调用、工具执行、状态更新和失败处理都写在同一个循环里，调整一条规则容易牵动多个分支。Archer 将这些职责分开，Kernel 只负责交接控制权、结果和异常。
+- **固定执行管线与事实恢复。** Runtime 按固定顺序处理人工等待、开始事实、授权和调用。重启后回放 Journal，按已提交事实判断该恢复结果、重新分发还是等待对账。
 - **用 Camp 管理类型化能力。** 一个 Provider 可以贡献多个能力。工具、技能、推理和日志各自通过版本化 Contract 声明接口，Camp 统一校验声明、解析能力并管理资源。
 
 ![Archer 桌面端的会话页面，显示一轮任务的答复、调用次数和执行详情入口。](showcase/images/desktop-session.png)
@@ -40,6 +41,8 @@ export async function run<E, T, R>(
 这里的 `try` 只包住 Handler 调用。Handler 失败时，Kernel 用 `program.throw(error)` 把异常交回 Generator，由流程决定是否捕获。流程在 `program.next(result)` 中抛出的异常直接向调用方传播。 [Kernel 源码](packages/kernel/src/run.ts) · [异常与清理测试](tests/kernel/run.test.ts)
 
 Runtime 通过 `runCommands` 接入驱动，由执行管线处理授权和提交。Generator 在当前进程内暂停。重启时，Runtime 从 Journal 回放已提交事实，再重建待执行工作。 [Runtime 调用点](packages/runtime/src/archer/session-runtime.ts#L990)
+
+人工等待与执行开始分别在固定的管线位置处理。处理顺序和失败边界可以直接用源码及测试核对。 [固定执行管线导读](showcase/architecture.md#固定管线保护执行顺序)
 
 ## Camp、Contract 与 Provider 的能力体系
 
