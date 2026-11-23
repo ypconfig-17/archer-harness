@@ -91,7 +91,12 @@ export function skillsProvider(options: SkillsProviderOptions): Provider {
   const roots = normalizeRoots(options.roots);
   const discovered = discover(roots);
   const byId = new Map(discovered.map(item => [item.id, item]));
-  const capabilities: Record<string, Contribution<Skill, SkillMetadata> | Contribution<Tool, ToolMetadata>> = {};
+  const capabilities: Record<
+    string,
+    Contribution<Skill, SkillMetadata> | Contribution<Tool, ToolMetadata>
+  > = {};
+
+  // 每个技能独立声明，正文只在调用对应能力时读取。
   for (const item of discovered) {
     capabilities[item.id] = skill({
       name: item.name,
@@ -101,7 +106,9 @@ export function skillsProvider(options: SkillsProviderOptions): Provider {
       ...(item.resources.length ? { resources: item.resources } : {}),
       ...(item.resourcesTruncated ? { resourcesTruncated: true } : {}),
       load: async (context): Promise<SkillContent> => {
-        if (context.signal.aborted) throw new OperationRejected('Skill loading was cancelled before reading.', 'ABORTED');
+        if (context.signal.aborted) {
+          throw new OperationRejected('Skill loading was cancelled before reading.', 'ABORTED');
+        }
         const bytes = await readFile(item.file, { signal: context.signal });
         if (bytes.byteLength > SKILL_CONTENT_MAX_BYTES) {
           throw new OperationRejected(`Skill ${item.name} exceeds the ${SKILL_CONTENT_MAX_BYTES} byte limit.`, 'INVALID_ARGUMENT');
@@ -111,6 +118,8 @@ export function skillsProvider(options: SkillsProviderOptions): Provider {
       },
     });
   }
+
+  // 读取参考资源是同一 Provider 提供的独立工具能力。
   if (discovered.length) {
     const schema: SchemaDescriptor = {
       type: 'object',
@@ -130,9 +139,21 @@ export function skillsProvider(options: SkillsProviderOptions): Provider {
       invoke: async (input, context) => {
         const value = inputOf(schema, input);
         const item = byId.get(value.skill as string);
-        if (!item) throw new OperationRejected(`Skill ${String(value.skill)} is not available.`, 'INVALID_ARGUMENT');
-        const resource = await readSkillResource(item.directory, value.path as string, context.signal);
-        return { output: resource.content, skill: item.id, path: resource.path, revision: resource.revision };
+        if (!item) {
+          throw new OperationRejected(`Skill ${String(value.skill)} is not available.`, 'INVALID_ARGUMENT');
+        }
+
+        const resource = await readSkillResource(
+          item.directory,
+          value.path as string,
+          context.signal,
+        );
+        return {
+          output: resource.content,
+          skill: item.id,
+          path: resource.path,
+          revision: resource.revision,
+        };
       },
     });
   }

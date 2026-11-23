@@ -5,10 +5,22 @@ import type { Camp, Contract, Contribution, Provider, ProviderDefinition, Capabi
   Tool, ToolMetadata, Skill, SkillMetadata, Inference, AgentJournal, InferencePrepare, PrepareMetadata } from '@archer/contracts';
 export type { Camp, Contract, Contribution, Provider, ProviderDefinition, CapabilityRef } from '@archer/contracts';
 
-export function contract<I, M extends object>(id: string, metadata: z.ZodType<M>, methods: readonly (keyof I & string)[], optionalMethods: readonly (keyof I & string)[] = []): Contract<I, M> {
+/** 固定契约声明，避免注册后修改接口方法清单。 */
+export function contract<I, M extends object>(
+  id: string,
+  metadata: z.ZodType<M>,
+  methods: readonly (keyof I & string)[],
+  optionalMethods: readonly (keyof I & string)[] = [],
+): Contract<I, M> {
   validateContract({ id, metadata, methods, optionalMethods });
-  return Object.freeze({ id, metadata, methods: Object.freeze([...methods]), optionalMethods: Object.freeze([...optionalMethods]) });
+  return Object.freeze({
+    id,
+    metadata,
+    methods: Object.freeze([...methods]),
+    optionalMethods: Object.freeze([...optionalMethods]),
+  });
 }
+
 function validateContract(type: Contract<any, any>): void {
   if (!type || !/^[A-Za-z][A-Za-z0-9._-]*@[1-9][0-9]*$/.test(type.id)
     || typeof type.metadata?.parse !== 'function' || !Array.isArray(type.methods) || !type.methods.length
@@ -18,22 +30,68 @@ function validateContract(type: Contract<any, any>): void {
     throw new Error('Invalid contract declaration.');
   }
 }
-export const TOOL = contract<Tool, ToolMetadata>('archer.tool@1', z.object({
-  description: z.string().min(1), summary: z.string().min(1).optional(), inputSchema: JsonObjectSchema, execution: z.enum(['read', 'write', 'shell']),
-  interaction: z.literal('human').optional(), resultView: z.literal('output').optional(),
-}).strict(), ['invoke']);
-export const SKILL = contract<Skill, SkillMetadata>('archer.skill@1', z.object({
-  name: z.string().min(1), description: z.string().min(1),
-  source: z.string().min(1).optional(), path: z.string().min(1).optional(),
-  resources: z.array(SkillResourceSchema).optional(), resourcesTruncated: z.boolean().optional(),
-}).strict(), ['load']);
-export const INFERENCE = contract<Inference, { description: string }>('archer.inference@1', z.object({ description: z.string() }).strict(), ['infer'], ['measure']);
-export const JOURNAL = contract<AgentJournal, { description: string }>('archer.journal@1', z.object({ description: z.string() }).strict(), ['ids', 'read', 'append']);
-export const INFERENCE_PREPARE = contract<InferencePrepare, PrepareMetadata>('archer.inference.prepare@1', z.object({ description: z.string(), input: JsonValueSchema, order: z.number().finite().optional() }).strict(), ['prepare']);
+export const TOOL = contract<Tool, ToolMetadata>(
+  'archer.tool@1',
+  z.object({
+    description: z.string().min(1),
+    summary: z.string().min(1).optional(),
+    inputSchema: JsonObjectSchema,
+    execution: z.enum(['read', 'write', 'shell']),
+    interaction: z.literal('human').optional(),
+    resultView: z.literal('output').optional(),
+  }).strict(),
+  ['invoke'],
+);
 
-export function offer<I, M extends object>(type: Contract<I, M>, metadata: M, implementation: I): Contribution<I, M> {
-  return { contract: type, metadata: type.metadata.parse(metadata), implementation };
+export const SKILL = contract<Skill, SkillMetadata>(
+  'archer.skill@1',
+  z.object({
+    name: z.string().min(1),
+    description: z.string().min(1),
+    source: z.string().min(1).optional(),
+    path: z.string().min(1).optional(),
+    resources: z.array(SkillResourceSchema).optional(),
+    resourcesTruncated: z.boolean().optional(),
+  }).strict(),
+  ['load'],
+);
+
+export const INFERENCE = contract<Inference, { description: string }>(
+  'archer.inference@1',
+  z.object({ description: z.string() }).strict(),
+  ['infer'],
+  ['measure'],
+);
+
+export const JOURNAL = contract<AgentJournal, { description: string }>(
+  'archer.journal@1',
+  z.object({ description: z.string() }).strict(),
+  ['ids', 'read', 'append'],
+);
+
+export const INFERENCE_PREPARE = contract<InferencePrepare, PrepareMetadata>(
+  'archer.inference.prepare@1',
+  z.object({
+    description: z.string(),
+    input: JsonValueSchema,
+    order: z.number().finite().optional(),
+  }).strict(),
+  ['prepare'],
+);
+
+/** 校验可序列化元数据，并将进程内实现单独交给 Camp。 */
+export function offer<I, M extends object>(
+  type: Contract<I, M>,
+  metadata: M,
+  implementation: I,
+): Contribution<I, M> {
+  return {
+    contract: type,
+    metadata: type.metadata.parse(metadata),
+    implementation,
+  };
 }
+
 export function tool(input: ToolMetadata & Tool): Contribution<Tool, ToolMetadata> {
   const { invoke, ...metadata } = input;
   return offer(TOOL, metadata, { invoke });
@@ -218,9 +276,15 @@ async function createProviderCamp(
       const operation = refreshTail.then(async () => {
         check();
         const definition = definitions.get(providerId);
-        if (!definition) throw new ArcherError('INVALID_ARGUMENT', 'Provider has no creation definition.');
+        if (!definition) {
+          throw new ArcherError('INVALID_ARGUMENT', 'Provider has no creation definition.');
+        }
+
+        // 候选必须先完成校验与初始化，失败时当前声明仍然可用。
         const source = await definition.create({ signal });
-        if (source.id !== providerId) throw new Error('Provider factory returned a different ID.');
+        if (source.id !== providerId) {
+          throw new Error('Provider factory returned a different ID.');
+        }
         const candidate = await createProviderCamp({ providers: [source], signal });
         try {
           check();
@@ -231,8 +295,12 @@ async function createProviderCamp(
         // 发布无异步间隙；后续查询只看新声明，旧资源由已有借用保护。
         const previous = replacements.get(providerId);
         replacements.set(providerId, candidate);
-        if (previous) retired.push(previous);
-        else retiredInitial.add(providerId);
+        if (previous) {
+          retired.push(previous);
+        } else {
+          retiredInitial.add(providerId);
+        }
+
         retireUnused();
         await retirementTail;
       });

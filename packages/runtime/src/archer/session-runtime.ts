@@ -988,24 +988,35 @@ export class SessionRuntime {
   // ─────────────────────────────────────────────
 
   private runCommands(commands: readonly SessionCommand[]): void {
-    if (this.faultData || commands.length === 0) return;
+    if (this.faultData || commands.length === 0) {
+      return;
+    }
+
+    // Generator 保持命令顺序，执行时产生的后续命令追加到队尾。
     function* program(): Generator<SessionCommand, void, readonly SessionCommand[]> {
       const pending = [...commands];
       while (pending.length > 0) {
         const command = pending.shift()!;
-        pending.push(...(yield command));
+        const followups = yield command;
+        pending.push(...followups);
       }
     }
+
     const execution = run(program(), async (command) => {
       if (command.type === 'abort_effect') {
         this.inFlight.get(command.effectId)?.controller.abort();
         return [];
       }
-      if (this.stopping || this.faultData) return [];
+      if (this.stopping || this.faultData) {
+        return [];
+      }
       return this.dispatch(command.effectId);
-    }).catch((error: unknown) => this.isolate(error)).finally(() => {
-      this.executions.delete(execution);
-    });
+    })
+      .catch((error: unknown) => this.isolate(error))
+      .finally(() => {
+        this.executions.delete(execution);
+      });
+
     this.executions.add(execution);
   }
 
