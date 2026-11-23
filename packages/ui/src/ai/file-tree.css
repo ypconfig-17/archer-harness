@@ -1,0 +1,54 @@
+/** 文件树布局独立维护，代码块替换不得删除目录行与缩进样式。 */
+.ui-file-tree {
+  min-width: 0;
+  font: var(--type-ui);
+}
+.ui-file-tree .ui-file-tree-file,
+.ui-file-tree-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-width: 0;
+  min-height: var(--control-height);
+  padding: var(--space-1) var(--space-3);
+  text-align: left;
+  justify-content: flex-start;
+  border: 0;
+  border-radius: var(--radius-small);
+  background: transparent;
+  box-shadow: none;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.ui-file-tree-file > span,
+.ui-file-tree-trigger > span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* 选中态复用导航的中性选中表面，不占用强调色，也不给密集行加投影。 */
+.ui-file-tree .ui-file-tree-file[aria-current='page'],
+.ui-file-tree .ui-file-tree-file[aria-current='page']:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--surface-selected);
+  font-weight: var(--weight-medium);
+}
+.ui-file-tree-trigger:hover {
+  background: var(--hover);
+}
+.ui-file-tree-trigger:focus-visible {
+  outline: 2px solid var(--state-focus);
+  outline-offset: 2px;
+}
+.ui-file-tree-trigger[aria-expanded='true'] > .ui-icon:first-child {
+  transform: rotate(90deg);
+}
+.ui-file-tree-children {
+  padding-left: var(--space-4);
+}
+.ui-file-tree [hidden] {
+  display: none;
+}

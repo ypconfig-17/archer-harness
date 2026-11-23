@@ -1,0 +1,27 @@
+{
+  "name": "@archer/memory",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "持久化记忆 Provider：检索、读取、幂等追加和推理参考",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@archer/contracts": "workspace:*",
+    "zod": "^4.6.7",
+    "@archer/camp": "workspace:*"
+  }
+}

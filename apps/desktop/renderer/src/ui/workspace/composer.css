@@ -1,0 +1,186 @@
+.composer {
+  background: var(--surface-composer);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-composer);
+  padding: var(--space-4);
+  box-shadow: none;
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+
+/* 输入区聚焦是主页最频繁的强调点：边界使用实心 Accent，并叠加统一焦点环。 */
+.composer:focus-within {
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
+}
+
+/* 官方 Input Group 只提供结构；输入区外观仍由 .composer 这一层表达，避免框中框。
+   官方 has-[control:focus-visible] 的焦点环权重更高，需同样命中该状态才能压掉第二层描边。 */
+.composer [data-slot='input-group'],
+.composer [data-slot='input-group']:has([data-slot='input-group-control']:focus-visible) {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.composer [data-slot='input-group-addon'][data-align='block-start'] {
+  padding: 0 0 var(--space-2);
+}
+
+.composer [data-slot='input-group-addon'][data-align='block-end'] {
+  padding: var(--space-3) 0 0;
+}
+
+.composer-tools {
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.composer-tools .composer-controls {
+  flex: 1;
+}
+
+/* 附件入口与三个选择器同高，发送键保留 32px 主操作体量。 */
+.composer-attach {
+  width: var(--control-icon-size);
+  height: var(--control-icon-size);
+}
+
+.composer textarea {
+  display: block;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  resize: none;
+  field-sizing: content;
+  min-height: var(--composer-empty-height);
+  max-height: 240px;
+  padding: 0 var(--space-1) var(--space-1);
+  font: var(--type-body);
+  background: transparent;
+  caret-color: var(--accent);
+}
+
+.composer textarea::placeholder {
+  color: var(--muted);
+}
+
+.home-composer textarea {
+  min-height: 40px;
+}
+
+.composer-controls {
+  flex-wrap: wrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.composer-controls {
+  flex-wrap: wrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* 模型、思考与命令模式共用官方触发器骨架：同一高度、内距、字阶与图标节奏。 */
+.composer-picker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  height: var(--control-icon-size);
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-small);
+  background: transparent;
+  color: var(--secondary);
+  font: var(--type-caption);
+  cursor: pointer;
+}
+
+.composer-picker:hover:not(:disabled) {
+  background: var(--control-surface-hover);
+}
+
+.composer-picker:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.composer-picker svg {
+  flex-shrink: 0;
+}
+
+/* 选中文本在触发器宽度内单行省略，箭头与文字之间不预留绝对定位空隙。 */
+.composer-picker [data-slot='select-value'] {
+  min-width: 0;
+  max-width: 168px;
+}
+
+.composer-control-label {
+  flex: none;
+}
+
+.composer-select-content {
+  min-width: 180px;
+  max-width: 280px;
+}
+
+/* 发送键沿用默认按钮的强调色，只保留输入区圆角外形与紧凑边长。 */
+.send-button {
+  flex: none;
+  width: var(--control-compact-size);
+  height: var(--control-compact-size);
+  border-radius: 50%;
+}
+
+.send-button:not(:disabled):active {
+  transform: scale(.94);
+}
+
+.composer-options > select {
+  border: 0;
+  font-size: var(--size-caption);
+  color: var(--muted);
+  max-width: 120px;
+  line-height: var(--line-caption);
+}
+
+/* 分栏由 Resizable 原语承担，页面只负责高度链。 */
+.chat-page {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 分栏容器必须有确定高度，否则单面板时内容会把 composer 顶出可视区。 */
+.chat-panels {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
+.chat-main-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.chat-inspector-panel {
+  min-width: 0;
+  height: 100%;
+}

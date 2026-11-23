@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="100 240 840 560" role="img" aria-label="Archer">
+  <defs>
+    <linearGradient id="a" x1="280" y1="520" x2="790" y2="520" gradientUnits="userSpaceOnUse"><stop stop-color="#7137ff"/><stop offset=".48" stop-color="#586eff"/><stop offset="1" stop-color="#30d5ef"/></linearGradient>
+    <linearGradient id="arrow" x1="130" y1="700" x2="910" y2="400" gradientUnits="userSpaceOnUse"><stop stop-color="#6934ff"/><stop offset="1" stop-color="#802bff"/></linearGradient>
+  </defs>
+  <path fill="url(#a)" d="M255 618 464 296Q510 225 557 296L670 480 568 506 519 425 433 559Z M592 557 697 530 779 711Q797 757 755 770 710 783 683 740Z M298 645 390 605 346 689Q330 720 300 720H263Q245 720 255 700Z"/>
+  <path fill="url(#arrow)" d="M125 720Q379 507 794 474L763 440 913 458 778 555 798 494Q502 558 321 674 206 684 125 720Z"/>
+</svg>

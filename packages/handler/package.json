@@ -1,0 +1,26 @@
+{
+  "name": "@archer/handler",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Effect 固定执行管线、提交包装与能力调用",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@archer/agent": "workspace:*",
+    "@archer/contracts": "workspace:*"
+  }
+}

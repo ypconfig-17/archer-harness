@@ -1,0 +1,187 @@
+.workspace {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  background: var(--canvas);
+}
+
+.new-chat-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+.new-chat-page > .home {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+
+.new-chat-header .chat-heading strong {
+  font-size: var(--size-ui);
+  font-weight: var(--weight-medium);
+  line-height: var(--line-ui);
+}
+
+.home {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  overflow: auto;
+  padding: var(--space-6) var(--workspace-inset) 16vh;
+}
+
+[data-platform='darwin'] .welcome::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 46px;
+  -webkit-app-region: drag;
+}
+
+.home-content {
+  width: 100%;
+  max-width: var(--conversation-width);
+}
+
+.home-heading {
+  margin-bottom: 28px;
+}
+
+.home h1 {
+  margin: 0;
+  font-size: var(--size-title);
+  font-weight: var(--weight-semibold);
+  line-height: var(--line-title);
+  letter-spacing: -.4px;
+}
+
+.home-form {
+  margin: 0;
+}
+
+.home-hint {
+  margin: 12px 2px 0;
+  color: var(--muted);
+  font-size: var(--size-caption);
+  line-height: var(--line-caption);
+}
+
+/* 首次使用：打开本机目录，而不是把落地页做成一整块网页英雄区。 */
+
+.welcome {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  overflow: auto;
+  padding: var(--space-6) var(--workspace-inset) 12vh;
+}
+
+.welcome-content {
+  width: 100%;
+  max-width: 600px;
+}
+
+.welcome h1 {
+  margin: 0 0 8px;
+  font-size: var(--size-title);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -.4px;
+  line-height: var(--line-title);
+}
+
+.welcome p {
+  margin: 0 0 22px;
+  max-width: 440px;
+  color: var(--secondary);
+  font-size: var(--size-ui);
+  line-height: var(--line-ui);
+}
+
+.welcome-open {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--icon-text-gap);
+  min-height: var(--control-height);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-control);
+  background: var(--accent);
+  color: var(--on-accent);
+  font: var(--type-ui);
+}
+
+.welcome-open:hover:not(:disabled) {
+  opacity: .88;
+}
+
+.welcome-open kbd {
+  height: 21px;
+  margin-left: 6px;
+  border-color: color-mix(in srgb, var(--canvas) 24%, transparent);
+  background: color-mix(in srgb, var(--canvas) 12%, transparent);
+  color: var(--on-accent);
+}
+
+.welcome-recents {
+  margin-top: 32px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.welcome-recents-label {
+  margin-bottom: 4px;
+  padding: 0 8px;
+  color: var(--muted);
+  font-size: var(--size-caption);
+  line-height: var(--line-caption);
+}
+
+.welcome-recent {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 40px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: none;
+  color: var(--secondary);
+  text-align: left;
+}
+
+.welcome-recent:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.welcome-recent-name {
+  flex: none;
+  max-width: 40%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--text);
+  font-size: var(--size-ui);
+  line-height: var(--line-ui);
+}
+
+.welcome-recent-path {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--muted);
+  font-size: var(--size-caption);
+  line-height: var(--line-caption);
+}

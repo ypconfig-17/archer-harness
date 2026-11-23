@@ -1,0 +1,555 @@
+.event-dot {
+  flex: none;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.event-dot.is-info {
+  background: var(--accent);
+}
+
+.event-dot.is-success {
+  background: var(--success);
+}
+
+.event-dot.is-warning {
+  background: var(--warning);
+}
+
+.event-dot.is-error {
+  background: var(--danger);
+}
+
+.event-seq {
+  flex: none;
+  color: var(--muted);
+  font: var(--type-code);
+  opacity: .75;
+}
+
+.event-body {
+  padding: 2px 6px 8px 58px;
+}
+
+.event-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 6px;
+}
+
+.event-fields > div {
+  display: flex;
+  gap: 8px;
+  font-size: var(--size-caption);
+  line-height: var(--line-caption);
+}
+
+.event-fields dt {
+  flex: none;
+  width: 72px;
+  color: var(--muted);
+}
+
+.event-fields dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--secondary);
+}
+
+.event-fields dd.is-mono {
+  font: var(--type-code);
+}
+
+.event-raw > [data-slot="collapsible-trigger"],
+.state-raw > summary,
+.state-instructions > summary {
+  padding: 2px 0;
+  color: var(--muted);
+  font-size: var(--size-caption);
+  line-height: var(--line-caption);
+  cursor: pointer;
+}
+
+.event-raw pre,
+.state-raw pre,
+.state-instructions pre {
+  max-height: 220px;
+  margin: 4px 0 0;
+  padding: 6px 8px;
+  overflow: auto;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-small);
+  background: var(--subtle);
+}
+
+.new-chat:hover {
+  background: var(--control-surface-hover);
+}
+
+.sidebar-toggle {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: var(--control-icon-size);
+  height: var(--control-icon-size);
+  border-radius: var(--radius-small);
+  color: var(--muted);
+}
+
+.sidebar-toggle:hover {
+  background: var(--control-surface-hover);
+  color: var(--text);
+}
+
+/* 图标折叠态由官方 Sidebar 的 data-collapsible 表达，宽度走 --sidebar-width-icon。 */
+[data-slot='sidebar'][data-collapsible='icon'] .brand {
+  padding: 0;
+  justify-content: center;
+}
+
+[data-slot='sidebar'][data-collapsible='icon'] .brand-wordmark,
+[data-slot='sidebar'][data-collapsible='icon'] .sidebar-toggle,
+[data-slot='sidebar'][data-collapsible='icon'] .new-chat span,
+[data-slot='sidebar'][data-collapsible='icon'] .new-chat kbd,
+[data-slot='sidebar'][data-collapsible='icon'] .search,
+[data-slot='sidebar'][data-collapsible='icon'] .conversation-nav,
+[data-slot='sidebar'][data-collapsible='icon'] .settings-entry span,
+[data-slot='sidebar'][data-collapsible='icon'] .settings-entry kbd,
+[data-slot='sidebar'][data-collapsible='icon'] .service-dot {
+  display: none;
+}
+
+[data-slot='sidebar'][data-collapsible='icon'] .new-chat {
+  justify-content: center;
+  padding: 0;
+}
+
+[data-slot='sidebar'][data-collapsible='icon'] .sidebar-footer {
+  margin-top: auto;
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+[data-slot='sidebar'][data-collapsible='icon'] .settings-entry {
+  flex: none;
+  justify-content: center;
+  padding: 7px;
+}
+
+.turn-menu {
+  width: var(--menu-task-width);
+  max-height: min(420px, 60vh);
+  overflow-y: auto;
+}
+
+.turn-menu [data-slot='dropdown-menu-item'] {
+  justify-content: space-between;
+  white-space: nowrap;
+}
+
+.turn-menu [data-slot='dropdown-menu-item'] > span {
+  flex: none;
+}
+
+.turn-menu [data-slot='dropdown-menu-item'] > small {
+  margin-left: auto;
+}
+
+.turn-menu [data-slot='dropdown-menu-item'] small {
+  color: var(--muted);
+  font-size: var(--size-caption);
+}
+
+.turn-menu-empty {
+  margin: 0;
+  padding: 7px 10px;
+  color: var(--muted);
+  font-size: var(--size-caption);
+}
+
+.load-earlier {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0 4px;
+}
+
+/* 加载入口使用基础 link 按钮，容器只负责居中和留白。 */
+.load-earlier small {
+  color: var(--muted);
+  font-size: var(--size-caption);
+}
+
+.composer-picker:focus-within {
+  background: var(--accent-subtle);
+  box-shadow: 0 0 0 1px var(--accent-border);
+}
+
+@media(max-width:720px) {
+
+  .mobile-menu {
+    display: grid;
+    place-items: center;
+    position: fixed;
+    left: 12px;
+    z-index: 40;
+    width: var(--control-touch-size);
+    height: var(--control-touch-size);
+    top: 16px;
+    border-radius: var(--radius-control);
+    background: var(--canvas);
+    color: var(--secondary);
+  }
+
+  .header-actions {
+    gap: 5px;
+  }
+
+  .activity {
+    display: none;
+  }
+
+  .composer-controls {
+    gap: 0;
+    flex-wrap: wrap;
+  }
+
+  .composer-options {
+    gap: 3px;
+  }
+
+  .composer-bottom {
+    gap: 5px;
+  }
+
+  .sidebar-toggle {
+    min-width: var(--control-touch-size);
+    min-height: var(--control-touch-size);
+  }
+
+  .home-workspace {
+    min-width: 0;
+  }
+
+  .home, .welcome {
+    align-items: safe center;
+  }
+
+  .home {
+    padding: 56px 20px;
+  }
+
+  .welcome {
+    padding: 56px 20px;
+  }
+
+  .workspace-dialog-foot {
+    padding-bottom: calc(13px + env(safe-area-inset-bottom));
+  }
+
+  .home h1 {
+    font-size: var(--size-title);
+    letter-spacing: -.4px;
+    line-height: var(--line-title);
+  }
+
+  .send-button {
+    width: var(--control-touch-size);
+    height: var(--control-touch-size);
+  }
+
+  .composer {
+    border-radius: var(--radius-panel);
+    padding: 12px 12px 10px;
+  }
+
+  .composer textarea {
+    font-size: var(--size-ui);
+    line-height: var(--line-ui);
+  }
+
+  .composer-picker {
+    font-size: var(--size-caption);
+    padding: 0 var(--space-1);
+    line-height: var(--line-caption);
+  }
+
+  .composer-picker [data-slot='select-value'] {
+    max-width: 160px;
+  }
+
+  .chat-scroll {
+    padding: 24px 20px 28px;
+  }
+
+  .composer-dock {
+    padding: 10px 12px max(18px, env(safe-area-inset-bottom));
+  }
+
+  .workspace-top {
+    min-height: 46px;
+    padding: 0 14px 0 50px;
+  }
+
+  .chat-heading strong {
+    font-size: var(--size-caption);
+    max-width: 200px;
+    line-height: var(--line-caption);
+  }
+
+  .sidebar > .brand > .sidebar-toggle {
+    display: none;
+  }
+}
+
+.workspace-select {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: none;
+  border: 0;
+  color: inherit;
+  padding: 2px 0;
+}
+
+.workspace-dialog {
+  padding: 0;
+  overflow: hidden;
+}
+
+.workspace-dialog-body {
+  padding: var(--surface-padding);
+}
+
+.workspace-dialog-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 116px;
+  padding: 4px 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.workspace-dialog-state p {
+  margin: 0;
+  color: var(--secondary);
+  font-size: var(--size-ui);
+  line-height: var(--line-ui);
+}
+
+.workspace-dialog-state > span {
+  font-size: var(--size-caption);
+  line-height: var(--line-caption);
+}
+
+.workspace-dialog-note {
+  margin-bottom: 12px;
+  padding: 9px 12px;
+  border: 1px solid var(--notice-danger-border);
+  border-radius: var(--radius-control);
+  background: var(--notice-danger);
+  color: var(--danger);
+  font-size: var(--size-caption);
+  line-height: var(--line-caption);
+  overflow-wrap: anywhere;
+}
+
+.workspace-dialog-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: var(--space-4) var(--surface-padding);
+  border-top: 1px solid var(--border-soft);
+}
+
+.workspace-dialog-hint {
+  color: var(--muted);
+  font-size: var(--size-caption);
+  line-height: var(--line-caption);
+}
+
+.workspace-dialog-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+
+/* 调用保持定列扫描；长参数只省略摘要，原始内容留在详情。 */
+.invocation-list {
+  overflow-x: auto;
+}
+
+.invocation-row {
+  display: grid;
+  grid-template-columns: 72px 36px minmax(120px, 1fr) 76px 66px 100px;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-width: 540px;
+  height: 32px;
+  padding: 0 var(--space-2);
+  border-bottom: 1px solid var(--border-soft);
+  text-align: left;
+  color: var(--secondary);
+  font: var(--type-caption);
+}
+
+button.invocation-row:hover {
+  background: var(--hover);
+}
+
+.invocation-row[aria-pressed="true"] {
+  background: var(--accent-subtle);
+}
+
+.invocation-columns {
+  color: var(--muted);
+}
+
+.invocation-name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.invocation-name strong,
+.invocation-name small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: inherit;
+}
+
+.invocation-name strong {
+  flex: none;
+  color: var(--text);
+}
+
+.invocation-row [data-tone="error"] {
+  color: var(--danger);
+}
+
+.invocation-row [data-tone="warning"] {
+  color: var(--warning);
+}
+
+/* 工具栏保持单行，搜索固定在右侧；空间不足时横向滚动，不堆叠控件。 */
+.event-view-toolbar.invocation-toolbar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--space-2);
+  overflow-x: auto;
+}
+
+.invocation-toolbar .invocation-search {
+  flex: 0 0 220px;
+  width: 220px;
+  margin-left: auto;
+}
+
+.invocation-row > span,
+.invocation-row > time {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 类型选项直接可见，仅选中项有轻量底色，避免整组控件形成额外边框。 */
+.invocation-inspector .invocation-filters {
+  flex: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  gap: var(--space-1);
+}
+
+.invocation-filters > button {
+  white-space: nowrap;
+  color: var(--muted);
+  border-radius: var(--radius-small);
+}
+
+.invocation-filters > button[aria-pressed="true"] {
+  background: var(--hover);
+  color: var(--text);
+  box-shadow: none;
+}
+
+/* 两层工具栏使用同一对齐线，选项按文字宽度排列，避免等分整行。 */
+.activity-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2);
+}
+
+.invocation-inspector .invocation-filters {
+  display: inline-flex;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.invocation-inspector .invocation-filters > button {
+  flex: none;
+  font: var(--type-caption);
+}
+
+.activity-heading .invocation-search {
+  width: clamp(160px, 25vw, 260px);
+  min-width: 0;
+  margin-left: auto;
+}
+
+.invocation-inspector .invocation-toolbar {
+  padding: 0 var(--space-2) var(--space-2);
+  background: transparent;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.invocation-toolbar > .event-range {
+  flex: none;
+  margin: 0 0 0 auto;
+  white-space: nowrap;
+  font: var(--type-caption);
+}
+
+/* 摘要列承担全部收缩；状态、耗时保持单行，长命令不能撑高调用行。
+   紧凑模式沿用活动行的内容与列规则，只移除时间、类型和用量列。 */
+.invocation-row-compact {
+  grid-template-columns: minmax(0, 1fr) max-content max-content;
+  min-width: 0;
+  border-bottom: 0;
+}
+.invocation-name > .ui-icon,
+.invocation-name > strong {
+  flex: none;
+}
+.invocation-name > small {
+  min-width: 0;
+  flex: 1;
+}
+.invocation-name > small[data-command] {
+  font-family: var(--font-family-code);
+}
+
+/* 状态仍由事实投影；颜色只补足扫读线索，不替代中文标签。 */
+.invocation-row [data-tone="ok"] { color: var(--success); }
+.invocation-row [data-tone="running"] { color: var(--accent); }

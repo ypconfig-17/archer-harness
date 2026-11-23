@@ -1,0 +1,17 @@
+/* 官方 data-slot 结构只映射桌面 Token，不建立第二套代码布局。 */
+[data-slot='code-block'] {
+  border-radius: var(--radius-small);
+  background: var(--panel);
+  color: var(--text);
+  font: var(--type-code);
+}
+[data-slot='code-block-header'] {
+  font: var(--type-caption);
+}
+[data-slot='code-block-content'] {
+  margin: 0;
+  font: var(--type-code);
+}
+[data-slot='code-block-title'] {
+  font: var(--type-caption);
+}

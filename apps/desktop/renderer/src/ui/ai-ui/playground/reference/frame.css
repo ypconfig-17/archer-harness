@@ -1,0 +1,98 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "./upstream/neutral.css";
+@import "./upstream/rhea.css";
+@source './upstream';
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* 官方语义名只在独立文档里存在，不与 Archer 同名变量互相覆盖。 */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+:root {
+  --font-heading: var(--font-sans);
+}
+*,
+::before,
+::after {
+  border-color: var(--border);
+}
+body {
+  margin: 0;
+  min-width: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+.specimen {
+  display: grid;
+  gap: 28px;
+  padding: 24px;
+}
+.specimen-section {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+}
+.specimen-section > h2 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+.specimen-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.specimen-field {
+  display: grid;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.specimen-note {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.specimen p {
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 0;
+}
+.cn-font-heading {
+  font-family: var(--font-heading);
+}
+@media (max-width: 420px) {
+  .specimen {
+    padding: 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+  }
+}

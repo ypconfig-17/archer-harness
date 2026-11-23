@@ -1,0 +1,639 @@
+/* 独立检查工作区：标签属于窗口层，导航属于内容层，两个层级不互相挤压。 */
+.inspector {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border-left: 1px solid var(--border-soft);
+  background: var(--sidebar);
+  container: inspector / inline-size;
+}
+
+/* 最大化脱离分栏，覆盖整个窗口用于整篇阅读。 */
+.inspector.is-maximized {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  width: auto;
+  border-left: 0;
+}
+
+.inspector-bar {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: var(--space-2);
+  min-height: var(--shell-header-height);
+  padding: var(--space-2);
+}
+
+.inspector-heading {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: var(--space-2);
+  min-width: 0;
+  padding-inline: var(--space-2);
+  color: var(--text);
+  font: var(--type-ui);
+  font-weight: var(--weight-medium);
+}
+
+.inspector-heading > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inspector-actions {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: var(--space-1);
+}
+
+.inspector-content {
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+  overflow: auto;
+  border-top-left-radius: var(--radius-panel);
+  background: var(--panel);
+}
+
+.inspector-content.is-changes {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.inspector pre {
+  color: var(--secondary);
+  font: var(--type-code);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* 分组标题与条目保持树形导航的阅读节奏，展开内容不使用独立卡片。 */
+.inspector-section {
+  min-width: 0;
+}
+
+.inspector-section > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--inspector-row-height);
+  padding: var(--space-1) 0;
+  color: var(--text);
+  font: var(--type-ui);
+  cursor: pointer;
+  list-style: none;
+}
+
+.inspector-section > summary::-webkit-details-marker {
+  display: none;
+}
+
+.inspector-section > summary > svg:first-child {
+  color: var(--muted);
+  transition: transform .15s ease;
+}
+
+.inspector-section[open] > summary > svg:first-child {
+  transform: rotate(90deg);
+}
+
+.inspector-section-body {
+  padding: var(--space-2) 0 var(--space-4) var(--space-5);
+}
+
+.inspector-empty-note {
+  margin: var(--space-4) 0;
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+@media (max-width: 960px) {
+  .inspector {
+    position: absolute;
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+    inset: 0 0 0 auto;
+    z-index: 30;
+    width: min(var(--inspector-width, 360px), calc(100% - var(--space-6)));
+    box-shadow: var(--shadow-popover);
+  }
+
+  .inspector.is-maximized {
+    width: 100%;
+  }
+
+  .inspector-resize {
+    display: none;
+  }
+}
+
+/* 能力来源按来源展开子项，复用折叠导航的层级。 */
+.provider-source > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.provider-source > summary::-webkit-details-marker {
+  display: none;
+}
+
+.provider-source-header > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.provider-source-disclosure {
+  flex: none;
+  color: var(--muted);
+}
+
+.provider-source[open] > summary .provider-source-disclosure {
+  transform: rotate(90deg);
+}
+
+.provider-source-children {
+  padding-left: var(--space-5);
+}
+
+/* 审阅固定为左目录树、右阅读区；树收起后正文独占整栏，不在窄栏里上下堆叠。 */
+.changes-workspace {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  color: var(--text);
+}
+.changes-toolbar {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: var(--space-2);
+  min-height: var(--shell-header-height);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border-soft);
+}
+.changes-breadcrumb {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: var(--space-1);
+  overflow: auto;
+  scrollbar-width: thin;
+  white-space: nowrap;
+  font: var(--type-caption);
+  color: var(--secondary);
+}
+.changes-breadcrumb > span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.changes-breadcrumb > span[aria-current] { color: var(--text); font-weight: var(--weight-medium); }
+/* 分段选择在工具栏不抢宽度，选中态与尺寸由公共组件决定。 */
+.changes-toolbar .changes-modes { flex: none; }
+/* 文件树与正文使用公共可拖动面板，窄栏默认收起文件树。 */
+.changes-body {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.changes-tree-panel,
+.changes-reader-panel {
+  min-width: 0;
+  min-height: 0;
+}
+.changes-tree-panel .changes-outline,
+.changes-reader-panel .changes-reader {
+  height: 100%;
+}
+.changes-reader {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-4);
+}
+.changes-reader header {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+.changes-reader header > strong { overflow-wrap: anywhere; font-weight: var(--weight-medium); }
+.changes-reader header > span { color: var(--muted); font: var(--type-caption); }
+/* 会话工具输出的 360px 上限只服务于对话卡片；审阅阅读区由整页滚动承载代码，内层不再限高，也不产生嵌套滚动框。 */
+.changes-reader .execution-output > pre {
+  max-height: none;
+  overflow: visible;
+}
+.changes-outline {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-right: 1px solid var(--border-soft);
+  background: var(--panel);
+}
+.changes-search {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: var(--space-2);
+  margin: var(--space-3);
+  padding: var(--space-2);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  color: var(--muted);
+  background: var(--control-surface);
+}
+.changes-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text);
+  font: var(--type-ui);
+}
+/* 焦点只由外层描边表达；输入本体不画第二层边框或光圈。 */
+.changes-search input:focus-visible { box-shadow: none; }
+.changes-search:focus-within { border-color: var(--accent); }
+.changes-scope { display: flex; justify-content: space-between; gap: var(--space-2); padding: 0 var(--space-3) var(--space-2); color: var(--muted); font: var(--type-caption); }
+.changes-files { flex: 1; min-height: 0; overflow: auto; padding: 0 var(--space-2) var(--space-3); }
+.changes-count { display: flex; flex: none; gap: var(--space-1); white-space: nowrap; font: var(--type-caption); font-variant-numeric: tabular-nums; }
+/* 工作区范围由分支与仓库根说明；路径可截断，但完整值仍通过标题保留。 */
+.git-scope {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: var(--space-2);
+  color: var(--secondary);
+  font: var(--type-caption);
+}
+.git-scope > strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--weight-medium); }
+.git-scope > span { flex: none; margin-left: auto; color: var(--muted); white-space: nowrap; }
+/* 阅读区先列状态与视图切换，再放差异正文，避免工具栏挤占窄栏。 */
+.git-file-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.changes-workspace > footer { padding: var(--space-2) var(--space-4); border-top: 1px solid var(--border-soft); color: var(--muted); font: var(--type-caption); }
+.changes-segment,
+.changes-empty { font-size: var(--size-caption); }
+
+/* 专注模式仅临时隐藏导航；恢复后仍使用用户原来的侧栏偏好。 */
+.workbench:has(.inspector.is-focused) [data-slot='sidebar'] { display: none; }
+[data-platform='darwin'] .inspector.is-focused .inspector-bar {
+  padding-left: var(--mac-window-controls-inset);
+  -webkit-app-region: drag;
+}
+[data-platform='darwin'] .inspector.is-focused .inspector-bar button,
+[data-platform='darwin'] .inspector.is-focused .inspector-bar [popover] { -webkit-app-region: no-drag; }
+/* 原始事件以任务身份组织；展开后的记录和 JSON 仍完整保留。 */
+.event-batch > [data-slot="collapsible-trigger"] {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--inspector-dense-row-height);
+  padding: var(--space-2);
+  color: var(--secondary);
+  font: var(--type-caption);
+  cursor: pointer;
+  list-style: none;
+}
+.event-batch > [data-slot="collapsible-trigger"] strong {
+  font-weight: var(--weight-medium);
+  color: var(--text);
+}
+
+.event-range {
+  margin: 0 0 var(--space-2);
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+/* 视图工具栏只控制当前事件内容，不重复检查器的视图导航。 */
+.event-filter-select {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+  color: var(--secondary);
+  font: var(--type-caption);
+}
+.event-filter-select select {
+  flex: 1;
+  min-width: 0;
+  height: var(--control-height);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-small);
+  background: var(--control-surface);
+  color: var(--text);
+  font: var(--type-navigation);
+}
+.event-batch > [data-slot="collapsible-trigger"] > small {
+  margin-left: auto;
+}
+.event-interaction > [data-slot="collapsible-trigger"] {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  min-height: var(--control-height);
+  color: var(--secondary);
+  font: var(--type-caption);
+  cursor: pointer;
+  list-style: none;
+}
+.event-interaction-label {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: var(--space-1);
+}
+.event-interaction-label strong {
+  color: var(--text);
+  font-weight: var(--weight-medium);
+}
+.event-interaction-label > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.event-interaction > [data-slot="collapsible-trigger"] > small {
+  flex: none;
+}
+.event-batch[data-open] > [data-slot="collapsible-trigger"] > .ui-icon:first-child,
+.event-interaction[data-open] > [data-slot="collapsible-trigger"] > .ui-icon:first-child {
+  transform: rotate(90deg);
+}
+
+.event-batch > [data-slot="collapsible-content"] > .event-interaction {
+  margin-left: var(--space-3);
+}
+
+.event-view-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding-bottom: var(--space-2);
+  background: var(--panel);
+}
+
+/* 右栏工作台只保留会话真实的阅读对象；首页列出入口，选中后就地展开。 */
+/* 工作台正文承接各阅读对象；首页与内容共用同一条高度链。 */
+.workbench-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.workbench-home {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  padding: var(--space-5) var(--space-4);
+  overflow: auto;
+  /* 细点阵只标示首页是选择面，不引入第二种底色。 */
+  background-image: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--border-default) 55%, transparent) 1px, transparent 0);
+  background-size: 18px 18px;
+}
+
+.workbench-home-inner {
+  display: grid;
+  gap: var(--space-2);
+  width: 100%;
+  max-width: 340px;
+  margin: auto;
+}
+
+.workbench-home-label {
+  margin: 0 0 var(--space-1) var(--space-1);
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+.workbench-cards {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.workbench-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-panel);
+  background: var(--raised);
+  box-shadow: var(--shadow-control);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 120ms ease;
+}
+
+.workbench-card:hover { border-color: var(--border); }
+.workbench-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.workbench-card-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: var(--control-touch-size);
+  height: var(--control-touch-size);
+  border-radius: var(--radius-control);
+  background: var(--subtle);
+  color: var(--secondary);
+}
+
+.workbench-card-copy {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.workbench-card-copy > strong {
+  color: var(--text);
+  font: var(--type-ui);
+  font-weight: var(--weight-medium);
+}
+
+.workbench-card-copy > small {
+  overflow: hidden;
+  color: var(--muted);
+  font: var(--type-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workbench-card-meta {
+  flex: none;
+  color: var(--muted);
+  font: var(--type-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 窄栏优先保留标题与说明，计数让位给可读宽度。 */
+@container inspector (max-width: 360px) {
+  .workbench-card-meta { display: none; }
+}
+
+.workbench-activity {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding: var(--space-4);
+  overflow: auto;
+}
+
+.workbench-activity .event-view-toolbar { position: static; }
+
+.workbench-overview {
+  flex: 1;
+  min-height: 0;
+  padding: var(--space-4);
+  overflow: auto;
+}
+
+.workbench-facts {
+  display: grid;
+  margin: 0;
+}
+
+.workbench-facts > div {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.workbench-facts > div:last-child { border-bottom: 0; }
+
+.workbench-facts dt {
+  align-self: center;
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+.workbench-facts dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--text);
+  font: var(--type-ui);
+  overflow-wrap: anywhere;
+}
+
+.workbench-facts dd.is-mono { font: var(--type-code); }
+
+.center-inspection-view .event-batch > [data-slot="collapsible-trigger"] { background: var(--subtle); border-radius: var(--radius-small); padding-inline: var(--space-3); }
+.center-inspection-view .event-interaction > [data-slot="collapsible-trigger"] { min-height: var(--control-touch-size); padding-block: var(--space-2); }
+.center-inspection-view .event-interaction-label { display: flex; align-items: baseline; gap: var(--space-3); min-width: 0; }
+.center-inspection-view .event-interaction-label strong { flex: none; font: var(--type-navigation); font-weight: var(--weight-medium); }
+.center-inspection-view .event-interaction-label > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--type-caption); color: var(--muted); }
+.changes-empty-workspace { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; padding: var(--space-6); gap: var(--space-2); text-align: center; color: var(--muted); }
+.changes-empty-workspace h3 { margin: var(--space-2) 0 0; color: var(--secondary); font: var(--type-ui); }
+.changes-empty-workspace p, .changes-empty-workspace small { margin: 0; font: var(--type-caption); }
+@media (max-width: 700px) {
+  .center-inspection-view .event-interaction-label { display: block; }
+}
+
+/* 活动列表负责定位，详情只在选择事实后出现；窄检查器使用同列阅读。 */
+.activity-browser { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.activity-browser.has-selection { grid-template-columns: minmax(0, 1fr) minmax(280px, 38%); gap: var(--space-4); }
+.activity-browser > .event-list { min-width: 0; }
+.activity-record {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-width: 0;
+  padding: var(--space-2);
+  border-radius: var(--radius-small);
+  text-align: left;
+  color: var(--secondary);
+}
+.activity-record:hover { background: var(--hover); }
+.activity-record[aria-pressed="true"] { background: var(--accent-subtle); color: var(--text); }
+.activity-record-copy { display: grid; flex: 1; min-width: 0; gap: var(--space-1); }
+.activity-record-copy > strong { font: var(--type-navigation); color: var(--text); }
+.activity-record-copy > small { font: var(--type-caption); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.activity-record > time { flex: none; font: var(--type-caption); color: var(--muted); }
+.activity-record-detail { position: sticky; top: var(--space-3); min-width: 0; max-height: 70dvh; overflow: auto; border-left: 1px solid var(--border-soft); padding-left: var(--space-4); }
+.activity-record-detail > header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+/* 详情属于紧凑检查器，沿用全局导航、辅助与代码字体，不使用弹窗标题比例。 */
+.activity-record-detail h3 {
+  margin: 0;
+  font: var(--type-navigation);
+  font-weight: var(--weight-medium);
+}
+.activity-record-detail .event-body { padding: var(--space-3) 0; }
+/* 原始 JSON 保留缩进与完整标识符，局部横向滚动不撑宽详情面板。 */
+.activity-record-detail pre {
+  max-width: 100%;
+  margin: var(--space-2) 0;
+  overflow-x: auto;
+  white-space: pre;
+  overflow-wrap: normal;
+  word-break: normal;
+  font: var(--type-code);
+}
+
+.activity-record-detail .event-range {
+  margin: var(--space-1) 0;
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+.activity-record-detail .ui-tabs {
+  gap: var(--space-2);
+}
+
+.activity-record-detail .ui-tabs > button {
+  padding-inline: var(--space-2);
+  font: var(--type-caption);
+}
+@container inspector (max-width: 700px) {
+  .activity-browser.has-selection { grid-template-columns: minmax(0, 1fr); }
+  .activity-browser.has-selection > .event-list { display: none; }
+  .activity-record-detail { position: static; max-height: none; border: 0; padding: 0; }
+}
+
+
+/* 折叠标题只表达已提交事实，公共原语负责交互。 */
+:is(.event-batch, .event-interaction) > [data-slot="collapsible-trigger"] {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+.activity-record.cn-button,
+.workbench-card.cn-button {
+  height: auto;
+  white-space: normal;
+}

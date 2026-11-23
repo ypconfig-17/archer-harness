@@ -1,0 +1,30 @@
+{
+  "name": "@archer/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Fastify \u9002\u914d\u5668\uff1a\u628a Archer Runtime \u66b4\u9732\u4e3a HTTP + SSE \u670d\u52a1",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@archer/contracts": "workspace:*",
+    "@archer/inference-pi": "workspace:*",
+    "@archer/runtime": "workspace:*",
+    "@archer/storage": "workspace:*",
+    "@fastify/cors": "^11.3.1",
+    "dotenv": "^17.2.4",
+    "fastify": "^5.12.7",
+    "zod": "^4.6.7",
+    "@archer/providers": "workspace:*",
+    "@archer/skills": "workspace:*",
+    "@archer/camp": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15"
+  }
+}

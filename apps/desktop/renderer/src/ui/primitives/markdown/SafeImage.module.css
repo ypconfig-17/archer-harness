@@ -1,0 +1,38 @@
+/* 远程图片的确认入口：只负责用户主动加载前的外观与失败提示。 */
+.imageConsent {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: var(--radius-small);
+  background: var(--subtle);
+  color: var(--secondary);
+  font: var(--type-caption);
+}
+
+.imageConsent button {
+  color: var(--accent-text);
+  font: inherit;
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+
+.imageConsent button:hover {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.mediaUnavailable {
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+.image {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: min(560px, 70vh);
+  border-radius: 10px;
+  object-fit: contain;
+}

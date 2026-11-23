@@ -1,0 +1,88 @@
+/* Playground 展示规则集中于此，不覆盖正式组件的字体、配色与交互状态。 */
+.component-document {
+  max-width: 760px;
+}
+.component-document-workspace {
+  max-width: 1040px;
+}
+.preview-frame {
+  --preview-content-width: 440px;
+  --preview-inset: var(--space-6);
+}
+.preview-frame[data-layout="reading"] {
+  --preview-content-width: 640px;
+}
+.preview-frame[data-layout="workspace"] {
+  --preview-content-width: 100%;
+  --preview-inset: 0px;
+}
+.preview-frame-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.preview-frame-controls {
+  min-width: 0;
+}
+.preview-frame-controls .segmented-control {
+  width: fit-content;
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+.preview-frame-toolbar > span,
+.preview-frame-caption {
+  color: var(--muted);
+  font: var(--type-caption);
+}
+.preview-frame-toolbar > span {
+  flex: none;
+}
+.preview-frame .preview-frame-canvas {
+  display: block;
+  padding: var(--preview-inset);
+  min-height: 0;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-panel);
+  background: var(--canvas);
+  box-shadow: none;
+}
+.preview-frame .preview-frame-content {
+  width: min(100%, var(--preview-content-width));
+  max-width: none;
+  min-width: 0;
+  margin-inline: auto;
+  padding-block: var(--space-4);
+}
+.preview-frame[data-layout="workspace"] .preview-frame-content {
+  padding: 0;
+}
+/* 示例只保留自己的内容结构；画布尺寸不再在各组件页面分别维护。 */
+.preview-frame-content
+  > :is(
+    .ai-component-demo,
+    .trace-turn-demo,
+    .plan-turn-demo,
+    .trace-part-demo,
+    .file-tree-demo
+  ) {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+.preview-frame .preview-frame-caption {
+  margin-block: var(--space-3) 0;
+}
+@media (max-width: 760px) {
+  .preview-frame {
+    --preview-inset: var(--space-4);
+  }
+  .preview-frame[data-layout="workspace"] {
+    --preview-inset: 0px;
+  }
+  .preview-frame-toolbar {
+    flex-wrap: wrap;
+  }
+}

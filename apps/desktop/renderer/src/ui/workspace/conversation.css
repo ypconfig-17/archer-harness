@@ -1,0 +1,980 @@
+.workspace-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: var(--shell-header-height);
+  padding: var(--space-2) var(--workspace-inset);
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--canvas);
+}
+
+[data-platform] .workspace-top {
+  -webkit-app-region: drag;
+}
+
+[data-platform] .workspace-top button,
+[data-platform] .workspace-top select,
+[data-platform] .workspace-top a,
+[data-platform] .workspace-top .activity {
+  -webkit-app-region: no-drag;
+}
+
+/* 会话名是顶栏的主要信息；工作区作为同一行的辅助位置，不重复占一层标题。 */
+
+.chat-heading {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.chat-workspace-name {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: var(--space-1);
+  max-width: 144px;
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--border);
+  color: var(--muted);
+  font: var(--type-caption);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.chat-page.has-inspector .chat-workspace-name {
+  display: none;
+}
+
+.chat-heading strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 520px;
+  font-size: var(--size-caption);
+  font-weight: var(--weight-medium);
+  color: var(--secondary);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  line-height: var(--line-caption);
+}
+
+.chat-heading-title {
+  min-width: 0;
+  max-width: 520px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font-size: var(--size-ui);
+  font-weight: var(--weight-medium);
+  line-height: var(--line-ui);
+  text-align: left;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  border-radius: var(--radius-small);
+}
+
+.chat-heading-title:hover {
+  color: var(--secondary);
+}
+
+.chat-heading-title-input {
+  width: min(420px, 60vw);
+  padding: 2px 6px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-small);
+  background: var(--control-surface);
+  color: var(--text);
+  font-size: var(--size-ui);
+  font-weight: var(--weight-medium);
+  line-height: var(--line-ui);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.activity {
+  font-size: var(--size-caption);
+  color: var(--muted);
+  margin-right: 6px;
+  line-height: var(--line-caption);
+}
+
+.activity:not(.is-running) {
+  display: none;
+}
+
+/* 当前执行状态用强调色与脉冲点表达，完成/失败/等待仍由各自语义色表达。 */
+.activity.is-running {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent-text);
+}
+
+.activity.is-running::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 1.3s infinite;
+}
+
+.chat-body {
+  display: contents;
+}
+
+.conversation-column {
+  container-type: inline-size;
+  container-name: conversation;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overflow-anchor: none;
+  padding: var(--space-6) var(--workspace-inset);
+}
+
+.conversation-width {
+  width: 100%;
+  max-width: var(--conversation-width);
+  margin: 0 auto;
+}
+
+.composer-dock {
+  flex: none;
+  max-height: 65vh;
+  overflow-y: auto;
+  padding: var(--space-3) var(--workspace-inset) var(--space-4);
+}
+
+.composer-dock .conversation-width > div {
+  margin-bottom: 10px;
+}
+
+/* 队列使用有界列表，避免积压任务挤走正文和输入框。 */
+
+.input-queue {
+  margin-bottom: var(--space-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-panel);
+  background: var(--subtle);
+  font: var(--type-caption);
+}
+
+.input-queue-header,
+.input-queue-heading,
+.input-queue-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.input-queue-header {
+  flex-wrap: wrap;
+  padding: var(--space-1) var(--space-3);
+  min-height: var(--control-touch-size);
+}
+
+.input-queue-heading {
+  color: var(--secondary);
+  white-space: nowrap;
+}
+
+.input-queue-heading strong {
+  font-weight: var(--weight-medium);
+}
+
+.input-queue-count,
+.input-queue-order {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.input-queue-status {
+  color: var(--color-amber-300);
+}
+
+.input-queue-actions {
+  margin-left: auto;
+  gap: var(--space-1);
+}
+
+/* 队列操作使用基础 ghost 按钮；这里只声明强调入口的角色，不重写控件表面。 */
+.input-queue-actions .input-queue-resume {
+  color: var(--accent-text);
+}
+
+.input-queue-content {
+  max-height: var(--queue-list-max-height);
+  overflow: auto;
+  border-top: 1px solid var(--border-soft);
+  padding: var(--space-1) var(--space-3);
+}
+
+.input-queue-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.input-queue-list li {
+  display: grid;
+  grid-template-columns: var(--icon-small) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  color: var(--secondary);
+}
+
+.input-queue-list li + li,
+.input-queue-list + .input-queue-list {
+  border-top: 1px solid var(--border-soft);
+}
+
+.input-queue-list li > div {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.input-queue-kind {
+  margin-right: var(--space-2);
+  color: var(--muted);
+}
+
+@media (max-width: 600px) {
+
+  .input-queue-actions button {
+    min-height: var(--control-touch-size);
+  }
+}
+
+.transcript {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* 用户消息的对齐与气泡由 @archer/ui 消息组件负责，这里只保留段落间停顿。 */
+.workspace-turn-group > .turn-boundary,
+.workspace-turn-group > .timeline-interaction {
+  margin-top: var(--space-4);
+}
+
+.workspace-turn-group > .process-message:not(:first-child) {
+  margin-top: var(--space-2);
+}
+
+.conversation-notice {
+  text-align: center;
+  font-size: var(--size-caption);
+  color: var(--muted);
+  line-height: var(--line-caption);
+}
+
+.conversation-notice.warn {
+  color: var(--warning);
+}
+
+.sync-hint {
+  color: var(--muted);
+  font-size: var(--size-caption);
+  text-align: center;
+  margin-bottom: 12px;
+  line-height: var(--line-caption);
+}
+
+.chat-empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 15vh 0;
+}
+
+.chat-empty h2 {
+  font-size: var(--size-section);
+  font-weight: var(--weight-regular);
+  line-height: var(--line-section);
+}
+
+.chat-empty p {
+  font-size: var(--size-caption);
+  line-height: var(--line-caption);
+}
+
+.error-banner,.warning-banner {
+  border-radius: var(--radius-control);
+  padding: 10px 12px;
+  margin: 12px 0;
+  font-size: var(--size-caption);
+  line-height: var(--line-caption);
+  overflow-wrap: anywhere;
+}
+
+.error-banner {
+  color: var(--danger);
+  background: var(--notice-danger);
+  border: 1px solid var(--notice-danger-border);
+}
+
+.warning-banner {
+  color: var(--warning);
+  background: var(--notice-warning);
+  border: 1px solid var(--notice-warning-border);
+}
+
+.page-message {
+  padding: var(--space-6);
+  color: var(--secondary);
+  max-width: var(--conversation-width);
+  margin: auto;
+}
+
+.page-message h2 {
+  font-size: var(--size-section);
+  margin-bottom: 14px;
+  line-height: var(--line-section);
+}
+
+.page-message button {
+  margin-top: 15px;
+}
+
+.management-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.management-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 160px;
+  min-height: var(--control-height);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  background: var(--control-surface);
+  color: var(--muted);
+}
+
+.management-search:focus-within {
+  border-color: var(--accent);
+}
+
+.management-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--text);
+  font: var(--type-ui);
+}
+
+/* 焦点只由外层描边表达，输入本体不画第二圈光环。 */
+.management-search input:focus-visible {
+  box-shadow: none;
+}
+
+.management-search input::placeholder {
+  color: var(--muted);
+}
+
+.management-count {
+  flex: none;
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+.management-list {
+  display: grid;
+}
+
+.management-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--border-soft);
+}
+
+.management-list > .management-row:first-child {
+  border-top: 0;
+}
+
+.management-primary {
+  display: grid;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.management-title {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--text);
+  font-size: var(--size-ui);
+  font-weight: var(--weight-medium);
+  line-height: var(--line-ui);
+}
+
+.management-row.is-current .management-title {
+  color: var(--accent-text);
+}
+
+.management-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+.management-meta > span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.management-workspace {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 240px;
+}
+
+.management-path {
+  max-width: 340px;
+}
+
+.management-badge {
+  flex: none;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--accent-subtle);
+  color: var(--text);
+  font: var(--type-caption);
+}
+
+.management-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+.management-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+.management-state.running {
+  color: var(--accent-text);
+}
+
+.management-state.paused {
+  color: var(--warning);
+}
+
+.management-confirm {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-3);
+  border: 1px solid var(--notice-danger-border);
+  border-radius: var(--radius-control);
+  background: var(--notice-danger);
+  color: var(--secondary);
+  font: var(--type-caption);
+}
+
+.management-confirm > div {
+  display: flex;
+  flex: none;
+  gap: 8px;
+}
+
+.management-empty {
+  margin: 0;
+  padding: 26px 0;
+  color: var(--muted);
+  font: var(--type-caption);
+  text-align: center;
+}
+
+.mobile-menu {
+  display: none;
+}
+
+@keyframes pulse {
+
+  50% {
+    opacity: .4;
+  }
+}
+
+@media(max-width:1100px) {
+
+  .chat-heading strong {
+    max-width: 350px;
+  }
+
+  .composer-picker [data-slot='select-value'] {
+    max-width: 150px;
+  }
+}
+
+@media(prefers-reduced-motion:reduce) {
+
+  *,*::before,*::after {
+    animation: none!important;
+    transition: none!important;
+  }
+}
+
+.input-kind {
+  display: block;
+  font-size: var(--size-caption);
+  color: var(--muted);
+  margin-bottom: 5px;
+  line-height: var(--line-caption);
+}
+
+.command-picker select {
+  width: auto;
+  max-width: 112px;
+}
+
+.event-empty {
+  color: var(--muted);
+  font-size: var(--size-caption);
+  line-height: var(--line-caption);
+  margin: 0 0 10px;
+  overflow-wrap: anywhere;
+}
+
+.event-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.event-list {
+  border-top: 1px solid var(--border-soft);
+}
+
+/* 工作轮次保留原始事件顺序；轻边界连接正文、授权与结果，不使用整轮卡片。 */
+.workspace-turn-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding-block: var(--space-3);
+}
+.workspace-turn-group + .workspace-turn-group {
+  margin-top: var(--space-5);
+}
+.workspace-turn-group .conversation-notice {
+  border-left: 2px solid var(--border);
+  padding-left: var(--space-3);
+  text-align: left;
+}
+
+/* 当前声明在输入区提供稳定入口，不占用对话中的执行活动位置。 */
+.current-plan-dock { margin-bottom: var(--space-2); font: var(--type-caption); color: var(--secondary); }
+.current-plan-dock [data-slot="collapsible-trigger"] { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; }
+.current-plan-label { flex: none; color: var(--muted); font: var(--type-caption); }
+.current-plan-dock [data-slot="collapsible-trigger"] strong { flex: 1; min-width: 0; overflow-wrap: anywhere; font-weight: var(--weight-medium); }
+.current-plan-dock ol { max-height: 30dvh; overflow: auto; padding-left: var(--space-4); }
+.current-plan-dock li { padding-block: var(--space-1); }
+.current-plan-dock li .ui-icon { margin-right: var(--space-2); }
+
+/* Plan 属于输入工具层，与滚动对话之间有独立边界，展开列表保持紧凑对齐。 */
+.current-plan-dock {
+  border-top: 1px solid var(--border);
+  padding-block: var(--space-2);
+  background: var(--canvas);
+}
+.current-plan-dock ol {
+  display: grid;
+  gap: var(--space-1);
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-2);
+}
+.current-plan-dock li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+.current-plan-dock li .ui-icon { flex: none; margin-top: var(--space-1); }
+/* 当前阶段只用浅强调表面与图标提示，不转写为执行进度或段落标题。 */
+.current-plan-dock li.is-current {
+  color: var(--text);
+  background: var(--accent-subtle);
+  border-radius: var(--radius-small);
+}
+
+/*
+ * 公开反馈与连续工具组成一个自然段落：段落之间 24px，
+ * 正文与工具组之间 8px；不使用卡片、底面或边框制造阶段感。
+ */
+/* 纯活动片段连续排列，间距收紧到 12px；含公开正文的片段仍保留 24px 段落停顿。 */
+.conversation-work-segment { margin-block: var(--space-3); min-width: 0; }
+.conversation-work-segment.has-prose { margin-block: var(--space-5); }
+.conversation-work-segment:first-child { margin-top: var(--space-1); }
+.conversation-work-segment:last-child { margin-bottom: var(--space-1); }
+/* 临时预览提示与正文同段落，只用辅助字号表达未提交，不引入状态卡或额外边框。 */
+.progress-preview-state {
+  display: inline-block;
+  margin-top: var(--space-1);
+  color: var(--muted);
+  font: var(--type-caption);
+}
+.conversation-tool-group { margin-top: var(--space-1); padding-left: var(--space-3); color: var(--secondary); font: var(--type-caption); }
+/* 根据主阅读列宽度重排，Inspector 占位也能触发，不依赖整个窗口宽度。 */
+@container conversation (max-width: 640px) {
+  .file-changes-breakdown { display: none; }
+  .chat-scroll { padding-inline: var(--space-4); }
+  .composer-dock { padding-inline: var(--space-4); }
+  .composer { padding: var(--space-3); }
+  .composer-controls { flex-wrap: wrap; gap: var(--space-2); }
+  .composer-controls .command-picker { margin-right: 0; }
+}
+@container conversation (max-width: 480px) {
+  .chat-scroll, .composer-dock { padding-inline: var(--space-3); }
+  .current-plan-dock [data-slot="collapsible-trigger"] { flex-wrap: wrap; }
+}
+
+/* 标题文本接收双击，空白仍保留原生拖拽；按钮继续使用自己的交互。 */
+[data-platform] .workspace-top .chat-heading {
+  -webkit-app-region: no-drag;
+}
+
+/* 已结束调用组限制阅读高度；仅列表滚动，折叠入口与后续正文留在原位。
+   当前执行及异常行仍由宿主单独呈现，不被历史滚动组隐藏。 */
+.conversation-tool-scroll,
+.conversation-tool-scroll > [data-slot="scroll-area-viewport"] {
+  max-height: var(--brief-activity-max-height);
+  min-height: 0;
+}
+.conversation-tool-scroll > [data-slot="scroll-area-viewport"] {
+  overscroll-behavior-y: contain;
+}
+
+/* 轻边界聚合历史变更；前三项直接预览，其余列表有界滚动。 */
+.file-changes {
+  margin: var(--space-3) 0;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-small);
+  background: transparent;
+  font: var(--type-caption);
+  overflow: hidden;
+}
+.file-changes-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  color: var(--secondary);
+  text-align: left;
+}
+.file-changes-trigger:hover { background: var(--hover); }
+.file-changes-trigger:focus-visible { outline: 2px solid var(--state-focus); outline-offset: -2px; }
+.file-changes-title {
+  font: var(--type-ui);
+  color: var(--text);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+}
+.file-changes-breakdown {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  color: var(--muted);
+  white-space: nowrap;
+}
+/* 箭头只表达展开状态，旋转由触发器的 aria-expanded 驱动。 */
+.file-changes-chevron {
+  flex: none;
+  color: var(--muted);
+  transition: transform var(--motion-feedback) ease;
+}
+.file-changes-trigger[aria-expanded='true'] .file-changes-chevron { transform: rotate(90deg); }
+.file-changes-content { border-top: 1px solid var(--border-soft); }
+.file-changes-header {
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: 0;
+  border-bottom: 1px solid var(--border-soft);
+  color: var(--secondary);
+}
+.file-changes-header > [data-slot="item-content"] { min-width: 0; }
+.file-changes-heading { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
+.file-changes-count {
+  padding-inline: var(--space-2);
+  border-radius: var(--radius-small);
+  background: var(--surface-subtle);
+  color: var(--secondary);
+  font-variant-numeric: tabular-nums;
+}
+.file-changes-trigger {
+  color: var(--text-muted);
+  justify-content: flex-start;
+  border-top: 1px solid var(--border-soft);
+  font: var(--type-caption);
+}
+.file-changes-scroll,
+.file-changes-scroll > [data-slot="scroll-area-viewport"] {
+  max-height: var(--brief-activity-max-height);
+  min-height: 0;
+}
+.file-changes-scroll > [data-slot="scroll-area-viewport"] {
+  overscroll-behavior-y: contain;
+}
+.file-changes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: var(--space-1);
+}
+/* 两行文件条目使用紧凑内距；图标与名称对齐，状态在右侧稳定居中。
+   不继承正文段落节奏，避免路径把结果区撑成大块空白。 */
+.file-changes-row {
+  flex-wrap: nowrap;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-small);
+  text-align: left;
+}
+.file-changes-row > [data-slot="item-media"] {
+  align-self: flex-start;
+  padding-top: var(--space-1);
+  color: var(--muted);
+}
+.file-changes-row:is(button):hover { background: var(--hover); }
+.file-changes-row:focus-visible { outline: 2px solid var(--state-focus); outline-offset: -2px; }
+/* 文字列可收缩，路径显式覆盖正文排版，名称保持主要阅读层级。 */
+.file-changes-row [data-slot="item-content"] {
+  min-width: 0;
+  gap: 0;
+}
+.file-changes-row [data-slot="item-title"] {
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  color: var(--text);
+  font: var(--type-navigation);
+  font-weight: var(--weight-medium);
+}
+/* 直接给文本节点赋予语义色，避免按钮及正文容器的继承色抹平层级。 */
+.file-changes .file-changes-name {
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.file-changes-row [data-slot="item-actions"] { flex: none; }
+.file-changes .file-changes-row [data-slot="item-description"] {
+  margin: 0;
+  padding: 0;
+  display: block;
+  overflow: hidden;
+  color: var(--muted);
+  font: var(--type-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.file-change-status {
+  flex: none;
+  white-space: nowrap;
+  font: var(--type-caption);
+}
+.file-changes .file-change-status.is-added,
+.file-changes .file-changes-added { color: var(--success); }
+.file-changes .file-change-status.is-modified { color: var(--text-secondary); }
+.file-changes .file-change-status.is-unknown { color: var(--text-muted); }
+@media (prefers-reduced-motion: reduce) {
+  .file-changes-chevron { transition: none; }
+}
+
+/* 会话定位条独立于正文滚动层；每条横线只定位真实 Turn，不生成执行状态。 */
+.conversation-turn-rail {
+  position: absolute;
+  z-index: 2;
+  right: var(--space-2);
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--control-icon-size);
+}
+/* 复用共享滚动视口；少量定位点自然居中，长会话有界滚动。 */
+.conversation-turn-scroll,
+.conversation-turn-scroll > [data-slot="scroll-area-viewport"] {
+  max-height: 60vh;
+}
+.conversation-turn-marks {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+.conversation-turn-marks > button { flex: none; }
+.conversation-turn-marks > button > span {
+  width: var(--space-3);
+  height: 2px;
+  background: var(--border);
+}
+.conversation-turn-marks > button:hover > span,
+.conversation-turn-marks > button:focus-visible > span { background: var(--accent); }
+
+/* 展开入口保留完整命中区；执行详情继续保持次要层级。 */
+.file-changes-trigger {
+  min-height: var(--control-height);
+  flex-wrap: nowrap;
+  border-radius: 0;
+  cursor: pointer;
+}
+.file-changes-trigger > [data-slot="item-content"] { min-width: 0; }
+.archer-turn-summary .archer-interaction-record > [data-slot="collapsible-trigger"] {
+  padding-inline: var(--space-3);
+  border-radius: var(--radius-small);
+}
+.archer-turn-summary .archer-interaction-record > [data-slot="collapsible-trigger"]:hover { background: var(--hover); }
+.archer-turn-summary .archer-interaction-record > [data-slot="collapsible-trigger"]:focus-visible {
+  outline: 2px solid var(--state-focus);
+  outline-offset: -2px;
+}
+.archer-turn-summary .archer-interaction-record > [data-slot="collapsible-trigger"] .archer-interaction-meta {
+  margin-left: auto;
+  color: var(--muted);
+}
+
+/* 行尾统计与箭头相邻；公共箭头的自动左边距不能再次把统计推向行中。 */
+.archer-turn-summary .archer-interaction-record > [data-slot="collapsible-trigger"] > .ui-disclosure-chevron {
+  margin-left: 0;
+}
+
+/* 署名下直接接正文或等待提示，空活动投影不占用额外段落间距。 */
+.workspace-turn-heading > .archer-message-header {
+  margin-top: 0;
+}
+.workspace-turn-group > div:empty {
+  display: none;
+}
+
+/* 署名与累计活动共用一行；窄栏只换行，不隐藏事实或挤压阅读入口。 */
+.workspace-turn-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  min-width: 0;
+}
+.workspace-turn-heading > .archer-message-header {
+  flex: none;
+}
+.workspace-turn-heading > .archer-turn-summary {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+.workspace-turn-heading > .archer-turn-summary > strong {
+  order: 1;
+}
+.workspace-turn-heading > .archer-turn-summary > div {
+  order: 2;
+  margin-left: auto;
+}
+@media (max-width: 700px) {
+  .workspace-turn-heading > .archer-turn-summary {
+    flex-basis: 100%;
+  }
+}
+
+/* 停止回执紧接前一执行内容，避免轮次间距与答复上边距重复叠加。 */
+.workspace-turn-group + .workspace-stop-group {
+  margin-top: 0;
+}
+
+/* 终态正文使用紧凑间距，分割线只由下方执行回执负责。 */
+.turn-outcome {
+  margin-top: var(--space-2);
+}
+.turn-outcome > .archer-assistant-answer {
+  margin-top: 0;
+}
+
+/* 回执只设一条上边界，文件变更保持在线上方，展开详情不重复画线。 */
+.turn-execution-receipt {
+  border-top: 1px solid var(--border);
+  margin-top: var(--space-5);
+  padding-top: var(--space-3);
+}
+.turn-execution-receipt .archer-turn-summary {
+  margin-top: 0;
+}
+.turn-execution-receipt .archer-turn-summary-detail {
+  border-top: 0;
+}
+
+/* 展开根节点不占独立行；入口与状态同行，内容仍横跨整行且保留原键盘语义。 */
+.turn-execution-receipt .archer-turn-summary > .archer-turn-summary-detail,
+.turn-execution-receipt .archer-interaction-record {
+  display: contents;
+}
+.turn-execution-receipt .archer-interaction-record > [data-slot="collapsible-trigger"] {
+  margin-left: auto;
+  width: auto;
+  gap: var(--space-2);
+}
+.turn-execution-receipt .archer-interaction-record > [data-slot="collapsible-content"] {
+  flex-basis: 100%;
+  min-width: 0;
+}
+
+/* 状态使用正文字体与中等字重，辅助统计保持原辅助字体，停止采用中性主文字。 */
+.turn-execution-receipt .archer-turn-summary > strong {
+  font: var(--type-body);
+  font-weight: var(--weight-medium);
+}
+.turn-execution-receipt .archer-turn-summary[data-status='cancelled'] > strong {
+  color: var(--text);
+}

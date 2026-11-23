@@ -1,0 +1,256 @@
+@theme {
+  --color-surface-950: var(--canvas);
+  --color-surface-925: var(--panel);
+  --color-surface-900: var(--subtle);
+  --color-surface-850: var(--hover);
+  --color-surface-800: var(--hover);
+  --color-surface-700: var(--border);
+  --color-line: var(--border);
+  --color-line-soft: var(--border-soft);
+  --color-ink: var(--text);
+  /* muted / accent 等 shadcn 语义名由 @archer/ui 的桥接层统一声明，避免两处定义冲突。 */
+  --color-brand-300: var(--accent);
+  --color-brand-400: var(--accent);
+  --color-brand-500: var(--accent);
+  --color-rose-300: var(--danger);
+  --color-amber-300: var(--warning);
+  --color-emerald-300: var(--success);
+  --color-violet-300: var(--decoration-violet);
+  --color-sky-300: var(--decoration-sky);
+}
+
+* {
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+body {
+  margin: 0;
+  font: var(--type-ui);
+  background: var(--canvas);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+[data-platform='darwin'],
+[data-platform='darwin'] body {
+  background: transparent;
+}
+
+button,input,textarea,select {
+  font: inherit;
+}
+
+button,summary {
+  cursor: pointer;
+}
+
+button {
+  transition: background var(--motion-feedback) ease, color var(--motion-feedback) ease, box-shadow var(--motion-feedback) ease;
+}
+
+button:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+input,textarea,select {
+  min-width: 0;
+  color: var(--text);
+  background: transparent;
+}
+
+/* 原生下拉框改由 Chromium base-select 绘制：按钮沿用各上下文边界，
+   展开列表使用浮层 Token，系统外观不再绕过界面主题与强调色。 */
+select {
+  appearance: base-select;
+  cursor: pointer;
+}
+
+select:disabled {
+  cursor: not-allowed;
+}
+
+select::picker-icon {
+  color: var(--muted);
+  transition: rotate var(--motion-feedback) ease;
+}
+
+/* 显式按钮让选中文本与展开图标共处一行，长文本在控件宽度内省略而不是换行。 */
+select > button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+}
+
+select > button > selectedcontent {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+select:open::picker-icon {
+  rotate: 180deg;
+}
+
+select::picker(select) {
+  appearance: base-select;
+  margin-top: var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-panel);
+  background: var(--surface-floating);
+  color: var(--text);
+  box-shadow: var(--shadow-popover);
+  max-height: min(320px, 50vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* option 只在下拉列表内绘制，直接使用选择器即可命中，不能再以 ::picker(select) 为祖先。 */
+option {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-small);
+  color: var(--secondary);
+  font: inherit;
+}
+
+option:hover,
+option:focus-visible {
+  background: var(--hover);
+  color: var(--text);
+}
+
+option:checked {
+  background: var(--accent-subtle);
+  color: var(--accent-text);
+}
+
+option:disabled {
+  color: var(--state-disabled);
+}
+
+option::checkmark {
+  color: var(--accent-text);
+}
+
+optgroup {
+  padding: var(--space-1) var(--space-2) 0;
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+optgroup option {
+  padding-inline: var(--space-2);
+}
+
+/* 勾选与滑块的系统强调色跟随 Accent Token。 */
+input[type='checkbox'],
+input[type='radio'],
+input[type='range'] {
+  accent-color: var(--accent);
+}
+
+/* 数字输入的步进按钮由系统绘制且无法取色，保留键盘与滚轮调整。 */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+/* 文件选择的触发按钮同样覆盖为公共按钮表面。 */
+input[type='file']::file-selector-button {
+  margin-right: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-small);
+  background: var(--control-surface);
+  color: var(--text);
+  font: var(--type-caption);
+  cursor: pointer;
+}
+
+input[type='file']::file-selector-button:hover {
+  background: var(--control-surface-hover);
+}
+
+/* 浏览器原生鼠标焦点轮廓也需显式归一；键盘焦点仍由 focus-visible 显示。
+   不清除输入框边框、选中底色或错误提示，避免混淆控件状态。 */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* 焦点提示收在控件边界内，避免紧凑行出现悬空外框；仅键盘可见焦点使用此提示。 */
+:focus-visible {
+  outline: 1px solid var(--state-focus);
+  outline-offset: -1px;
+}
+
+::selection {
+  background: var(--selection);
+}
+
+.workbench {
+  position: relative;
+  display: flex;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--canvas);
+}
+
+/* 桌面壳：macOS 让侧栏毛玻璃透出系统材质，Windows 顶部让给系统标题栏按钮。 */
+
+[data-platform='darwin'] .workbench {
+  background: transparent;
+}
+
+[data-platform='darwin'] .app-sidebar::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 46px;
+  -webkit-app-region: drag;
+}
+
+[data-platform='win32'] .workbench {
+  padding-top: 40px;
+}
+
+[data-platform='win32'] .workbench::before {
+  content: '';
+  position: fixed;
+  inset: 0 0 auto;
+  height: 40px;
+  background: var(--sidebar);
+  -webkit-app-region: drag;
+  z-index: 100;
+}
+
+/* 减少动态效果时保留状态反馈，关闭装饰性过渡和滚动动画。 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* macOS 顶部使用统一指针处理；Windows 保留系统标题栏按钮与原生拖拽。 */
+[data-platform='darwin'] .workspace-top,
+[data-platform='darwin'] .settings-workspace-bar,
+[data-platform='darwin'] .app-sidebar::before,
+[data-platform='darwin'] .welcome::before,
+[data-platform='darwin'] .inspector.is-focused .inspector-bar {
+  -webkit-app-region: no-drag !important;
+  user-select: none;
+}

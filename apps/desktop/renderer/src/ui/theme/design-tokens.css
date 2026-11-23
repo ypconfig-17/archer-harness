@@ -1,0 +1,624 @@
+/* 字体规则与 Tailwind 桥接集中在此；组件仅引用语义刻度。
+   清空默认字号表，避免第三方类名绕过桌面字号偏好。 */
+@theme inline {
+  --text-*: initial;
+  --font-sans: var(--font-family-ui);
+  --font-heading: var(--font-family-ui);
+  --font-mono: var(--font-family-code);
+  --font-weight-normal: var(--weight-regular);
+  --font-weight-medium: var(--weight-medium);
+  --font-weight-semibold: var(--weight-semibold);
+  --font-weight-bold: var(--weight-semibold);
+  --text-xs: var(--size-caption);
+  --text-xs--line-height: var(--line-caption);
+  --text-sm: var(--size-ui);
+  --text-sm--line-height: var(--line-ui);
+  --text-base: var(--size-dialog-title);
+  --text-base--line-height: var(--line-dialog-title);
+  --text-lg: var(--size-section);
+  --text-lg--line-height: var(--line-section);
+  --text-xl: var(--size-section);
+  --text-xl--line-height: var(--line-section);
+  --text-2xl: var(--size-title);
+  --text-2xl--line-height: var(--line-title);
+  --text-3xl: var(--size-title);
+  --text-3xl--line-height: var(--line-title);
+  --text-4xl: var(--size-title);
+  --text-4xl--line-height: var(--line-title);
+  --text-5xl: var(--size-title);
+  --text-5xl--line-height: var(--line-title);
+  --text-6xl: var(--size-title);
+  --text-6xl--line-height: var(--line-title);
+  --text-7xl: var(--size-title);
+  --text-7xl--line-height: var(--line-title);
+  --text-8xl: var(--size-title);
+  --text-8xl--line-height: var(--line-title);
+  --text-9xl: var(--size-title);
+  --text-9xl--line-height: var(--line-title);
+}
+
+/* 桌面设计系统的唯一视觉刻度入口；结构组件共享尺寸、间距、圆角与状态色。 */
+:root {
+  --font-family-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-family-code: "SFMono-Regular", Menlo, Consolas, monospace;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  /* 仅用于树的一级节点（项目名）等需要更重强调的少量位置。 */
+  --weight-bold: 700;
+
+  --size-brand: 16px;
+  --line-brand: 24px;
+  --size-title: 24px;
+  --line-title: 32px;
+  --size-section: 18px;
+  --line-section: 24px;
+  --size-folder: 14px;
+  --line-folder: 20px;
+  /* 树的一级节点（项目名）单独一档，随字号偏好一起缩放。 */
+  --size-tree: 16px;
+  --line-tree: 24px;
+  --size-ui: 14px;
+  --line-ui: 20px;
+  --size-body: 14px;
+  --line-body: 24px;
+  --size-caption: 12px;
+  --line-caption: 18px;
+  --size-code: 12px;
+  --line-code: 18px;
+
+  --type-brand: var(--weight-semibold) var(--size-brand)/var(--line-brand) var(--font-family-ui);
+  --type-title: var(--weight-semibold) var(--size-title)/var(--line-title) var(--font-family-ui);
+  --type-section: var(--weight-semibold) var(--size-section)/var(--line-section) var(--font-family-ui);
+  --type-folder: var(--weight-medium) var(--size-folder)/var(--line-folder) var(--font-family-ui);
+  --size-navigation: 13px;
+  --line-navigation: 20px;
+  --size-dialog-title: 16px;
+  --line-dialog-title: 22px;
+  --type-navigation: var(--weight-regular) var(--size-navigation)/var(--line-navigation) var(--font-family-ui);
+  --type-dialog-title: var(--weight-medium) var(--size-dialog-title)/var(--line-dialog-title) var(--font-family-ui);
+  --type-ui: var(--weight-regular) var(--size-ui)/var(--line-ui) var(--font-family-ui);
+  --type-body: var(--weight-regular) var(--size-body)/var(--line-body) var(--font-family-ui);
+  --type-caption: var(--weight-regular) var(--size-caption)/var(--line-caption) var(--font-family-ui);
+  --type-code: var(--weight-regular) var(--size-code)/var(--line-code) var(--font-family-code);
+
+  --sidebar-width: 288px;
+  --brief-activity-max-height: 280px;
+  --control-touch-size: 40px;
+  --control-compact-size: 32px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --radius-small: 6px;
+  --control-height: 32px;
+  --control-icon-size: 28px;
+  --shell-header-height: 44px;
+  --workspace-inset: 24px;
+  --menu-min-width: 184px;
+  --menu-task-width: 264px;
+  --composer-empty-height: 28px;
+  --composer-message-height: 32px;
+  --radius-composer: 12px;
+  --radius-workspace: 10px;
+  --radius-bubble: 12px;
+  --surface-padding: var(--space-4);
+  --section-gap: var(--space-5);
+  --dialog-small: 460px;
+  --dialog-medium: 560px;
+  --dialog-large: 820px;
+  --radius-panel: 12px;
+  --settings-content-inset: 28px;
+  --inspector-reading-width: 960px;
+  --inspector-argument-label-width: 88px;
+  --mac-window-controls-inset: 88px;
+  --inspector-outline-width: 224px;
+  --file-tree-width: 240px;
+  --file-tree-indent: 16px;
+  --diff-gutter-width: 4ch;
+  --inspector-row-height: 30px;
+  --inspector-dense-row-height: 28px;
+  --state-label-width: 76px;
+  --state-reading-width: 720px;
+  --radius-control: 8px;
+  --queue-list-max-height: 152px;
+
+  --avatar-size: 28px;
+  --conversation-width: 780px;
+  --space-prose-block: 16px;
+  --space-prose-heading: 8px;
+  --space-prose-section-extra: 12px;
+  --space-prose-list-item: 6px;
+  --space-prose-indent: 22px;
+
+  --icon-ui: 16px;
+  --icon-small: 14px;
+  --icon-mini: 12px;
+  --icon-brand: 22px;
+  --brand-mark-size: 24px;
+  --icon-text-gap: 8px;
+  /* 箭头独占一列；子行图标对齐文件夹，文字共享同一基线。 */
+  --nav-row-inset: 8px;
+  --nav-indent: var(--nav-row-inset);
+  --nav-row-height: 30px;
+
+  --provider-space-section: 20px;
+  --provider-space-item: 12px;
+  --provider-label-width: 88px;
+  --settings-space-1: var(--space-1);
+  --settings-space-2: var(--space-2);
+  --settings-space-3: var(--space-3);
+  --settings-space-4: var(--space-4);
+  --settings-space-5: var(--space-5);
+  --settings-space-6: var(--space-6);
+  --settings-content-width: 800px;
+  --provider-card-height: 88px;
+  --provider-card-icon-size: 36px;
+  --settings-nav-width: 220px;
+  --settings-control-width: 196px;
+  --provider-capability-card-height: 112px;
+  --skill-editor-width: 640px;
+  --skill-editor-body-height: 200px;
+  --activity-row-height: 32px;
+  --approval-command-max-height: 160px;
+
+  /* 原始彩色图集的裁切刻度，与主题颜色独立。 */
+  --artwork-width: 13.473684;
+  --artwork-height: 8.982456;
+  --artwork-left: -0.578947;
+  --artwork-top: -0.657895;
+  --artwork-step-x: -1.619048;
+  --artwork-step-y: -2.078947;
+
+  --motion-feedback: 160ms;
+}
+
+/*
+ * 中性表面只由外观模式决定；强调色主题不替换这些背景。
+ * 明度顺序：app < sidebar < content < surface < raised。
+ * hover / selected / active 是同一方向上的三级交互反馈：浅色逐级加深，
+ * 深色逐级提亮，因此悬停行、选中行与按下态在任何主题下都能互相区分。
+ */
+:root {
+  color-scheme: light;
+  --bg-app: #F4F5F8;
+  --bg-sidebar: #F1F2F6;
+  --bg-content: #FFFFFF;
+  --surface: #F7F8FB;
+  --surface-subtle: #F2F4F8;
+  --surface-raised: #FFFFFF;
+  --surface-hover: #EAEDF4;
+  --surface-selected: #E0E2E9;
+  --surface-active: #D6D9E0;
+  --surface-overlay: #FFFFFF;
+  --surface-bubble: #EEF1F8;
+  --border-default: #E3E6EE;
+  --border-subtle: #EDEFF5;
+  --border-strong: #D3D8E3;
+  --text-primary: #232736;
+  --text-secondary: #525C6B;
+  --text-muted: #636D7C;
+  --text-disabled: #9AA2AF;
+  --code-background: #F6F7FA;
+  --on-danger: #FFFFFF;
+
+  /* 阴影与遮罩取中性主题自己的色相，强调整色与明暗都不参与。 */
+  --shadow-tint: 30 38 56;
+  --shadow-overlay: 0 12px 32px rgb(var(--shadow-tint) / 12%), 0 2px 6px rgb(var(--shadow-tint) / 6%);
+  --shadow-dialog: 0 24px 72px rgb(var(--shadow-tint) / 18%);
+  --shadow-control: 0 1px 3px rgb(var(--shadow-tint) / 10%);
+  --shadow-floating-quiet: 0 3px 12px color-mix(in srgb, var(--text-primary) 8%, transparent);
+  --shadow-composer: 0 2px 8px rgb(var(--shadow-tint) / 4%);
+  --dialog-backdrop: rgb(var(--shadow-tint) / 24%);
+
+  --success: #2F7250;
+  --warning: #8A5A12;
+  --danger: #B23A48;
+  --info: #2D6DA8;
+}
+
+:root[data-appearance="dark"] {
+  color-scheme: dark;
+  --bg-app: #0E1015;
+  --bg-sidebar: #12141A;
+  --bg-content: #191C23;
+  --surface: #222630;
+  --surface-subtle: #1E222B;
+  --surface-raised: #292E39;
+  --surface-hover: #2E343F;
+  --surface-selected: #373C48;
+  --surface-active: #3F4450;
+  --surface-overlay: #262B36;
+  --surface-bubble: #232833;
+  --border-default: #303540;
+  --border-subtle: #272C36;
+  --border-strong: #3C4250;
+  --text-primary: #E9ECF3;
+  --text-secondary: #A8B0C0;
+  --text-muted: #8F96A5;
+  --text-disabled: #6A7382;
+  --code-background: #1D2129;
+  --on-danger: #2A1013;
+
+  --shadow-tint: 0 0 0;
+  --shadow-overlay: 0 14px 36px rgb(var(--shadow-tint) / 48%), 0 2px 8px rgb(var(--shadow-tint) / 32%);
+  --shadow-dialog: 0 28px 80px rgb(var(--shadow-tint) / 60%);
+  --shadow-control: 0 1px 3px rgb(var(--shadow-tint) / 30%);
+  --shadow-floating-quiet: 0 3px 12px rgb(var(--shadow-tint) / 28%);
+  --shadow-composer: none;
+  --dialog-backdrop: rgb(5 7 11 / 64%);
+
+  --success: #86D6AD;
+  --warning: #E8C177;
+  --danger: #F0A0AA;
+  --info: #8CB9EE;
+}
+
+/*
+ * 界面主题只覆盖中性层：窗口、侧栏、阅读面、表面、文字与边界。
+ * Graphite 是 :root 默认值；其余主题用双属性选择器覆盖深色组合，
+ * 强调色块不参与这里，因此三个维度可以自由组合。
+ */
+:root[data-base-theme="midnight"] {
+  color-scheme: light;
+  --bg-app: #ECEEF3;
+  --bg-sidebar: #E7EAF0;
+  --bg-content: #FFFFFF;
+  --surface: #F5F6FA;
+  --surface-subtle: #EEF0F5;
+  --surface-raised: #FFFFFF;
+  --surface-hover: #E2E5ED;
+  --surface-selected: #D8DBE2;
+  --surface-active: #CED1D9;
+  --surface-overlay: #FFFFFF;
+  --surface-bubble: #E9ECF3;
+  --border-default: #DCE0E9;
+  --border-subtle: #E8EBF2;
+  --border-strong: #C8CEDA;
+  --text-primary: #12151D;
+  --text-secondary: #4B5364;
+  --text-muted: #5F6877;
+  --text-disabled: #99A0AD;
+  --code-background: #F3F5F9;
+  --on-danger: #FFFFFF;
+  --shadow-tint: 20 24 34;
+}
+
+:root[data-base-theme="midnight"][data-appearance="dark"] {
+  color-scheme: dark;
+  --bg-app: #07080B;
+  --bg-sidebar: #0A0C10;
+  --bg-content: #101318;
+  --surface: #181C23;
+  --surface-subtle: #14181E;
+  --surface-raised: #1F242C;
+  --surface-hover: #242932;
+  --surface-selected: #2D323A;
+  --surface-active: #343A42;
+  --surface-overlay: #1B2027;
+  --surface-bubble: #1A1F26;
+  --border-default: #272D37;
+  --border-subtle: #1F242C;
+  --border-strong: #333B47;
+  --text-primary: #E6E9F0;
+  --text-secondary: #A3ABB9;
+  --text-muted: #87909F;
+  --text-disabled: #616A78;
+  --code-background: #14181E;
+  --on-danger: #2A1013;
+  --shadow-tint: 0 0 0;
+}
+
+:root[data-base-theme="slate"] {
+  color-scheme: light;
+  --bg-app: #EDF1F7;
+  --bg-sidebar: #E7EDF5;
+  --bg-content: #FFFFFF;
+  --surface: #F4F7FB;
+  --surface-subtle: #EDF1F7;
+  --surface-raised: #FFFFFF;
+  --surface-hover: #E1E7F1;
+  --surface-selected: #D6DCE6;
+  --surface-active: #CDD3DC;
+  --surface-overlay: #FFFFFF;
+  --surface-bubble: #E8EEF8;
+  --border-default: #DBE2ED;
+  --border-subtle: #E8EDF5;
+  --border-strong: #C6D0DF;
+  --text-primary: #1C2533;
+  --text-secondary: #4A586C;
+  --text-muted: #5D6B7E;
+  --text-disabled: #98A3B3;
+  --code-background: #F3F6FA;
+  --on-danger: #FFFFFF;
+  --shadow-tint: 19 33 49;
+}
+
+:root[data-base-theme="slate"][data-appearance="dark"] {
+  color-scheme: dark;
+  --bg-app: #0C111A;
+  --bg-sidebar: #101722;
+  --bg-content: #141C28;
+  --surface: #1D2735;
+  --surface-subtle: #18212D;
+  --surface-raised: #243041;
+  --surface-hover: #293647;
+  --surface-selected: #323E50;
+  --surface-active: #3A4658;
+  --surface-overlay: #1F2A39;
+  --surface-bubble: #1D2836;
+  --border-default: #2B394B;
+  --border-subtle: #232F3F;
+  --border-strong: #3A4B61;
+  --text-primary: #E4EBF5;
+  --text-secondary: #A5B1C2;
+  --text-muted: #8997AA;
+  --text-disabled: #657385;
+  --shadow-tint: 0 0 0;
+  --code-background: #17202C;
+  --on-danger: #2A1013;
+}
+
+:root[data-base-theme="warm"] {
+  color-scheme: light;
+  --bg-app: #F7F4EF;
+  --bg-sidebar: #F2EEE7;
+  --bg-content: #FFFDF9;
+  --surface: #FAF7F2;
+  --surface-subtle: #F4F0E9;
+  --surface-raised: #FFFDF9;
+  --surface-hover: #ECE6DD;
+  --surface-selected: #E1DBD3;
+  --surface-active: #D8D2C9;
+  --surface-overlay: #FFFDF9;
+  --surface-bubble: #F3EDE4;
+  --border-default: #E6DED3;
+  --border-subtle: #EFE9E0;
+  --border-strong: #D7CBBB;
+  --text-primary: #2B241C;
+  --text-secondary: #5A5045;
+  --text-muted: #6B6155;
+  --text-disabled: #A69C8F;
+  --code-background: #F8F4EE;
+  --on-danger: #FFFFFF;
+  --shadow-tint: 92 74 54;
+}
+
+:root[data-base-theme="warm"][data-appearance="dark"] {
+  color-scheme: dark;
+  --bg-app: #100E0B;
+  --bg-sidebar: #15120E;
+  --bg-content: #1A1712;
+  --surface: #241F19;
+  --surface-subtle: #1F1B15;
+  --surface-raised: #2C261F;
+  --surface-hover: #322B24;
+  --surface-selected: #3A342D;
+  --surface-active: #423C34;
+  --surface-overlay: #26211A;
+  --surface-bubble: #241F18;
+  --border-default: #362F26;
+  --border-subtle: #2B251E;
+  --border-strong: #463D31;
+  --text-primary: #F0E9DE;
+  --text-secondary: #B5A997;
+  --text-muted: #9B8F7D;
+  --text-disabled: #6F6558;
+  --code-background: #1E1A14;
+  --on-danger: #2A1013;
+  --shadow-tint: 0 0 0;
+}
+
+/*
+ * 强调色主题只覆盖 Accent。浅色块必须排在中性深色块之后，
+ * 并为 data-appearance="dark" 提供双属性选择器，确保组合优先级稳定。
+ */
+:root,
+:root[data-theme="graphite-iris"] {
+  --accent-default: #6066D8;
+  --accent-text: #565CD2;
+  --accent-foreground: #FFFFFF;
+}
+
+:root[data-appearance="dark"],
+:root[data-theme="graphite-iris"][data-appearance="dark"] {
+  --accent-default: #8793F6;
+  --accent-text: #A6AFFF;
+  --accent-foreground: #101218;
+}
+
+:root[data-theme="slate-teal"]:not([data-appearance="dark"]) {
+  --accent-default: #128078;
+  --accent-text: #0D746D;
+  --accent-foreground: #FFFFFF;
+}
+
+:root[data-theme="slate-teal"][data-appearance="dark"] {
+  --accent-default: #52BAAD;
+  --accent-text: #6FD0C3;
+  --accent-foreground: #101218;
+}
+
+:root[data-theme="carbon-amber"]:not([data-appearance="dark"]) {
+  --accent-default: #C17D35;
+  --accent-text: #8A5F35;
+  --accent-foreground: #241505;
+}
+
+:root[data-theme="carbon-amber"][data-appearance="dark"] {
+  --accent-default: #E3A15D;
+  --accent-text: #F0B571;
+  --accent-foreground: #101218;
+}
+
+:root[data-theme="dusty-rose"]:not([data-appearance="dark"]) {
+  --accent-default: #B24E71;
+  --accent-text: #A03A5D;
+  --accent-foreground: #FFFFFF;
+}
+
+:root[data-theme="dusty-rose"][data-appearance="dark"] {
+  --accent-default: #E28AA5;
+  --accent-text: #F0A6BE;
+  --accent-foreground: #101218;
+}
+
+/*
+ * 自定义强调色由 theme.ts 在运行时写入同名的内联变量；
+ * 这里的回退值只服务样式加载后、React 接管前的短暂窗口。
+ */
+:root[data-theme="custom"] {
+  --accent-default: var(--accent-custom, #6066D8);
+  --accent-text: color-mix(in srgb, var(--accent-custom, #6066D8) 62%, var(--text-primary));
+  --accent-foreground: #FFFFFF;
+}
+
+:root[data-theme="custom"][data-appearance="dark"] {
+  --accent-foreground: #101218;
+}
+
+/*
+ * Accent 的交互层级由填充色推导；文字色只在需要满足正文对比度时单独声明。
+ * 强强调用于当前选中与主操作，浅强调用于选中表面与当前活动，中性表面不被整体染色。
+ */
+:root {
+  --accent-hover: color-mix(in srgb, var(--accent-default) 88%, var(--text-primary));
+  --accent-pressed: color-mix(in srgb, var(--accent-default) 76%, var(--text-primary));
+  --accent-subtle: color-mix(in srgb, var(--accent-default) 14%, var(--surface));
+  --accent-subtle-hover: color-mix(in srgb, var(--accent-default) 21%, var(--surface));
+  --accent-border: color-mix(in srgb, var(--accent-default) 50%, var(--border-default));
+  /* 次级强调用于图标与轻量入口，向正文色混合，保证在浅色表面上仍可读。 */
+  --accent-muted: color-mix(in srgb, var(--accent-default) 60%, var(--text-primary));
+  --accent-focus: var(--accent-default);
+  --accent-focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent-focus) 24%, transparent);
+  --focus-ring: var(--accent-focus-ring);
+  --state-focus: var(--accent-default);
+  --state-disabled: var(--text-disabled);
+
+  /*
+   * 普通控件保持中性：字段、次级按钮与选择器的静止表面只在自身中性层上
+   * 前进一点（向正文色混合），强调色只留给主操作、焦点与当前项。
+   */
+  --control-surface: color-mix(in srgb, var(--text-primary) 4%, var(--surface));
+  --control-surface-hover: color-mix(in srgb, var(--text-primary) 9%, var(--surface));
+  --control-border: color-mix(in srgb, var(--text-primary) 8%, var(--border-default));
+
+  /* 成功、失败、警告与等待授权保持独立语义；运行中的当前活动由强调色表达。 */
+  --success-surface: color-mix(in srgb, var(--success) 10%, var(--surface));
+  --warning-surface: color-mix(in srgb, var(--warning) 10%, var(--surface));
+  --danger-surface: color-mix(in srgb, var(--danger) 10%, var(--surface));
+  --warning-border: color-mix(in srgb, var(--warning) 25%, var(--border-default));
+  --notice-danger: color-mix(in srgb, var(--danger) 5%, var(--surface));
+  --notice-warning: color-mix(in srgb, var(--warning) 5%, var(--surface));
+  --notice-danger-border: color-mix(in srgb, var(--danger) 22%, var(--border-default));
+  --notice-warning-border: color-mix(in srgb, var(--warning) 22%, var(--border-default));
+
+  --decoration-violet: #9B7BC3;
+  --decoration-sky: #6D97B6;
+  --settings-danger: var(--danger);
+
+  /* 旧组件仍在使用的语义别名；统一指向新 Token，不保留第二轮调色板副本。 */
+  --canvas: var(--bg-content);
+  --panel: var(--surface);
+  --sidebar: var(--bg-sidebar);
+  --subtle: var(--surface-subtle);
+  --raised: var(--surface-raised);
+  --hover: var(--surface-hover);
+  --border: var(--border-default);
+  --border-soft: var(--border-subtle);
+  --text: var(--text-primary);
+  --secondary: var(--text-secondary);
+  --muted: var(--text-muted);
+  --accent: var(--accent-default);
+  --on-accent: var(--accent-foreground);
+  --selection: var(--surface-selected);
+  --bubble: var(--surface-bubble);
+  --code: var(--code-background);
+  --shadow: var(--shadow-dialog);
+  --shadow-popover: var(--shadow-overlay);
+  --surface-floating: var(--surface-overlay);
+  --surface-frame: var(--bg-app);
+  --surface-composer: color-mix(in srgb, var(--surface-subtle) 80%, var(--surface));
+}
+
+/* 窗口与滚动回弹区域跟随当前界面主题；首帧版本由构建从本文件生成。 */
+html {
+  background: var(--bg-app);
+}
+
+/* shiki CSS 变量主题的语法高亮色板，正文 Markdown 的代码块通过 --shiki-* 消费。 */
+:root {
+  --shiki-foreground: var(--text-primary);
+  /* 代码块外壳由 Streamdown/共享代码组件绘制，行内主题不再叠一层底色。 */
+  --shiki-background: transparent;
+  --shiki-token-constant: #A87926;
+  --shiki-token-string: color-mix(in srgb, #39816A 62%, var(--text-primary));
+  --shiki-token-string-expression: color-mix(in srgb, #39816A 62%, var(--text-primary));
+  --shiki-token-comment: var(--text-muted);
+  --shiki-token-keyword: #4B78B7;
+  --shiki-token-parameter: #A87926;
+  --shiki-token-function: #6C63B5;
+  --shiki-token-punctuation: var(--text-secondary);
+  --shiki-token-link: var(--accent-text);
+}
+
+:root[data-appearance="dark"] {
+  --shiki-token-constant: #D9B57B;
+  --shiki-token-string: #8EC3A5;
+  --shiki-token-string-expression: #8EC3A5;
+  --shiki-token-keyword: #8CB4ED;
+  --shiki-token-parameter: #D9B57B;
+  --shiki-token-function: #BCABED;
+}
+
+:root[data-font-size="small"] {
+  --size-navigation: 12px;
+  --line-navigation: 18px;
+  --size-dialog-title: 15px;
+  --size-title: 22px;
+  --line-title: 30px;
+  --size-section: 17px;
+  --line-section: 23px;
+  --size-folder: 13px;
+  --line-folder: 19px;
+  --size-tree: 15px;
+  --line-tree: 22px;
+  --size-ui: 13px;
+  --line-ui: 19px;
+  --size-body: 13px;
+  --line-body: 22px;
+  --size-caption: 11px;
+  --line-caption: 17px;
+  --size-code: 11px;
+  --line-code: 17px;
+}
+
+:root[data-font-size="large"] {
+  --size-navigation: 15px;
+  --line-navigation: 22px;
+  --size-dialog-title: 18px;
+  --line-dialog-title: 26px;
+  --size-title: 27px;
+  --line-title: 36px;
+  --size-section: 20px;
+  --line-section: 27px;
+  --size-folder: 16px;
+  --line-folder: 23px;
+  --size-tree: 18px;
+  --line-tree: 27px;
+  --size-ui: 16px;
+  --line-ui: 23px;
+  --size-body: 16px;
+  --line-body: 27px;
+  --size-caption: 14px;
+  --line-caption: 20px;
+  --size-code: 14px;
+  --line-code: 20px;
+}
+
+.ui-icon { width: var(--icon-ui); height: var(--icon-ui); flex-shrink: 0; vertical-align: middle; }
+.ui-icon.icon-small { width: var(--icon-small); height: var(--icon-small); }
+.ui-icon.icon-mini { width: var(--icon-mini); height: var(--icon-mini); }
+.ui-icon.icon-brand { width: var(--icon-brand); height: var(--icon-brand); }

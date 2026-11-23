@@ -1,0 +1,81 @@
+.reference-comparison {
+  min-width: 0;
+}
+.comparison-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-3);
+  margin-block: var(--space-4);
+}
+.comparison-controls > label {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--secondary);
+  font: var(--type-caption);
+}
+.comparison-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+.comparison-columns > section {
+  min-width: 0;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-panel);
+  overflow: hidden;
+}
+.comparison-columns header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-soft);
+  font: var(--type-ui);
+}
+.comparison-columns header > span,
+.comparison-note {
+  color: var(--muted);
+  font: var(--type-caption);
+}
+.comparison-columns iframe {
+  display: block;
+  border: 0;
+  width: 100%;
+  height: 1500px;
+}
+@media (max-width: 1000px) {
+  .comparison-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.comparison-provenance {
+  margin-block: var(--space-4);
+  color: var(--secondary);
+  font: var(--type-caption);
+}
+.comparison-provenance > [data-slot="collapsible-trigger"] {
+  cursor: pointer;
+  color: var(--text);
+}
+.comparison-provenance ul {
+  padding-inline-start: var(--space-5);
+  overflow-wrap: anywhere;
+}
+.comparison-provenance a {
+  color: var(--accent);
+}
+.comparison-provenance a:focus-visible,
+.comparison-provenance > [data-slot="collapsible-trigger"]:focus-visible {
+  outline: 2px solid var(--state-focus);
+  outline-offset: 3px;
+}
+
+/* 对照页顶部只保留原生选择器的文字与箭头，不把参考基线变成表单面板。 */
+.comparison-controls .ui-select {
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}

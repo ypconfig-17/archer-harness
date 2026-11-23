@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- 首帧前同步恢复三维外观与字号：CSS 尚未加载时也不闪白，React 挂载后由 theme.ts 接管。 -->
+    <script>
+      (function () {
+        var root = document.documentElement;
+        var appearance = 'dark';
+        var baseTheme = 'graphite';
+        var theme = 'graphite-iris';
+        var customAccent = '';
+        var fontSize = 'medium';
+        var colorThemes = ['graphite-iris', 'slate-teal', 'carbon-amber', 'dusty-rose', 'custom'];
+        var baseThemes = ['graphite', 'midnight', 'slate', 'warm'];
+        try {
+          var saved = JSON.parse(localStorage.getItem('archer-preferences') || 'null');
+          var state = saved && saved.state;
+          if (state) {
+            if (state.appearance === 'light' || state.appearance === 'dark' || state.appearance === 'system') appearance = state.appearance;
+            if (baseThemes.indexOf(state.baseTheme) >= 0) baseTheme = state.baseTheme;
+            if (colorThemes.indexOf(state.colorTheme) >= 0) theme = state.colorTheme;
+            if (typeof state.customAccent === 'string' && /^#[0-9a-f]{6}$/i.test(state.customAccent)) customAccent = state.customAccent;
+            if (state.fontSize === 'small' || state.fontSize === 'large') fontSize = state.fontSize;
+          }
+        } catch (error) {}
+        var dark = appearance === 'dark'
+          || appearance === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        root.dataset.appearance = dark ? 'dark' : 'light';
+        root.dataset.baseTheme = baseTheme;
+        root.dataset.theme = theme;
+        root.dataset.fontSize = fontSize;
+        // 自定义强调色的完整推导由 theme.ts 完成；这里只回放已保存的填充色。
+        if (theme === 'custom' && customAccent) root.style.setProperty('--accent-custom', customAccent);
+      })();
+    </script>
+    <!--theme-first-paint-->
+    <title>Archer</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

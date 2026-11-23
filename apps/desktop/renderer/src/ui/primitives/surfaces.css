@@ -1,0 +1,141 @@
+/* 应用层只维护业务布局，公共表面由 @archer/ui 提供。 */
+/* 确认框采用紧凑正文，记录框复用标题组件但保留独立滚动与业务确认。 */
+.ui-dialog[data-size="medium"],
+.settings-unsaved-dialog {
+  padding: var(--surface-padding);
+}
+
+
+
+.recovery-records-dialog .ui-dialog-header {
+  padding: 0 0 var(--space-4);
+}
+
+
+
+/* 原生文件选择器不属于文本字段组件；只补足容器边界，文本类字段统一使用 @archer/ui。 */
+:is(.ui-dialog, .settings-workspace) input[type='file'] {
+  max-width: 100%;
+  min-height: var(--control-height);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-small);
+  background: var(--control-surface);
+  color: var(--text);
+  font: var(--type-ui);
+}
+
+:is(.ui-dialog, .settings-workspace) input[type='file']:focus-visible {
+  outline: 2px solid var(--state-focus);
+  outline-offset: 1px;
+}
+
+:is(.ui-dialog, .settings-workspace) input[type='file']:disabled {
+  background: var(--subtle);
+  color: var(--state-disabled);
+}
+.full-access-dialog {
+  padding: var(--surface-padding);
+}
+
+.full-access-dialog > .ui-dialog-header {
+  padding: 0 0 var(--space-3);
+}
+
+.full-access-description {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.full-access-description p {
+  margin: 0;
+}
+
+.full-access-scope {
+  color: var(--text);
+  font: var(--type-ui);
+}
+
+.full-access-current {
+  color: var(--secondary);
+  font: var(--type-ui);
+}
+
+.full-access-notes {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+
+/* 取消沿用普通控件表面，授权主操作独占实心强调色；仅调整确认框呈现。 */
+.full-access-dialog > .ui-dialog-actions {
+  border-top: 0;
+  margin-top: var(--space-4);
+  padding: 0;
+}
+
+
+/* 授权确认沿用标准模态结构，正文与附加说明分层，不重复大型警示面。 */
+.full-access-description {
+  padding-block: var(--space-2);
+}
+
+.full-access-notes {
+  border-top: 1px solid var(--border-soft);
+  padding-top: var(--space-3);
+}
+
+.full-access-current {
+  padding-left: var(--space-2);
+  border-left: 2px solid var(--accent);
+}
+
+
+/* 模式名称与真实策略边界配对，作用域独立显示，避免误认成全局授权。 */
+.command-mode-menu {
+  width: 264px;
+}
+
+.command-mode-copy {
+  display: grid;
+  flex: 1;
+  gap: var(--space-1);
+  text-align: left;
+}
+
+.command-mode-copy strong { font: var(--type-ui); font-weight: var(--weight-medium); }
+
+.command-mode-copy small { font: var(--type-caption); color: var(--muted); }
+
+.command-mode-scope {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2);
+  border-top: 1px solid var(--border-soft);
+  color: var(--muted);
+  font: var(--type-caption);
+}
+
+
+.full-access-notes {
+  padding: var(--space-3);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-small);
+  background: var(--subtle);
+}
+
+.full-access-notes p, .full-access-current {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.full-access-notes .ui-icon, .full-access-current .ui-icon { flex: none; }
+
+.full-access-notes p:first-child > .ui-icon { color: var(--warning); }
+
+.full-access-current > .ui-icon { color: var(--success); }
