@@ -551,7 +551,6 @@ function AboutPanel() {
   const desktop = window.archerDesktop;
   const info = health.data;
   const pending = health.isError ? '无法连接' : '读取中…';
-  const inference = info ? (info.inference === 'pi' ? '连接模型服务' : '模拟响应（调试）') : pending;
   const platform = desktop?.platform === 'darwin' ? 'macOS'
     : desktop?.platform === 'win32' ? 'Windows'
     : desktop?.platform === 'linux' ? 'Linux' : '浏览器';
@@ -563,7 +562,6 @@ function AboutPanel() {
       </div>
       <div className="about-facts">
         <div><span>版本</span><span>{info?.version ?? pending}</span></div>
-        <div><span>推理方式</span><span>{inference}</span></div>
         <div><span>运行平台</span><span>{platform}</span></div>
         <div><span>服务地址</span><span>{desktop?.apiUrl || window.location.origin}</span></div>
       </div>
@@ -572,7 +570,7 @@ function AboutPanel() {
       <h4>服务连接</h4>
       <SettingRow
         label={health.isError ? '暂时无法连接' : health.isPending ? '正在检查连接' : '服务已连接'}
-        hint={health.isError ? health.error.message : '版本与推理方式来自当前服务。'}
+        hint={health.isError ? health.error.message : '版本来自当前服务。'}
       >
         <Button variant="secondary" disabled={health.isFetching} onClick={() => void health.refetch()}>
           <Icon name="refresh" size="sm" />

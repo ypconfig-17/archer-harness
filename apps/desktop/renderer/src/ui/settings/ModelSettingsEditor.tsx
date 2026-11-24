@@ -1,6 +1,6 @@
 import { Button, Collapsible, CollapsibleContent, CollapsibleTrigger, ConfirmDialog, Icon, Input, NativeSelect } from '@archer/ui';
 import { useEffect, useReducer, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { JsonObject, ModelSettings } from '@archer/contracts';
 import { client } from '../../lib/api';
 import { REASONING_LABELS } from '../../lib/model-selection';
@@ -8,12 +8,16 @@ import {
   modelDraftDirty,
   modelDraftReducer,
   modelSettingsUpdate,
+  resolvedBaseUrls,
+  serviceBaseUrls,
   serviceModels,
   type ModelDraft,
   type ModelServiceDraft,
 } from '../../lib/model-settings-draft';
 import { useModelSettings } from '../workspace/ComposerControls';
 import { SettingRow, SettingsSaveBar, type SettingsEditorState } from './SettingsControls';
+
+const localKeys = window.archerDesktop?.serviceKey === 'desktop-local' ? window.archerDesktop : undefined;
 
 export function ModelSettingsEditor({ onStateChange }: { onStateChange(state: SettingsEditorState): void }) {
   const query = useModelSettings();
@@ -56,12 +60,40 @@ export function ModelSettingsEditor({ onStateChange }: { onStateChange(state: Se
     setError('');
     setSaved('');
     try {
-      const result = await client.updateModelSettings(modelSettingsUpdate(state));
-      // 成功返回的配置是新的编辑基线；失败时保留完整草稿和原 revision，交由用户处理冲突。
-      dispatch({ type: 'reset', data: result });
+      const update = modelSettingsUpdate(state);
+      for (const service of state.draft.providers) {
+        const address = service.baseURL.trim();
+        if (address && !URL.canParse(address)) throw new Error(`服务「${service.id.trim() || '新服务'}」的 API 地址不是合法 URL。`);
+      }
+      const pendingKeys = new Map<string, string | null>();
+      for (const service of state.draft.providers) {
+        if (service.localKey !== undefined) pendingKeys.set(service.id.trim(), service.localKey);
+      }
+      const saveKey = localKeys?.saveModelKey;
+      if (pendingKeys.size && !saveKey) throw new Error('当前服务不支持在桌面保存 API Key。');
+      const result = await client.updateModelSettings(update);
       cache.setQueryData(['model-settings'], result);
       void cache.invalidateQueries({ queryKey: ['health'] });
-      setSaved('已保存，将用于后续推理。');
+      try {
+        for (const service of state.draft.providers) {
+          const id = service.id.trim();
+          const key = pendingKeys.get(id);
+          if (key === undefined || !saveKey) continue;
+          // 配置已提交，按解析后的实际地址写入；内置服务留空地址也能保存密钥。
+          const addresses = resolvedBaseUrls(id, result.models);
+          if (addresses.length === 0) throw new Error(`服务「${id}」没有可绑定 API Key 的请求地址，请填写 API 地址后重试。`);
+          for (const address of addresses) await saveKey(id, address, key);
+          pendingKeys.delete(id);
+        }
+        setSaved('已保存，将用于后续推理。');
+      } catch (cause) {
+        const message = cause instanceof Error ? cause.message : '请检查本机凭据存储后重试。';
+        setError(`模型服务设置已保存，API Key 保存失败。${message}`);
+      } finally {
+        // 服务配置已经提交。只保留尚未写入系统存储的密钥，重试以新的 revision 为基线。
+        dispatch({ type: 'reset', data: result, pendingKeys });
+        void cache.invalidateQueries({ queryKey: ['model-key-status'] });
+      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : '保存失败，请稍后重试。');
     } finally {
@@ -88,12 +120,6 @@ export function ModelSettingsEditor({ onStateChange }: { onStateChange(state: Se
       <fieldset className="settings-form" disabled={busy}>
         <section className="settings-group" hidden={expanded !== null}>
           <h4>推理连接</h4>
-          <SettingRow label="推理方式" hint="连接实际模型服务，或使用固定响应进行本地调试。">
-            <NativeSelect aria-label="推理方式" value={draft.mode} onChange={event => edit({ ...draft, mode: event.target.value as ModelDraft['mode'] })}>
-              <option value="pi">连接模型服务</option>
-              <option value="mock">模拟响应（调试）</option>
-            </NativeSelect>
-          </SettingRow>
           <SettingRow label="默认服务" hint="未指定模型时使用。配置多个服务后，请明确选择默认服务。">
             <NativeSelect aria-label="默认服务" value={draft.defaultProvider} onChange={event => edit({ ...draft, defaultProvider: event.target.value })}>
               <option value="">{draft.providers.length <= 1 ? '自动选择唯一服务' : '请选择默认服务'}</option>
@@ -108,7 +134,6 @@ export function ModelSettingsEditor({ onStateChange }: { onStateChange(state: Se
             <div><h4>模型服务</h4><p className="settings-note">每个服务共用连接地址、协议与凭据，可包含多个模型。</p></div>
             <span className="management-count">{draft.providers.length} 个服务</span>
           </div>
-          {draft.mode === 'mock' && <p className="settings-notice">当前使用模拟响应。以下服务配置会保存，切换为连接模型服务后才会使用。</p>}
           {draft.providers.length === 0 && <div className="settings-empty">
             <Icon name="spark" size="lg" /><h4>添加第一个模型服务</h4>
             <p>配置连接信息和模型后，即可在对话中选择。</p>
@@ -161,13 +186,27 @@ export function ModelSettingsEditor({ onStateChange }: { onStateChange(state: Se
                       {base.protocols.map(api => <option key={api}>{api}</option>)}
                     </NativeSelect>
                   </label>
-                  <label className="settings-field">密钥环境变量
-                    <Input value={service.apiKeyEnv} placeholder="OPENAI_API_KEY" spellCheck={false} autoComplete="off" onChange={event => editService(index, { apiKeyEnv: event.target.value })} />
-                    <small>填写服务端的变量名，凭据由服务端读取。</small>
-                  </label>
                   <label className="settings-field wide">API 地址
                     <Input value={service.baseURL} placeholder="留空使用内置服务地址" spellCheck={false} onChange={event => editService(index, { baseURL: event.target.value })} />
                   </label>
+                  {localKeys?.saveModelKey && <ModelApiKeyField
+                    service={service}
+                    settings={base}
+                    onChange={localKey => editService(index, { localKey })}
+                  />}
+                  {localKeys?.saveModelKey ? (
+                    <details className="settings-field wide">
+                      <summary>使用环境变量</summary>
+                      <label className="settings-field">密钥环境变量
+                        <Input value={service.apiKeyEnv} placeholder="OPENAI_API_KEY" spellCheck={false} autoComplete="off" onChange={event => editService(index, { apiKeyEnv: event.target.value })} />
+                      </label>
+                    </details>
+                  ) : (
+                    <label className="settings-field wide">密钥环境变量
+                      <Input value={service.apiKeyEnv} placeholder="OPENAI_API_KEY" spellCheck={false} autoComplete="off" onChange={event => editService(index, { apiKeyEnv: event.target.value })} />
+                      <small>填写服务端的变量名，凭据由服务端读取。</small>
+                    </label>
+                  )}
                 </div>
                 <h5>可用模型</h5>
                 <ModelEntries service={service} settings={base} onChange={value => editService(index, value)} />
@@ -201,6 +240,43 @@ export function ModelSettingsEditor({ onStateChange }: { onStateChange(state: Se
   </>;
 }
 
+/** 输入框只保留尚未提交的值，保存后只能查询存在状态。 */
+function ModelApiKeyField({ service, settings, onChange }: {
+  service: ModelServiceDraft;
+  settings: ModelSettings;
+  onChange(value: string | null | undefined): void;
+}) {
+  const id = service.id.trim();
+  // 手填地址优先；留空时使用目录解析出的实际地址，内置服务无需重复填写端点。
+  const [address] = serviceBaseUrls(service, settings.models);
+  const { data: stored } = useQuery({
+    queryKey: ['model-key-status', id, address],
+    queryFn: async () => address !== undefined && Boolean(await localKeys?.hasModelKey?.(id, address)),
+    enabled: Boolean(id) && address !== undefined,
+  });
+  return (
+    <div className="settings-field">
+      <label className="settings-field">API Key
+        <Input
+          type="password"
+          value={service.localKey ?? ''}
+          placeholder={stored ? '已保存，留空保留' : '粘贴模型服务的 API Key'}
+          autoComplete="new-password"
+          spellCheck={false}
+          onChange={event => onChange(event.target.value || undefined)}
+        />
+      </label>
+      {service.localKey === null ? (
+        <Button variant="link" size="sm" onClick={() => onChange(undefined)}>撤销移除密钥</Button>
+      ) : stored ? (
+        <Button variant="link" size="sm" onClick={() => onChange(null)}>移除已保存密钥</Button>
+      ) : (
+        <small>保存后由本机系统加密存储。</small>
+      )}
+    </div>
+  );
+}
+
 /** 每个模型保留自己的扩展参数；推理能力改变后，已保存目录不能充当新能力的依据。 */
 function ModelEntries({ service, settings, onChange }: {
   service: ModelServiceDraft;
@@ -220,6 +296,9 @@ function ModelEntries({ service, settings, onChange }: {
   }
 
   return <div className="model-entries">
+    {models.length === 0 && <p className="settings-notice" role="status">
+      此服务还没有可用模型。使用内置服务标识会自动继承目录模型；自定义服务需要添加模型并填写模型 ID。
+    </p>}
     {models.map((model, index) => {
       const known = catalog.find(entry => entry.provider === service.id && entry.id === model.id);
       const originalService = (settings.config.providers as JsonObject)[service.id] as JsonObject | undefined;

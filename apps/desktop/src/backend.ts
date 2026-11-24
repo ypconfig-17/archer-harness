@@ -8,6 +8,7 @@ export interface BackendOptions {
   entry: string;
   dataDir: string;
   env: NodeJS.ProcessEnv;
+  resolveModelKey?(provider: string, address: string): Promise<string | undefined>;
   onFailure(message: string): void;
 }
 export class DesktopBackend {
@@ -28,7 +29,15 @@ export class DesktopBackend {
     const child = spawn(this.options.executable, [this.options.entry], {
       cwd: this.options.dataDir,
       stdio: ['ignore', 'ignore', 'pipe', 'ipc'],
-      env: { ...this.options.env, ELECTRON_RUN_AS_NODE: '1', HOST: '127.0.0.1', PORT: '0', HARNESS_TOKEN: this.token, HARNESS_DATA_DIR: this.options.dataDir },
+      env: {
+        ...this.options.env,
+        ELECTRON_RUN_AS_NODE: '1',
+        HOST: '127.0.0.1',
+        PORT: '0',
+        HARNESS_TOKEN: this.token,
+        HARNESS_DATA_DIR: this.options.dataDir,
+        ARCHER_DESKTOP_MODEL_KEYS: this.options.resolveModelKey ? '1' : undefined,
+      },
       windowsHide: true,
     });
     this.child = child;
@@ -39,8 +48,26 @@ export class DesktopBackend {
         reject(new Error('本机服务未在启动期限内就绪。'));
         void this.stop();
       }, 30_000);
-      child.on('message', value => {
-        if (ready || this.closed || !value || typeof value !== 'object' || !('type' in value) || value.type !== 'archer.ready' || !('url' in value) || typeof value.url !== 'string') return;
+      child.on('message', (value: unknown) => {
+        if (!value || typeof value !== 'object' || !('type' in value)) return;
+        if (ready && !this.closed && this.options.resolveModelKey && value.type === 'archer.model-key'
+          && 'id' in value && typeof value.id === 'string'
+          && 'provider' in value && typeof value.provider === 'string'
+          && 'address' in value && typeof value.address === 'string') {
+          const { id, provider, address } = value;
+          const respond = (payload: { key?: string } | { failed: true }): void => {
+            if (child.connected) {
+              child.send({ type: 'archer.model-key', id, ...payload }, () => undefined);
+            }
+          };
+          // 密钥只通过父子进程的私有通道返回，不继承到 Shell 环境。
+          void this.options.resolveModelKey(provider, address).then(
+            key => respond(key === undefined ? {} : { key }),
+            () => respond({ failed: true }),
+          );
+          return;
+        }
+        if (ready || this.closed || value.type !== 'archer.ready' || !('url' in value) || typeof value.url !== 'string') return;
         let url: URL;
         try { url = new URL(value.url); } catch { return; }
         if (url.protocol !== 'http:' || url.hostname !== '127.0.0.1' || !url.port) return;

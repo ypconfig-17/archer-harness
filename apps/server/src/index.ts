@@ -14,6 +14,7 @@ import { createCamp, provider, offer, INFERENCE, INFERENCE_PREPARE } from '@arch
 import { toolsProvider, historyProvider, shellProvider, projectContextProvider } from '@archer/providers';
 import { skillsProvider, defaultSkillsRoots } from '@archer/skills';
 import { createModelSettings } from './model-settings.js';
+import { desktopModelKeyResolver } from './desktop-model-keys.js';
 import { RecoveryRecords } from './recovery-records.js';
 import { journalProvider } from '@archer/storage';
 
@@ -26,7 +27,12 @@ async function main(): Promise<void> {
   const dataDir = path.resolve(process.env.HARNESS_DATA_DIR ?? './data');
   const aiConfigPath = process.env.HARNESS_AI_CONFIG?.trim() || undefined;
 
-  const modelSettings = await createModelSettings(path.join(dataDir, 'model-settings.json'), aiConfigPath ? path.resolve(aiConfigPath) : undefined);
+  const resolveApiKey = desktopModelKeyResolver();
+  const modelSettings = await createModelSettings(
+    path.join(dataDir, 'model-settings.json'),
+    aiConfigPath ? path.resolve(aiConfigPath) : undefined,
+    resolveApiKey ? { resolveApiKey } : undefined,
+  );
   const inference = modelSettings.inference;
 
   const recoveryRecords = new RecoveryRecords(dataDir);
@@ -51,13 +57,13 @@ async function main(): Promise<void> {
   try {
     app = await buildServer({ archer, modelSettings, recoveryRecords,
       skillLibrary: createSkillLibrary(defaultSkillsRoots(dataDir)),
-      token, inference: modelSettings.get().mode, logger: { level: process.env.LOG_LEVEL ?? 'info' } });
+      token, logger: { level: process.env.LOG_LEVEL ?? 'info' } });
     await archer.start();
     const url = await app.listen({ host, port });
     process.send?.({ type: 'archer.ready', url });
     app.log.info(`Archer Server 已启动：${url}`);
     app.log.info(token ? '管理令牌鉴权已开启' : '管理令牌为空，鉴权已关闭（仅建议本机使用）');
-    app.log.info(`推理实现：${modelSettings.get().mode}；模型服务可通过设置面板配置`);
+    app.log.info(modelSettings.get().models.length ? '模型服务已配置' : '尚未配置模型服务，推理请求会明确失败');
   } catch (error) {
     const failures: unknown[] = [error];
     // 先收束执行，再关闭借用的 Camp；清理失败同时保留原始错误。

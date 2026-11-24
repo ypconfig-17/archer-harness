@@ -53,12 +53,14 @@ export function ComposerControls({
   const [confirmation, setConfirmation] = useState<{ target: AuthorizationConfirmation | null } | null>(null);
   const prefs = usePreferences();
   const settings = useModelSettings();
-  const models = settings.data?.mode === 'pi' ? settings.data.models : [];
+  const models = settings.data?.models ?? [];
   const chosen = selectedModel(prefs.model, settings.data);
   const reasoning = chosen ? selectedReasoning(chosen, prefs.reasoningByModel) : 'off';
   const current = models.some(m => JSON.stringify([m.provider, m.id]) === prefs.model) ? prefs.model : '';
   const providers = [...new Set(models.map(model => model.provider))];
-  const defaultModel = settings.data?.mode === 'mock' ? 'Mock 演示模型' : settings.isError ? '模型设置不可用' : '默认模型';
+  // 空配置是明确的未就绪状态：选择器不提供凭空的默认模型。
+  const defaultModel = settings.isPending ? '读取模型…' : settings.isError ? '模型设置不可用' : models.length ? '默认模型' : '未配置模型';
+  const noModels = settings.data !== undefined && models.length === 0;
   // 收起状态由 items 提供名称，无需等浮层挂载后再取值。
   // 默认项用显式哨兵值：空字符串会被 Base UI 视为未选择，文字会落到占位态。
   const modelItems = [{ value: 'default', label: defaultModel }, ...models.map(model => ({ value: JSON.stringify([model.provider, model.id]), label: model.name }))];
@@ -70,8 +72,8 @@ export function ComposerControls({
     setConfirmation(null);
     onCommandModeChange('full', captured);
   }} />}
-  <Select items={modelItems} value={modelValue} disabled={disabled || settings.isError} onValueChange={value => prefs.setModel(value === 'default' || value == null ? '' : String(value))}>
-    <SelectTrigger size="sm" className="composer-picker" aria-label="选择模型" title={models.find(model => JSON.stringify([model.provider, model.id]) === current)?.name ?? '默认模型'}>
+  <Select items={modelItems} value={modelValue} disabled={disabled || settings.isError || noModels} onValueChange={value => prefs.setModel(value === 'default' || value == null ? '' : String(value))}>
+    <SelectTrigger size="sm" className="composer-picker" aria-label="选择模型" title={models.find(model => JSON.stringify([model.provider, model.id]) === current)?.name ?? defaultModel}>
       <Icon name="spark" size="sm" />
       <SelectValue />
     </SelectTrigger>

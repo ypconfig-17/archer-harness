@@ -20,20 +20,74 @@ it('模型设置保留服务端请求头、校验修订并在重启后恢复，�
     const file = join(dir, 'settings.json');
     const service = await createModelSettings(file, initial);
     expect(JSON.stringify(service.get())).not.toContain('secret-header');
-    expect(service.get().models).toContainEqual(expect.objectContaining({ provider: 'local', id: 'small' }));
+    expect(service.get().models).toContainEqual(expect.objectContaining({ provider: 'local', id: 'small', baseUrl: 'http://127.0.0.1:9999/v1' }));
     const request: InferEffect = { type: 'INFER', target: { providerId: 'model', capabilityId: 'infer', contractId: 'archer.inference@1', revision: 'v1' }, promptPrefixCount: 0, messages: [{ role: 'user', content: 'Hello' }] };
     expect(service.inference.measure?.(request)?.contextWindow).toBeGreaterThan(0);
     const before = service.get();
-    const updated = await service.update({ expectedRevision: before.revision, mode: 'pi', config: before.config });
+    const updated = await service.update({ expectedRevision: before.revision, config: before.config });
     expect(updated.revision).toMatch(/^[a-f0-9]{64}$/);
     expect(await readFile(file, 'utf8')).toContain('secret-header');
-    const mock = await service.update({ expectedRevision: updated.revision, mode: 'mock', config: updated.config });
-    expect(service.inference.measure?.(request)).toBeUndefined();
-    expect(mock.revision).not.toBe(updated.revision);
-    await expect(service.update({ expectedRevision: updated.revision, mode: 'pi', config: updated.config })).rejects.toMatchObject({ code: 'CONFLICT' });
-    await expect(service.update({ expectedRevision: mock.revision, mode: 'pi', config: { providers: {} } })).rejects.toThrow();
-    expect(service.get()).toEqual(mock);
-    expect((await createModelSettings(file)).get()).toEqual(mock);
+    // 清空服务是合法的保存操作；此后推理明确失败，不返回模拟答复。
+    const empty = await service.update({ expectedRevision: updated.revision, config: { providers: {} } });
+    await expect(service.inference.infer(request, new AbortController().signal)).rejects.toMatchObject({ code: 'CAPABILITY_UNAVAILABLE' });
+    expect(empty.models).toEqual([]);
+    expect(empty.revision).not.toBe(updated.revision);
+    await expect(service.update({ expectedRevision: updated.revision, config: updated.config })).rejects.toMatchObject({ code: 'CONFLICT' });
+    expect(service.get()).toEqual(empty);
+    expect((await createModelSettings(file)).get()).toEqual(empty);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+it('内置服务不填写地址时，公开设置仍给出解析后的实际地址', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'archer-settings-'));
+  try {
+    const initial = join(dir, 'ai.json');
+    await writeFile(initial, JSON.stringify({ providers: { deepseek: { models: [{ id: 'deepseek-flash' }] } } }));
+    // 桌面按此地址保存本机密钥；缺少它就无法为留空地址的内置服务输入 Key。
+    const service = await createModelSettings(join(dir, 'settings.json'), initial);
+    expect(service.get().models).toEqual([
+      expect.objectContaining({ provider: 'deepseek', id: 'deepseek-flash', baseUrl: 'https://api.deepseek.com' }),
+    ]);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+it('没有配置文件时以空服务启动，推理请求明确失败而不是给出模拟答复', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'archer-settings-'));
+  try {
+    const service = await createModelSettings(join(dir, 'settings.json'));
+    expect(service.get().models).toEqual([]);
+    expect(service.get().config).toEqual({ providers: {} });
+    const request: InferEffect = { type: 'INFER', target: { providerId: 'model', capabilityId: 'infer', contractId: 'archer.inference@1', revision: 'v1' }, promptPrefixCount: 0, messages: [{ role: 'user', content: 'Hello' }] };
+    expect(() => service.inference.measure?.(request)).toThrow('尚未配置模型服务');
+    await expect(service.inference.infer(request, new AbortController().signal)).rejects.toMatchObject({ code: 'CAPABILITY_UNAVAILABLE' });
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+it('没有模型的未知服务返回可读的配置错误，而不是服务器内部错误', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'archer-settings-'));
+  try {
+    const service = await createModelSettings(join(dir, 'settings.json'));
+    const archer = createArcher({
+      camp: testCamp({ journal: new MemoryAgentJournal(),
+        inference: { async infer() { return { content: '' }; } } }),
+    });
+    await archer.start();
+    const server = await buildServer({ archer, modelSettings: service, token: 'admin' });
+    try {
+      const response = await server.inject({
+        method: 'PUT', url: '/api/settings/models', headers: { authorization: 'Bearer admin' },
+        payload: {
+          expectedRevision: service.get().revision,
+          config: { providers: { 'my-deepseek': { api: 'openai-completions', baseURL: 'https://api.deepseek.com' } } },
+        },
+      });
+      expect(response.statusCode).toBe(400);
+      // 保存失败时保留原因：服务标识不在目录且没有显式模型，需要用户补模型或换标识。
+      // 消息只使用设置页的产品词汇，不暴露底层实现名称。
+      const error = JSON.parse(response.body).error as string;
+      expect(error).toContain('不在内置模型目录中');
+      expect(error).not.toMatch(/pi-ai|provider|models/);
+    } finally { await server.close(); await archer.stop(); }
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
@@ -44,7 +98,7 @@ it('模型设置接口遵循入口鉴权，未授权者不能读取或修改配�
 
   });
   await archer.start();
-  const server = await buildServer({ archer, inference: 'mock', token: 'admin' });
+  const server = await buildServer({ archer, token: 'admin' });
   try {
     const preflight = await server.inject({ method: 'OPTIONS', url: '/api/settings/models', headers: { origin: 'http://localhost:5173', 'access-control-request-method': 'PUT' } });
     expect(preflight.statusCode).toBe(204);
@@ -164,7 +218,7 @@ it('HTTP 和 SDK 都拒绝有歧义的策略链，拒绝时不写入输入或调
     return { content: 'Done.' };
   } } }) });
   await app.start();
-  const server = await buildServer({ archer: app, inference: 'mock' });
+  const server = await buildServer({ archer: app });
   try {
     const agent = await app.agents.create({ id: 'invalid-profile', instructions: 'Reply.' });
     const invalid = defaultContextProfile();

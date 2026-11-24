@@ -14,7 +14,7 @@ import Fastify, {
 import cors from '@fastify/cors';
 import { ModelSettingsUpdateSchema, ArcherError } from '@archer/contracts';
 import type { ModelSettingsService } from './model-settings.js';
-import type { Archer, HealthInfo } from '@archer/contracts';
+import type { Archer } from '@archer/contracts';
 import { createAuthHook } from './auth.js';
 import { registerErrorHandler } from './error-handler.js';
 import { registerAgentRoutes } from './routes/agents.js';
@@ -27,8 +27,6 @@ export interface ServerOptions {
   archer: Archer;
   modelSettings?: ModelSettingsService;
   skillLibrary?: SkillLibrary;
-  /** 当前推理实现，供健康检查展示 */
-  inference: HealthInfo['inference'];
   /** 启动恢复诊断，不参与会话事实或调度。 */
   recoveryRecords?: RecoveryRecords;
   token?: string;
@@ -42,7 +40,6 @@ export async function buildServer(options: ServerOptions): Promise<FastifyInstan
   registerErrorHandler(app);
 
   registerHealthRoute(app, {
-    inference: () => options.modelSettings?.get().mode ?? options.inference,
     recoveryFailures: options.recoveryRecords ? () => options.recoveryRecords!.list().length : undefined,
   });
 

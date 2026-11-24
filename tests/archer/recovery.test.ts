@@ -109,7 +109,7 @@ it('HTTP 客户端保留隔离诊断，只有不存在的会话返回 null，诊
   const dir = await directory();
   await writeFile(join(dir, 'broken.jsonl'), 'invalid journal\n');
   const archer = await appAt(dir, { infer: async () => ({ content: 'Done.' }) });
-  const server = await buildServer({ archer, inference: 'mock', token: 'admin' });
+  const server = await buildServer({ archer, token: 'admin' });
   try {
     expect((await server.inject({ method: 'GET', url: '/api/agents/broken' })).statusCode).toBe(401);
     const address = await server.listen({ host: '127.0.0.1', port: 0 });

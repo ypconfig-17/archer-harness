@@ -93,7 +93,7 @@ pnpm build
 pnpm dev:desktop
 ```
 
-首次启动默认使用 Mock 推理。使用真实模型时，在桌面设置中配置模型服务，或参考 [模型配置示例](examples/inference.json)，通过 `HARNESS_AI_CONFIG` 指定配置文件的绝对路径。密钥通过 `apiKeyEnv` 引用的环境变量提供。
+首次启动没有模型服务：顶部会提示先完成配置，未配置时无法发送任务。在桌面的「设置 → 模型设置」填写服务标识、模型 ID 和 API Key；内置服务的 API 地址可以留空，自定义服务需要填写地址与协议。桌面通过系统加密保存 API Key，并按服务标识和实际请求地址区分。独立 Server 可参考 [模型配置示例](examples/inference.json)，通过 `HARNESS_AI_CONFIG` 指定配置文件的绝对路径，通过 `apiKeyEnv` 引用密钥环境变量。
 
 独立服务可用 `pnpm dev:server` 启动，默认监听 `127.0.0.1:3000`。Shell 和服务访问的使用边界见 [安全说明](SECURITY.md)。
 

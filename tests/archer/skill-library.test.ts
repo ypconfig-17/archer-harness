@@ -16,7 +16,7 @@ it('新增必须鉴权，成功只落文件；并发重名仅成功一次且 Cam
   const roots = [{ source: 'archer', directory }];
   const archer = createArcher({ camp: testCamp({ builtins: false, providers: [skillsProvider({ roots })] }) });
   await archer.start();
-  const server = await buildServer({ archer, inference: 'mock', token: 'admin', skillLibrary: createSkillLibrary(roots) });
+  const server = await buildServer({ archer, token: 'admin', skillLibrary: createSkillLibrary(roots) });
   try {
     const request = { method: 'POST' as const, url: '/api/skills/library', payload: { content: document } };
     expect((await server.inject(request)).statusCode).toBe(401);

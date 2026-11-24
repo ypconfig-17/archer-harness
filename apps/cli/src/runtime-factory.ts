@@ -5,7 +5,7 @@ import type { AgentManager, ProviderInfo } from '@archer/contracts';
 import { ArcherClient } from '@archer/client';
 import { createCamp, provider, offer, INFERENCE, INFERENCE_PREPARE } from '@archer/camp';
 import { loadPiInference } from '@archer/inference-pi';
-import { createArcher, createMockInference } from '@archer/runtime';
+import { createArcher } from '@archer/runtime';
 import { journalProvider } from '@archer/storage';
 import { shellProvider, toolsProvider, projectContextProvider } from '@archer/providers';
 import { skillsProvider, defaultSkillsRoots } from '@archer/skills';
@@ -29,12 +29,14 @@ export async function createCliRuntime(selection: RuntimeSelection): Promise<Cli
     const client = new ArcherClient({ baseUrl: selection.remote, token: selection.token ?? process.env.HARNESS_TOKEN });
     return { agents: client, providers: () => client.providers(), close: async () => {} };
   }
-  const inference = aiConfig === undefined ? createMockInference() : await loadPiInference(path.resolve(aiConfig));
+  // 没有模型配置就不存在可用推理；明确报错，不提供模拟答复。
+  if (!aiConfig) throw new Error('本地模式需要模型配置：请用 --ai-config 或 HARNESS_AI_CONFIG 指定配置文件；远程模式由 Server 决定。');
+  const inference = await loadPiInference(path.resolve(aiConfig));
   const dataDir = path.resolve(selection.dataDir ?? process.env.HARNESS_DATA_DIR ?? './data');
   const camp = await createCamp({ providers: [toolsProvider(), historyProvider(), shellProvider(), projectContextProvider(),
     skillsProvider({ roots: defaultSkillsRoots(dataDir) }), journalProvider(dataDir),
     provider('inference', { model: offer(INFERENCE, { description: '使用宿主配置的模型服务进行推理。' }, inference) },
-      { identity: { configuration: aiConfig ?? 'mock' } }),
+      { identity: { configuration: aiConfig } }),
   ] });
   const archer = createArcher({ camp, preparations: camp.list(INFERENCE_PREPARE).filter(item => item.ref.providerId === 'project').map(item => item.ref), onError: error => console.error(`[archer] ${error.code}: ${error.message}`) });
   try { await archer.start(); }

@@ -365,6 +365,41 @@ describe('路由与模型选择', () => {
 });
 
 describe('凭据与取消', () => {
+  it('按模型实际地址选择桌面密钥，无匹配时继续使用显式环境变量', async () => {
+    const { fetch, requests } = recordingFetch(() => textStream(['ok']));
+    const resolveApiKey = async (provider: string, address: string): Promise<string | undefined> => (
+      provider === 'gateway' && address === 'https://gateway.test/v1' ? 'desktop-test-key' : undefined
+    );
+    const options = { env: { GATEWAY_KEY: 'env-test-key' }, fetch, resolveApiKey };
+    const effect = inferEffect([{ role: 'user', content: 'hi' }]);
+    const signal = new AbortController().signal;
+
+    await createPiInference(gateway(['m']), options).infer(effect, signal);
+    await createPiInference(gateway(['m'], { baseURL: 'https://other.test/v1' }), options).infer(effect, signal);
+
+    expect(requests.map(request => [request.url, request.headers.get('authorization')])).toEqual([
+      ['https://gateway.test/v1/chat/completions', 'Bearer desktop-test-key'],
+      ['https://other.test/v1/chat/completions', 'Bearer env-test-key'],
+    ]);
+  });
+
+  it('内置目录地址同样按实际地址使用本机密钥，无需声明环境变量', async () => {
+    const { fetch, requests } = recordingFetch(() => textStream(['ok']));
+    const resolveApiKey = async (provider: string, address: string): Promise<string | undefined> => (
+      provider === 'deepseek' && address === 'https://api.deepseek.com' ? 'desktop-catalog-key' : undefined
+    );
+    const inference = createPiInference(
+      { providers: { deepseek: { models: [{ id: 'deepseek-flash' }] } } },
+      { env: {}, fetch, resolveApiKey },
+    );
+
+    await inference.infer(inferEffect([{ role: 'user', content: 'hi' }]), new AbortController().signal);
+
+    expect(requests.map(request => [request.url, request.headers.get('authorization')])).toEqual([
+      ['https://api.deepseek.com/chat/completions', 'Bearer desktop-catalog-key'],
+    ]);
+  });
+
   it('凭据引用缺失时在发出请求前失败', async () => {
     const { fetch, requests } = recordingFetch(() => textStream(['ok']));
     const inference = createPiInference(gateway(['m'], { defaultModel: 'm' }), {

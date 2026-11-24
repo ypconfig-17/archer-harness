@@ -126,7 +126,7 @@ export function describeConfigError(error: z.ZodError): string {
 export function resolvePiConfig(config: PiInferenceConfig): ResolvedPiConfig {
   const entries = Object.entries(config.providers);
   if (entries.length === 0) {
-    throw new Error('inference-pi: providers 不能为空');
+    throw new Error('至少需要配置一个模型服务');
   }
 
   const routes = entries.map(([provider, profile]): ResolvedPiRoute => {
@@ -143,8 +143,8 @@ export function resolvePiConfig(config: PiInferenceConfig): ResolvedPiConfig {
       && !models.some((model) => model.id === profile.defaultModel)
     ) {
       throw new Error(
-        `inference-pi: provider "${provider}" 的 defaultModel "${profile.defaultModel}" `
-        + `不在模型清单中；可用模型：${models.map((model) => model.id).join(', ')}`,
+        `服务「${provider}」的默认模型「${profile.defaultModel}」不在模型列表中；`
+        + `可用模型：${models.map((model) => model.id).join(', ')}`,
       );
     }
     return {
@@ -167,8 +167,8 @@ export function resolvePiConfig(config: PiInferenceConfig): ResolvedPiConfig {
     && !Object.hasOwn(config.providers, config.defaultProvider)
   ) {
     throw new Error(
-      `inference-pi: defaultProvider "${config.defaultProvider}" 不是已配置的 provider；`
-      + `可用：${entries.map(([provider]) => provider).join(', ')}`,
+      `默认服务「${config.defaultProvider}」不是已配置的服务；`
+      + `可用服务：${entries.map(([provider]) => provider).join(', ')}`,
     );
   }
 

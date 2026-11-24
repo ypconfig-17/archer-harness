@@ -25,7 +25,7 @@ export interface PiProviderSpec {
   api?: ResolvedPiRoute['api'];
   baseURL?: string;
   models: readonly Model<Api>[];
-  /** 路由是否声明了凭据引用；只影响目录 provider 是否补上 api-key 鉴权 */
+  /** 路由是否可由宿主提供密钥；只影响目录 provider 是否补上 api-key 鉴权。 */
   namesCredential: boolean;
 }
 
@@ -75,7 +75,7 @@ function reuseCatalogProvider(base: Provider, spec: PiProviderSpec): Provider {
  * @returns 可注册进 pi-ai Models 集合的 provider。
  * @throws {PiInferenceError} 当路由声明的协议无法被本包提供时。
  */
-export function buildPiProvider(route: ResolvedPiRoute): Provider {
+export function buildPiProvider(route: ResolvedPiRoute, hostCanResolveKey = false): Provider {
   const catalog = catalogProvider(route.provider);
   const spec: PiProviderSpec = {
     provider: route.provider,
@@ -83,7 +83,8 @@ export function buildPiProvider(route: ResolvedPiRoute): Provider {
     ...(route.api === undefined ? {} : { api: route.api }),
     ...(route.baseURL === undefined ? {} : { baseURL: route.baseURL }),
     models: route.models,
-    namesCredential: route.apiKeyEnv !== undefined,
+    // 宿主可按实际请求地址解析密钥；目录端点同样适用，未声明环境变量也要接受请求级密钥。
+    namesCredential: route.apiKeyEnv !== undefined || hostCanResolveKey,
   };
 
   // 目录路由保留目录协议时整体复用；显式协议意味着部署方在重指向线协议，
@@ -95,7 +96,7 @@ export function buildPiProvider(route: ResolvedPiRoute): Provider {
   if (route.api === undefined) {
     throw new PiInferenceError(
       'CONFIG_INVALID',
-      `inference-pi: provider "${route.provider}" 不在 pi-ai 目录中，必须声明 api；`
+      `服务「${route.provider}」不在内置模型目录中，必须填写协议；`
       + `可用协议：${Object.keys(PI_PROTOCOLS).join(', ')}`,
     );
   }

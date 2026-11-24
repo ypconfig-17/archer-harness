@@ -137,22 +137,23 @@ function resolveModel(
   seen: Set<string>,
 ): Model<Api> {
   if (seen.has(entry.id)) {
-    throw new Error(`inference-pi: provider "${request.provider}" 重复声明模型 "${entry.id}"`);
+    throw new Error(`服务「${request.provider}」重复声明模型「${entry.id}」`);
   }
   seen.add(entry.id);
 
+  // 错误消息面向设置页使用者：只使用服务、模型、协议和 API 地址等产品词汇。
   const api = request.api ?? base?.api ?? sharedApi;
   if (api === undefined) {
     throw new Error(
-      `inference-pi: 模型 "${entry.id}" 不在 pi-ai 内置目录中，无法推断协议；`
-      + `请在 provider "${request.provider}" 上声明 api`,
+      `模型「${entry.id}」不在内置模型目录中，无法确定协议；`
+      + `请为服务「${request.provider}」填写协议`,
     );
   }
   const baseUrl = request.baseURL ?? base?.baseUrl ?? providerBaseUrl;
   if (baseUrl === undefined) {
     throw new Error(
-      `inference-pi: 模型 "${entry.id}" 不在 pi-ai 内置目录中，无法推断端点；`
-      + `请在 provider "${request.provider}" 上声明 baseURL`,
+      `模型「${entry.id}」不在内置模型目录中，无法确定 API 地址；`
+      + `请为服务「${request.provider}」填写 API 地址`,
     );
   }
 
@@ -186,8 +187,8 @@ export function resolveRouteModels(request: RouteModelRequest): readonly Model<A
   if (request.models === undefined) {
     if (defaults.size === 0) {
       throw new Error(
-        `inference-pi: provider "${request.provider}" 没有 pi-ai 内置模型，`
-        + '必须在配置的 models 中声明模型',
+        `服务「${request.provider}」不在内置模型目录中，且没有添加模型；`
+        + '请使用内置服务标识，或至少添加一个模型',
       );
     }
     return [...defaults.values()].map((model) => withRouteOverrides(model, request));

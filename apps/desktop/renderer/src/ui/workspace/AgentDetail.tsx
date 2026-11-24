@@ -343,6 +343,10 @@ export function AgentDetail({
   async function submit(message: PromptInputMessage) {
     if ((!submission && (!message.text.trim() && !message.files.length)) || busy || !state) return;
     if (!submission && state.execution !== 'ready') return;
+    if (!submission && (modelSettings.data?.models.length ?? 0) === 0) {
+      setError('尚未配置模型服务，请先在「设置 → 模型设置」完成配置。');
+      return;
+    }
     setError('');
     setPreparing(true);
     const request = submission ?? {
@@ -559,7 +563,7 @@ export function AgentDetail({
                 </Select>}
                 <ComposerControls workspace={workspace ?? undefined} disabled={busy || Boolean(submission)} shellDisabled={updatingAuthorization || !active && mode !== 'send'} commandMode={active ? activeShell ? activeCommandMode : 'disabled' : mode === 'send' ? submission?.commandMode ?? commandMode : 'disabled'} authorizationTarget={authorizationTarget} onCommandModeChange={chooseCommandMode} />
               </PromptInputTools>
-              <DraftComposerSendButton draftKey={`agent:${agentId}`} onStop={active ? () => abort.mutate(active.turnId) : undefined} stopping={cancelling} busy={busy} locked={Boolean(submission)} idleLabel={sendLabel} disabled={!submission && state.execution !== 'ready'} />
+              <DraftComposerSendButton draftKey={`agent:${agentId}`} onStop={active ? () => abort.mutate(active.turnId) : undefined} stopping={cancelling} busy={busy} locked={Boolean(submission)} idleLabel={sendLabel} disabled={!submission && (state.execution !== 'ready' || (modelSettings.data?.models.length ?? 0) === 0)} />
             </PromptInputFooter>
           </PromptInput>}
         </div></div>

@@ -18,6 +18,7 @@ import {
 } from 'electron';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { DesktopBackend } from './backend.js';
+import { DesktopModelKeys } from './model-keys.js';
 import { restoreWindowState, toggleWindowMaximize, type WindowState } from './window-state.js';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -115,6 +116,24 @@ function registerThemeSync(): void {
         symbolColor: colors.symbolColor,
       });
     }
+  });
+}
+
+/** 设置窗口只写密钥和读保存状态。实际值只交给本机推理进程。 */
+function registerModelKeys(keys: DesktopModelKeys): void {
+  ipcMain.handle('archer:model-key-status', async (event, provider: unknown, address: unknown) => {
+    if (event.senderFrame !== mainWindow?.webContents.mainFrame
+      || typeof provider !== 'string' || typeof address !== 'string') return false;
+    return keys.has(provider.trim(), address.trim());
+  });
+  ipcMain.handle('archer:save-model-key', async (event, provider: unknown, address: unknown, key: unknown) => {
+    if (event.senderFrame !== mainWindow?.webContents.mainFrame
+      || typeof provider !== 'string' || !provider.trim()
+      || typeof address !== 'string' || !address.trim()
+      || (key !== null && (typeof key !== 'string' || !key.trim() || key.length > 8192))) {
+      throw new Error('请填写模型服务标识、API 地址与有效的 API Key。');
+    }
+    await keys.save(provider.trim(), address.trim(), key === null ? null : key.trim());
   });
 }
 
@@ -314,15 +333,18 @@ else void app.whenReady().then(async () => {
   // 开发态未打包，需要显式设置 Dock 图标，否则沿用 Electron 默认图标。
   if (process.platform === 'darwin') app.dock?.setIcon(path.join(assetsDir, 'icon.png'));
   if (!apiUrl) {
+    const modelKeys = new DesktopModelKeys(path.join(app.getPath('userData'), 'model-keys'));
     backend = new DesktopBackend({
       executable: process.execPath,
       entry: path.resolve(currentDir, '../../server/dist/index.js'),
       dataDir: process.env.HARNESS_DATA_DIR ? path.resolve(process.env.HARNESS_DATA_DIR) : path.join(app.getPath('userData'), 'harness'),
       env: { ...process.env, ...(process.env.HARNESS_AI_CONFIG ? { HARNESS_AI_CONFIG: path.resolve(process.env.HARNESS_AI_CONFIG) } : {}) },
+      resolveModelKey: (provider, address) => modelKeys.resolve(provider, address),
       onFailure: message => { void reportFailure(message); },
     });
     apiUrl = await backend.start();
     token = backend.token;
+    registerModelKeys(modelKeys);
   }
   configureApiSession();
   registerDirectoryPicker();

@@ -15,6 +15,12 @@ contextBridge.exposeInMainWorld('archerDesktop', {
   titlebarPointer: (phase: 'start' | 'move' | 'end', x: number, y: number): void => ipcRenderer.send('archer:titlebar-pointer', phase, x, y),
   toggleMaximize: (): void => ipcRenderer.send('archer:toggle-maximize'),
   chooseDirectory: (): Promise<string | null> => ipcRenderer.invoke('archer:choose-directory'),
+  hasModelKey: (provider: string, address: string): Promise<boolean> => (
+    ipcRenderer.invoke('archer:model-key-status', provider, address)
+  ),
+  saveModelKey: (provider: string, address: string, key: string | null): Promise<void> => (
+    ipcRenderer.invoke('archer:save-model-key', provider, address, key)
+  ),
   setTheme: (appearance: 'light' | 'dark' | 'system', colors: { color: string; symbolColor: string }): void => {
     ipcRenderer.send(THEME_CHANNEL, appearance, colors);
   },

@@ -13,6 +13,9 @@ interface Window {
     readonly toggleMaximize?: () => void;
     /** 打开系统目录选择器；取消时返回 null */
     readonly chooseDirectory?: () => Promise<string | null>;
+    /** 查询或变更本机模型密钥，只返回状态，不向页面读取密钥。 */
+    readonly hasModelKey?: (provider: string, address: string) => Promise<boolean>;
+    readonly saveModelKey?: (provider: string, address: string, key: string | null) => Promise<void>;
     /** 同步应用主题到系统材质与标题栏按钮 */
     readonly setTheme?: (appearance: 'light' | 'dark' | 'system', colors: { color: string; symbolColor: string }) => void;
     /** 订阅原生菜单动作，返回取消订阅函数 */

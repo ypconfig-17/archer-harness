@@ -2,10 +2,10 @@
 import { expect, it } from 'vitest';
 import type { ModelSettings, ReasoningLevel } from '@archer/contracts';
 import { modelKey, selectedInference, selectedModel, selectedReasoning, REASONING_LABELS } from '../../../apps/desktop/renderer/src/lib/model-selection';
-const models: ModelSettings = { revision: 'one', mode: 'pi', config: {}, protocols: [], defaultModel: { provider: 'deepseek', id: 'flash' }, models: [
-  { provider: 'deepseek', id: 'flash', name: 'Flash', reasoningLevels: ['off', 'low', 'high', 'max'], defaultReasoning: 'high' },
-  { provider: 'other', id: 'reasoner', name: 'Reasoner', reasoningLevels: ['low', 'medium', 'high'], defaultReasoning: 'medium' },
-  { provider: 'other', id: 'plain', name: 'Plain', reasoningLevels: ['off'], defaultReasoning: 'off' },
+const models: ModelSettings = { revision: 'one', config: {}, protocols: [], defaultModel: { provider: 'deepseek', id: 'flash' }, models: [
+  { provider: 'deepseek', id: 'flash', name: 'Flash', baseUrl: 'https://api.deepseek.com', reasoningLevels: ['off', 'low', 'high', 'max'], defaultReasoning: 'high' },
+  { provider: 'other', id: 'reasoner', name: 'Reasoner', baseUrl: 'https://other.test/v1', reasoningLevels: ['low', 'medium', 'high'], defaultReasoning: 'medium' },
+  { provider: 'other', id: 'plain', name: 'Plain', baseUrl: 'https://other.test/v1', reasoningLevels: ['off'], defaultReasoning: 'off' },
 ] };
 it('默认模型也能选择等级，不同模型各自保留选择', () => {
   const flash = models.models[0]!, reasoner = models.models[1]!;
@@ -20,7 +20,7 @@ it('旧选择超出新模型能力时回到该模型默认值，不能发送不�
   expect(selectedInference(modelKey(plain), models, { [modelKey(plain)]: 'high' })?.reasoning).toBe('off');
   expect(selectedInference('missing', models)).toEqual({ provider: 'deepseek', model: 'flash', reasoning: 'high' });
   expect(selectedInference('', { ...models, defaultModel: undefined })).toBeUndefined();
-  expect(selectedInference('', { ...models, mode: 'mock' })).toBeUndefined();
+  expect(selectedInference('', { ...models, models: [], defaultModel: undefined })).toBeUndefined();
 });
 it('已生成请求不随偏好后续调整变化，界面等级全部使用中文', () => {
   const flash = models.models[0]!; const preferences: Record<string, ReasoningLevel> = { [modelKey(flash)]: 'low' };

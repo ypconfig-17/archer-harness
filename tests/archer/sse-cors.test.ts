@@ -1,18 +1,18 @@
 import { testCamp } from '../helpers/application';
 /** 独立部署的 Web 必须能够读取 HTTP 与 SSE 的同一组跨域响应头。 */
 import { expect, it } from 'vitest';
-import { createArcher, createMockInference } from '@archer/runtime';
+import { createArcher } from '@archer/runtime';
 import { MemoryAgentJournal } from '@archer/storage';
 import { buildServer } from '../../apps/server/src/app.js';
 
 it('Agent 与 Turn 的 SSE 保留跨域头，并只补齐游标之后的事实', async () => {
   const archer = createArcher({
     camp: testCamp({ journal: new MemoryAgentJournal(),
-      inference: createMockInference() }),
+      inference: { async infer() { return { content: 'ok' }; } } }),
 
   });
   await archer.start();
-  const server = await buildServer({ archer, inference: 'mock' });
+  const server = await buildServer({ archer });
   try {
     const agent = await archer.agents.create({ id: 'sse-cors', instructions: 'Inspect visible nodes.' });
     await agent.prompt('Inspect.');

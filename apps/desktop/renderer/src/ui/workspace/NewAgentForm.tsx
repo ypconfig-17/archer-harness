@@ -62,6 +62,7 @@ export function NewAgentForm({
   const prefs = usePreferences();
   const { state: sidebarState } = useSidebar();
   const modelSettings = useModelSettings();
+  const modelReady = (modelSettings.data?.models.length ?? 0) > 0;
   const commandMode = useProjectPreferences(state => workspace ? state.commandModes[workspace] ?? 'ask' : 'ask');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -70,6 +71,10 @@ export function NewAgentForm({
   async function submit(message: PromptInputMessage) {
     const root = workspace?.trim() ?? '';
     if (busy || (!message.text.trim() && !message.files.length)) return;
+    if (!modelReady) {
+      setError('尚未配置模型服务，请先在「设置 → 模型设置」完成配置。');
+      return;
+    }
     const workspaceAccess = attempt?.workspaceAccess ?? prefs.workspaceAccess;
     setBusy(true);
     setError('');
@@ -177,7 +182,7 @@ export function NewAgentForm({
             </PromptInputActionMenu>
             <ComposerControls workspace={workspace ?? undefined} disabled={busy || locked} commandMode={attempt?.commandMode ?? commandMode} onCommandModeChange={mode => useProjectPreferences.getState().setCommandMode(workspace, mode)} />
           </PromptInputTools>
-          <ComposerSendButton busy={busy} locked={locked} draft={draft} idleLabel="开始对话" />
+          <ComposerSendButton busy={busy} locked={locked} draft={draft} disabled={!modelReady} idleLabel="开始对话" />
         </PromptInputFooter>
       </PromptInput>
       {error || locked && !busy ? <div role="alert" className="error-banner">

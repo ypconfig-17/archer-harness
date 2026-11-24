@@ -8,7 +8,6 @@ export * from './archer/agents.js';
 export * from './archer/container.js';
 export * from './archer/dependencies.js';
 export * from './archer/session-runtime.js';
-export * from './mock-infer.js';
 export * from './context/context.js';
 export * from './context/application-context.js';
 

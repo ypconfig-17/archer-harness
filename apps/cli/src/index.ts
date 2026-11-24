@@ -81,7 +81,7 @@ function addRuntimeOptions(command: Command): Command {
     )
     .option(
       '--ai-config <path>',
-      '本地模式的 pi-ai 配置文件（也可使用 HARNESS_AI_CONFIG；远程模式不支持）',
+      '本地模式的模型配置文件（也可使用 HARNESS_AI_CONFIG；远程模式不支持）',
       process.env.HARNESS_AI_CONFIG,
     );
 }

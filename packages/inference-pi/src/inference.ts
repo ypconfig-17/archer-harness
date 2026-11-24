@@ -48,6 +48,8 @@ export interface PiInference extends Inference {
 export interface PiInferenceOptions {
   /** 读取凭据引用的环境变量来源；默认 process.env */
   env?: Readonly<Record<string, string | undefined>>;
+  /** 宿主按实际请求地址解析本机凭据；未配置时沿用环境变量来源。 */
+  resolveApiKey?: (provider: string, address: string) => Promise<string | undefined>;
   /** 覆盖 HTTP 实现，便于测试；默认使用全局 fetch */
   fetch?: typeof globalThis.fetch;
 }
@@ -93,7 +95,7 @@ function selectRoute(
     if (route === undefined) {
       throw new PiInferenceError(
         'UNKNOWN_PROVIDER',
-        `未配置 provider "${config.provider}"；可用：${availableProviders(resolved)}`,
+        `未配置服务「${config.provider}」；可用服务：${availableProviders(resolved)}`,
       );
     }
     return route;
@@ -111,14 +113,14 @@ function selectRoute(
     if (candidates.length > 1) {
       throw new PiInferenceError(
         'PROVIDER_REQUIRED',
-        `模型 "${config.model}" 同时存在于多个 provider（${candidates
+        `模型「${config.model}」同时存在于多个服务（${candidates
           .map((route) => route.provider)
-          .join(', ')}），请显式指定 provider`,
+          .join(', ')}），请显式指定服务`,
       );
     }
     throw new PiInferenceError(
       'UNKNOWN_MODEL',
-      `没有 provider 提供模型 "${config.model}"；可用：${resolved.routes
+      `没有服务提供模型「${config.model}」；可用：${resolved.routes
         .map((route) => `${route.provider}(${availableModels(route)})`)
         .join(', ')}`,
     );
@@ -128,7 +130,7 @@ function selectRoute(
 
   throw new PiInferenceError(
     'PROVIDER_REQUIRED',
-    `存在多个 provider，请在推理配置中指定 provider；可用：${availableProviders(resolved)}`,
+    `存在多个服务，请在推理请求中指定服务；可用服务：${availableProviders(resolved)}`,
   );
 }
 
@@ -143,7 +145,7 @@ function selectModel(
     if (model === undefined) {
       throw new PiInferenceError(
         'UNKNOWN_MODEL',
-        `provider "${route.provider}" 没有模型 "${id}"；可用：${availableModels(route)}`,
+        `服务「${route.provider}」没有模型「${id}」；可用模型：${availableModels(route)}`,
       );
     }
     return model;
@@ -153,8 +155,8 @@ function selectModel(
 
   throw new PiInferenceError(
     'MODEL_REQUIRED',
-    `provider "${route.provider}" 提供多个模型，请在推理配置中指定 model；`
-    + `可用：${availableModels(route)}`,
+    `服务「${route.provider}」提供多个模型，请在推理请求中指定模型；`
+    + `可用模型：${availableModels(route)}`,
   );
 }
 
@@ -168,7 +170,7 @@ function resolveCredential(
   if (value === undefined || value.trim().length === 0) {
     throw new PiInferenceError(
       'MISSING_CREDENTIAL',
-      `provider "${route.provider}" 需要环境变量 ${route.apiKeyEnv}，但该变量未设置或为空`,
+      `服务「${route.provider}」需要环境变量 ${route.apiKeyEnv}，但该变量未设置或为空`,
     );
   }
   return value.trim();
@@ -199,7 +201,7 @@ function toInferResult(message: AssistantMessage, apiKey: string | undefined): I
           .join(''),
         ...reasoningOf(message),
         toolCalls: (message.stopReason === 'length' ? [] : message.content.filter(block => block.type === 'toolCall')).map(call => {
-          if (call.argumentsError) throw new PiInferenceError('PROVIDER_ERROR', 'Model returned invalid tool arguments.');
+          if (call.argumentsError) throw new PiInferenceError('PROVIDER_ERROR', '模型返回的工具参数不合法。');
           return { id: call.id, name: call.name, input: call.arguments, ...(call.thoughtSignature ? { signature: call.thoughtSignature } : {}), ...(call.namespace ? { namespace: call.namespace } : {}) };
         }),
         usage: usageOf(message.usage),
@@ -209,12 +211,12 @@ function toInferResult(message: AssistantMessage, apiKey: string | undefined): I
     case 'error':
       throw new PiInferenceError(
         'PROVIDER_ERROR',
-        redact(message.errorMessage ?? 'provider 返回错误', apiKey),
+        redact(message.errorMessage ?? '模型服务返回错误', apiKey),
       );
     default:
       throw new PiInferenceError(
         'PROVIDER_ERROR',
-        `provider 返回了不受支持的 stopReason："${message.stopReason}"`,
+        `模型服务返回了不受支持的结束原因：「${message.stopReason}」`,
       );
   }
 }
@@ -222,7 +224,7 @@ function toInferResult(message: AssistantMessage, apiKey: string | undefined): I
 /**
  * 用已解析的配置创建推理端口。
  * @param input - AI 配置 JSON 值；通常来自 `HARNESS_AI_CONFIG` 指向的文件。
- * @param options - 环境变量与 fetch 注入点。
+ * @param options - 凭据来源与 fetch 注入点。
  * @returns 可直接交给 Runtime 的推理端口。
  * @throws {PiInferenceError} 配置不合法、目录无法推断协议/端点或 provider 构建失败。
  */
@@ -235,7 +237,7 @@ export function createPiInference(
     config = parsePiConfig(input);
   } catch (error: unknown) {
     if (error instanceof ZodError) {
-      throw new PiInferenceError('CONFIG_INVALID', `AI 配置不合法：${describeConfigError(error)}`);
+      throw new PiInferenceError('CONFIG_INVALID', `模型服务配置不合法：${describeConfigError(error)}`);
     }
     throw error;
   }
@@ -260,7 +262,7 @@ export function createPiInference(
   const routes = new Map<string, ResolvedPiRoute>();
   for (const route of resolved.routes) {
     try {
-      models.setProvider(buildPiProvider(route));
+      models.setProvider(buildPiProvider(route, options.resolveApiKey !== undefined));
     } catch (error: unknown) {
       if (error instanceof PiInferenceError) throw error;
       throw new PiInferenceError('CONFIG_INVALID', messageOf(error));
@@ -292,7 +294,9 @@ export function createPiInference(
       const model = selectModel(route, effect.config);
       const reasoning = effect.config?.reasoning ?? route.modelReasoning[model.id]!.default;
       if (!route.modelReasoning[model.id]!.levels.includes(reasoning)) throw new PiInferenceError('CONFIG_INVALID', `模型 ${model.id} 不支持推理等级 ${reasoning}`);
-      const apiKey = resolveCredential(route, env);
+      // 本机密钥按模型解析后的实际地址查找；目录默认端点与显式覆盖都适用。
+      const localKey = await options.resolveApiKey?.(route.provider, model.baseUrl);
+      const apiKey = localKey ?? resolveCredential(route, env);
       const context = toPiContext(effect.messages, model);
       context.tools = (effect.tools ?? []).map(tool => ({ name: tool.name, description: tool.description, parameters: tool.parameters as Tool['parameters'] }));
       const requestOptions: ModelsSimpleStreamOptions = {
@@ -377,7 +381,7 @@ export async function loadPiInference(
   } catch (error: unknown) {
     throw new PiInferenceError(
       'CONFIG_INVALID',
-      `无法读取 AI 配置文件 ${path}：${messageOf(error)}`,
+      `无法读取模型配置文件 ${path}：${messageOf(error)}`,
     );
   }
 
@@ -387,7 +391,7 @@ export async function loadPiInference(
   } catch (error: unknown) {
     throw new PiInferenceError(
       'CONFIG_INVALID',
-      `AI 配置文件不是合法 JSON（${path}）：${messageOf(error)}`,
+      `模型配置文件不是合法 JSON（${path}）：${messageOf(error)}`,
     );
   }
   return createPiInference(parsed, options);

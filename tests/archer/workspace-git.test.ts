@@ -134,7 +134,7 @@ it('HTTP 入口只按会话记录的工作区读取', async () => {
   if (root) await writeFile(join(root, 'tracked.txt'), 'changed\n');
   const archer = createArcher({ camp: testCamp() });
   await archer.start();
-  const server = await buildServer({ archer, inference: 'mock', token: 'admin' });
+  const server = await buildServer({ archer, token: 'admin' });
   try {
     const address = await server.listen({ host: '127.0.0.1', port: 0 });
     const client = new ArcherClient({ baseUrl: address, token: 'admin' });

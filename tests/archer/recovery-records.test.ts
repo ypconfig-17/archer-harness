@@ -62,7 +62,7 @@ it('管理接口统一鉴权，客户端导出与移出后健康计数立即更�
   const { content, records } = await fixture();
   const archer = createArcher({ camp: testCamp() });
   await archer.start();
-  const server = await buildServer({ archer, inference: 'mock', token: 'admin', recoveryRecords: records });
+  const server = await buildServer({ archer, token: 'admin', recoveryRecords: records });
   try {
     for (const [method, url] of [
       ['GET', '/api/recovery-records'],

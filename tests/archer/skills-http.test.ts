@@ -22,7 +22,7 @@ it('客户端按固定引用读取技能正文与资源，拒绝过期引用与�
   const directory = await skillRoot();
   const archer = createArcher({ camp: testCamp({ builtins: false, providers: [skillsProvider({ roots: [{ source: 'standard', directory }] })] }) });
   await archer.start();
-  const server = await buildServer({ archer, inference: 'mock', token: 'admin' });
+  const server = await buildServer({ archer, token: 'admin' });
   try {
     expect((await server.inject({ method: 'GET', url: '/api/skills/skills/review/x' })).statusCode).toBe(401);
     const address = await server.listen({ host: '127.0.0.1', port: 0 });
@@ -44,7 +44,7 @@ it('来源没有资源读取工具时明确不可预览，不退化为空资源'
     },
   }] }) });
   await archer.start();
-  const server = await buildServer({ archer, inference: 'mock' });
+  const server = await buildServer({ archer });
   try {
     const address = await server.listen({ host: '127.0.0.1', port: 0 });
     const client = new ArcherClient({ baseUrl: address });

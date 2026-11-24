@@ -85,7 +85,7 @@ describe('人工回复', () => {
     const agent = await archer.agents.create({ id: 'http-human', instructions: 'Ask.' });
     await agent.send('Go');
     const target = await waitPending(agent);
-    const server = await buildServer({ archer, token: 'test-token', inference: 'mock' });
+    const server = await buildServer({ archer, token: 'test-token' });
     const headers = { authorization: 'Bearer test-token' };
     try {
       expect((await server.inject({ method: 'POST', url: `/api/agents/${agent.id}/human/token`, payload: target })).statusCode).toBe(401);

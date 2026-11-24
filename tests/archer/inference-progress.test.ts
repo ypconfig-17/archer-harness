@@ -33,7 +33,7 @@ it('通过真实 HTTP 在推理结束前显示进度，最终结果成为唯一�
   });
   await archer.start();
   const agent = await archer.agents.create({ id: 'streaming', instructions: 'Reply.' });
-  const server = await buildServer({ archer, token: 'test-token', inference: 'mock' });
+  const server = await buildServer({ archer, token: 'test-token' });
   const baseUrl = await server.listen({ host: '127.0.0.1', port: 0 });
   const client = new ArcherClient({ baseUrl, token: 'test-token' });
   const controller = new AbortController();

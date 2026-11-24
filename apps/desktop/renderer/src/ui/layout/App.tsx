@@ -9,6 +9,7 @@ import { Sidebar } from '../navigation/Sidebar';
 import { useWorkspaceNavigation } from '../../store/workspaces';
 import { WorkspaceDialog } from '../navigation/WorkspaceDialog';
 import { useAgents, useHealth } from '../../hooks/use-runtime';
+import { useModelSettings } from '../workspace/ComposerControls';
 import { useUiStore } from '../../store/ui';
 import { Settings } from '../settings/Settings';
 import { usePreferences } from '../../store/preferences';
@@ -73,6 +74,9 @@ export default function App() {
   const prefs = usePreferences();
   const systemDark = useSystemDark();
   const openSettings = usePreferences(state => state.openSettings);
+  const modelSettings = useModelSettings();
+  // 空配置是发布版最常见的首次状态：在顶部给出唯一入口，避免把无模型误当成可发送。
+  const needsModelSetup = modelSettings.data !== undefined && modelSettings.data.models.length === 0;
   useEffect(() => {
     if (prefs.settings) document.title = '设置 · Archer';
     else if (view.type === 'home') document.title = 'Archer';
@@ -161,6 +165,10 @@ export default function App() {
     {health.isError && <div className="connection-banner" role="alert">
       <div><strong>无法连接 Archer 服务</strong><span>会话记录暂时无法更新。请确认后端服务已启动，然后重新连接。</span></div>
       <Button variant="link" size="sm" disabled={health.isFetching} onClick={() => void queryClient.invalidateQueries()}>{health.isFetching ? '正在连接…' : '重新连接'}</Button>
+    </div>}
+    {needsModelSetup && <div className="connection-banner" role="alert">
+      <div><strong>尚未配置模型服务</strong><span>填写服务、模型与 API Key 后，即可选择模型并发送任务。</span></div>
+      <Button variant="link" size="sm" onClick={() => openSettings(true, 'models')}>配置模型</Button>
     </div>}
     {view.type === 'agent' ? <AgentDetail key={view.agentId} agentId={view.agentId} onRemoved={clear} onNew={openNewChat} /> : <NewAgentForm key={selectedWorkspace ?? 'empty'} workspace={selectedWorkspace} recentWorkspaces={roots} onSelectWorkspace={root => {
       setWorkspace(root);

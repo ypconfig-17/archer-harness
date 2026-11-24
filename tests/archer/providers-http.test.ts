@@ -6,7 +6,7 @@ import { testCamp } from '../helpers/application';
 import { buildServer } from '../../apps/server/src/app';
 it('HTTP 与客户端列出 Provider，入口鉴权覆盖能力声明', async () => {
   const archer = createArcher({ camp: testCamp() }); await archer.start();
-  const server = await buildServer({ archer, inference: 'mock', token: 'admin' });
+  const server = await buildServer({ archer, token: 'admin' });
   try {
     expect((await server.inject({ method: 'GET', url: '/api/providers' })).statusCode).toBe(401);
     const address = await server.listen({ host: '127.0.0.1', port: 0 });

@@ -278,6 +278,20 @@
   text-overflow: ellipsis;
 }
 
+/* 已选文案与展开箭头垂直居中，下拉列表沿用控件宽度，长选项在列表内换行。 */
+.settings-workspace .ui-select {
+  align-items: center;
+}
+
+.settings-workspace .ui-select::picker(select) {
+  inline-size: anchor-size(width);
+}
+
+.settings-workspace .ui-select option {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
 /* 紧凑设置列仅收紧分段控件内边距，文字、图标和选中态继续复用公共组件。 */
 .setting-row-control .segmented-control button {
   padding-inline: var(--space-1);
@@ -346,14 +360,20 @@
   padding: var(--space-1) var(--space-2);
 }
 
-.provider-toggle {
+/* 服务与模型行复用公共按钮，按两行文案增高，悬停与展开背景包住完整内容。 */
+.provider-toggle,
+.model-entry-toggle {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   flex: 1;
   min-width: 0;
   min-height: var(--control-height);
+  height: auto;
+  padding-block: var(--settings-space-1);
   gap: var(--icon-text-gap);
-  text-align: left;
+  text-align: start;
+  white-space: normal;
 }
 
 .provider-toggle > span:first-of-type {
@@ -425,17 +445,7 @@
   gap: var(--settings-space-2);
 }
 
-.model-entry-heading > button:first-child {
-  display: flex;
-  align-items: center;
-  flex: 1;
-  min-width: 0;
-  min-height: var(--control-height);
-  gap: var(--icon-text-gap);
-  text-align: left;
-}
-
-.model-entry-heading > button > span {
+.model-entry-toggle > span {
   display: grid;
   min-width: 0;
   font: var(--type-ui);
