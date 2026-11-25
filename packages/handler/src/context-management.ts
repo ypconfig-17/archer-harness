@@ -111,7 +111,9 @@ export async function manageContext(
       continue;
     }
 
-    if (reason === 'growth' && hasFailedCompactionSinceAdopted) {
+    // 若尚未真正逼近物理模型上限（85%），且上次摘要尝试失败未采纳，则无论因增长线还是软封顶触发，都暂停每轮重复重试。
+    const nearPhysicalLimit = metrics.estimatedInputTokens > Math.floor(metrics.inputLimit * 0.85);
+    if (hasFailedCompactionSinceAdopted && (reason === 'growth' || !nearPhysicalLimit)) {
       blocked.add(step.id);
       continue;
     }

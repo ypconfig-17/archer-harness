@@ -7,19 +7,28 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
   Icon,
-  Input,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
   Item,
   ItemActions,
   ItemContent,
   ItemDescription,
+  ItemGroup,
   ItemMedia,
+  ItemSeparator,
   ItemTitle,
-  NativeSelect,
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
   ScrollArea,
   SegmentedControl,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Tabs,
   Tooltip,
 } from '@archer/ui';
@@ -54,6 +63,12 @@ const FILTERS: readonly { value: EntryFilter; label: string }[] = [
   { value: 'tools', label: '工具' },
   { value: 'references', label: '参考' },
 ];
+const TREND_WINDOW_ITEMS = [
+  { value: '9', label: '最近 9 次' },
+  { value: '18', label: '最近 18 次' },
+  { value: '0', label: '全部请求' },
+];
+const LATEST_REQUEST_VALUE = '__latest__';
 type ContextView = 'structure' | 'raw';
 /** 条带点击只切到对应筛选并展开分组，不改变选择与请求快照。 */
 const SLICE_TARGETS: Record<CompositionKey, { filter: EntryFilter; groups: readonly string[] }> = {
@@ -179,6 +194,14 @@ export const ContextPanel = memo(function ContextPanel({ events, hasEarlier = fa
   const selectedTool = selection?.kind === 'tool' ? effect.tools?.[selection.index] : undefined;
   const detail = describeSelection(selection, selectedMessage, selectedTool, context);
   const compactions = requests.filter(request => request.purpose === 'compaction' && request.key !== context.key);
+  const adoptedCompaction = compactions.find(request => request.adopted && request.summary);
+  const requestItems = [
+    { value: LATEST_REQUEST_VALUE, label: '最近请求（随记录更新）' },
+    ...requests.map((request, position) => ({
+      value: request.key,
+      label: `#${position + 1} · 任务 ${turnNumber(request.turnId)} · ${requestKind(request)}`,
+    })),
+  ];
   const cacheShare = usage?.cacheReadTokens !== undefined && usage.promptTokens > 0
     ? `${(usage.cacheReadTokens / usage.promptTokens * 100).toFixed(1)}%`
     : '';
@@ -273,15 +296,23 @@ export const ContextPanel = memo(function ContextPanel({ events, hasEarlier = fa
         <h2>上下文扫描</h2>
       </div>
       <div className="context-request">
-        <label className="context-select">
+        <div className="context-select">
           <span>请求</span>
-          <NativeSelect aria-label="选择模型请求" value={activeKey ?? ''} onChange={event => chooseRequest(event.target.value)}>
-            <option value="">最近请求（随记录更新）</option>
-            {requests.map((request, position) => <option key={request.key} value={request.key}>
-              任务 {turnNumber(request.turnId)} · {requestKind(request)} {position + 1}
-            </option>)}
-          </NativeSelect>
-        </label>
+          <Select
+            items={requestItems}
+            value={activeKey ?? LATEST_REQUEST_VALUE}
+            onValueChange={value => chooseRequest(value === LATEST_REQUEST_VALUE || value == null ? '' : String(value))}
+          >
+            <SelectTrigger size="sm" aria-label="选择模型请求" className="context-request-trigger">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              {requestItems.map(item => <SelectItem key={item.value} value={item.value}>
+                {item.label}
+              </SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
         <span className="context-position">#{index + 1} / {requests.length}</span>
         <Tooltip label="上一个请求">
           <Button variant="ghost" size="icon-sm" aria-label="上一个请求" disabled={index <= 0} onClick={() => moveRequest(-1)}>
@@ -371,17 +402,24 @@ export const ContextPanel = memo(function ContextPanel({ events, hasEarlier = fa
               <section className="context-section context-trend" aria-label="Token 趋势">
                 <header className="context-section-head">
                   <h3>上下文 Token 趋势</h3>
-                  <label className="context-trend-window">
-                    <NativeSelect
-                      aria-label="趋势范围"
+                  <div className="context-trend-window">
+                    <Select
+                      items={TREND_WINDOW_ITEMS}
                       value={String(trendWindow)}
-                      onChange={event => setTrendWindow(Number(event.target.value))}
+                      onValueChange={value => {
+                        if (value != null) setTrendWindow(Number(value));
+                      }}
                     >
-                      <option value="9">最近 9 次</option>
-                      <option value="18">最近 18 次</option>
-                      <option value="0">全部请求</option>
-                    </NativeSelect>
-                  </label>
+                      <SelectTrigger size="sm" aria-label="趋势范围" className="context-trend-trigger">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent align="end">
+                        {TREND_WINDOW_ITEMS.map(item => <SelectItem key={item.value} value={item.value}>
+                          {item.label}
+                        </SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </header>
                 <div className="context-trend-body">
                   <p className="context-trend-summary">
@@ -469,15 +507,22 @@ export const ContextPanel = memo(function ContextPanel({ events, hasEarlier = fa
                   <span className="context-section-note">{entryCount} 条记录</span>
                 </header>
                 <div className="context-entries-tools">
-                  <label className="context-search">
-                    <Icon name="search" size="sm" />
-                    <Input
+                  <InputGroup className="context-search">
+                    <InputGroupAddon>
+                      <Icon name="search" size="sm" />
+                    </InputGroupAddon>
+                    <InputGroupInput
                       aria-label="搜索上下文条目"
                       placeholder="搜索消息、工具与参考…"
                       value={search}
                       onChange={event => setSearch(event.target.value)}
                     />
-                  </label>
+                    {search && <InputGroupAddon align="inline-end">
+                      <InputGroupButton aria-label="清空搜索" size="icon-xs" onClick={() => setSearch('')}>
+                        <Icon name="x" size="xs" />
+                      </InputGroupButton>
+                    </InputGroupAddon>}
+                  </InputGroup>
                   <SegmentedControl label="条目类别" value={filter} options={FILTERS} onChange={setFilter} />
                 </div>
                 <div className="context-groups">
@@ -525,48 +570,51 @@ export const ContextPanel = memo(function ContextPanel({ events, hasEarlier = fa
         <ResizablePanel defaultSize="34" minSize={260} maxSize="50" className="context-split-panel">
           <ScrollArea className="context-scroll">
             <div className="context-inspector">
-              <section className="context-inspector-block" aria-label="请求概览">
+              {detail ? <section className="context-inspector-block" aria-label="已选上下文">
                 <header className="context-inspector-head">
-                  <h3>请求概览</h3>
-                  <span className={`context-state${context.failed ? ' is-failed' : ''}`}>{requestState(context)}</span>
-                </header>
-                <dl className="context-facts">
-                  <div><dt>请求目的</dt><dd>{purpose === 'compaction' ? '上下文摘要' : purpose === 'agent' ? '任务推理' : '尚未形成实际请求'}</dd></div>
-                  <div><dt>提交时间</dt><dd>{context.requestedAt ? new Date(context.requestedAt).toLocaleString('zh-CN', { hour12: false }) : '请求时间未记录'}</dd></div>
-                  <div><dt>推理入口</dt><dd>{capabilityLabel(effect.target)}</dd></div>
-                  <div><dt>模型</dt><dd>{effect.config?.model ?? '未声明'}</dd></div>
-                  <div><dt>固定前缀</dt><dd>{effect.promptPrefixCount} 条消息</dd></div>
-                  <div><dt>推理等级</dt><dd>{reasoningLevel ? REASONING_LABELS[reasoningLevel] : '未声明'}</dd></div>
-                  <div><dt>返回用量</dt><dd>{usage
-                    ? `输入 ${usage.promptTokens.toLocaleString()} · 输出 ${usage.completionTokens.toLocaleString()} tokens · 缓存读 ${usage.cacheReadTokens?.toLocaleString() ?? '未知'} / 写 ${usage.cacheWriteTokens?.toLocaleString() ?? '未知'}`
-                    : '暂无返回用量'}</dd></div>
-                  {effect.contextProjection && <div>
-                    <dt>消息投影</dt>
-                    <dd>摘要替换 {effect.contextProjection.summarizedMessages} 条 · {effect.contextProjection.originalChars.toLocaleString()} → {effect.contextProjection.projectedChars.toLocaleString()} 字符</dd>
-                  </div>}
-                </dl>
-              </section>
-              <section className="context-inspector-block" aria-label="已选上下文">
-                <header className="context-inspector-head">
-                  <h3 ref={heading} className="context-detail-title" tabIndex={-1}>{detail ? detail.title : '已选上下文'}</h3>
-                  {detail && <Button variant="ghost" size="icon-sm" aria-label="关闭上下文详情" onClick={closeDetail}>
+                  <Button variant="ghost" size="sm" className="context-detail-back" onClick={closeDetail}>
+                    <Icon name="chevron-left" size="sm" />
+                    返回概览
+                  </Button>
+                  <Button variant="ghost" size="icon-sm" aria-label="关闭上下文详情" onClick={closeDetail}>
                     <Icon name="x" size="sm" />
-                  </Button>}
+                  </Button>
                 </header>
-                <div className="context-detail-body">
-                  {detail ? detail.body : <p className="context-note">选择左侧条目，查看请求快照中的原始内容。</p>}
-                </div>
-              </section>
-              <section className="context-inspector-block" aria-label="上下文整理">
-                <header className="context-inspector-head"><h3>上下文整理</h3></header>
-                {contextPlan ? <>
+                <h3 ref={heading} className="context-detail-title" tabIndex={-1}>{detail.title}</h3>
+                <div className="context-detail-body">{detail.body}</div>
+              </section> : <>
+                <section className="context-inspector-block" aria-label="请求概览">
+                  <header className="context-inspector-head">
+                    <h3>请求概览</h3>
+                    <span className={`context-state${context.failed ? ' is-failed' : ''}`}>{requestState(context)}</span>
+                  </header>
                   <dl className="context-facts">
-                    <div><dt>整理配置</dt><dd>{contextPlan.profileName} · revision {contextPlan.profileRevision}</dd></div>
-                    {contextPlan.steps.length > 0
-                      ? <div><dt>估算变化</dt><dd>{contextPlan.beforeTokens.toLocaleString()} → {contextPlan.afterTokens.toLocaleString()} tokens · 输入额度 {contextPlan.inputLimit.toLocaleString()}</dd></div>
-                      : <div><dt>整理结果</dt><dd>未触发压缩 · 估算 {contextPlan.afterTokens.toLocaleString()} / {contextPlan.inputLimit.toLocaleString()} tokens</dd></div>}
+                    <div><dt>请求目的</dt><dd>{purpose === 'compaction' ? '上下文摘要' : purpose === 'agent' ? '任务推理' : '尚未形成实际请求'}</dd></div>
+                    <div><dt>提交时间</dt><dd>{context.requestedAt ? new Date(context.requestedAt).toLocaleString('zh-CN', { hour12: false }) : '请求时间未记录'}</dd></div>
+                    <div><dt>推理入口</dt><dd>{capabilityLabel(effect.target)}</dd></div>
+                    <div><dt>模型</dt><dd>{effect.config?.model ?? '未声明'}</dd></div>
+                    <div><dt>固定前缀</dt><dd>{effect.promptPrefixCount} 条消息</dd></div>
+                    <div><dt>推理等级</dt><dd>{reasoningLevel ? REASONING_LABELS[reasoningLevel] : '未声明'}</dd></div>
+                    <div><dt>返回用量</dt><dd>{usage
+                      ? `输入 ${usage.promptTokens.toLocaleString()} · 输出 ${usage.completionTokens.toLocaleString()} tokens · 缓存读 ${usage.cacheReadTokens?.toLocaleString() ?? '未知'} / 写 ${usage.cacheWriteTokens?.toLocaleString() ?? '未知'}`
+                      : '暂无返回用量'}</dd></div>
                   </dl>
-                  {contextPlan.steps.length > 0 && <Collapsible className="context-raw">
+                </section>
+                <section className="context-inspector-block" aria-label="上下文整理">
+                  <header className="context-inspector-head"><h3>上下文整理</h3></header>
+                  {(contextPlan || effect.contextProjection) ? <dl className="context-facts">
+                    {effect.contextProjection && <div>
+                      <dt>消息投影</dt>
+                      <dd>摘要替换 {effect.contextProjection.summarizedMessages} 条 · {effect.contextProjection.originalChars.toLocaleString()} → {effect.contextProjection.projectedChars.toLocaleString()} 字符</dd>
+                    </div>}
+                    {contextPlan && <>
+                      <div><dt>整理配置</dt><dd>{contextPlan.profileName} · revision {contextPlan.profileRevision}</dd></div>
+                      {contextPlan.steps.length > 0
+                        ? <div><dt>估算变化</dt><dd>{contextPlan.beforeTokens.toLocaleString()} → {contextPlan.afterTokens.toLocaleString()} tokens · 输入额度 {contextPlan.inputLimit.toLocaleString()}</dd></div>
+                        : <div><dt>整理结果</dt><dd>未触发压缩 · 估算 {contextPlan.afterTokens.toLocaleString()} / {contextPlan.inputLimit.toLocaleString()} tokens</dd></div>}
+                    </>}
+                  </dl> : <p className="context-note">本次请求未触发上下文整理。</p>}
+                  {contextPlan && contextPlan.steps.length > 0 && <Collapsible className="context-raw">
                     <CollapsibleTrigger>整理步骤 · {contextPlan.steps.length}</CollapsibleTrigger>
                     <CollapsibleContent keepMounted>
                       <ul className="context-steps">
@@ -576,44 +624,56 @@ export const ContextPanel = memo(function ContextPanel({ events, hasEarlier = fa
                       </ul>
                     </CollapsibleContent>
                   </Collapsible>}
-                </> : <p className="context-note">本次请求未触发上下文整理。</p>}
-                {context.summary && <>
-                  <h4 className="context-detail-subtitle">已采用摘要</h4>
-                  <p className="context-note">{context.compactedAt ? new Date(context.compactedAt).toLocaleString('zh-CN', { hour12: false }) : '整理时间未记录'}</p>
-                  <OutputBlock text={context.summary} />
-                </>}
-                {compactions.length > 0 && <>
-                  <h4 className="context-detail-subtitle">摘要请求 · {compactions.length}</h4>
-                  <div className="context-list">
-                    {compactions.map(request => {
-                      const reqPos = requests.indexOf(request) + 1;
-                      const timeText = request.requestedAt
-                        ? ` · ${new Date(request.requestedAt).toLocaleTimeString('zh-CN', { hour12: false })}`
-                        : '';
-                      const usageText = request.usage
-                        ? ` · ${request.usage.promptTokens.toLocaleString()} tokens`
-                        : ' · 已提交请求';
-                      return <Item
-                        key={request.key}
-                        size="xs"
-                        className="context-row"
-                        render={<button type="button" />}
-                        onClick={() => chooseRequest(request.key)}
-                      >
-                        <ItemMedia variant="icon"><Icon name="list" size="sm" /></ItemMedia>
-                        <ItemContent>
-                          <ItemTitle>#{reqPos} 摘要请求 · {requestState(request)}</ItemTitle>
-                          <ItemDescription>任务 {turnNumber(request.turnId)}{timeText}{usageText}</ItemDescription>
-                        </ItemContent>
-                        <ItemActions><Icon name="chevron-right" size="xs" /></ItemActions>
-                      </Item>;
-                    })}
-                  </div>
-                </>}
-                {compactions.some(request => !request.adopted) && (
-                  <p className="context-note">摘要请求已提交不代表已应用，以整理事实为准。</p>
-                )}
-              </section>
+                  {context.summary && <>
+                    <h4 className="context-detail-subtitle">已采用摘要</h4>
+                    <p className="context-note">{context.compactedAt ? new Date(context.compactedAt).toLocaleString('zh-CN', { hour12: false }) : '整理时间未记录'}</p>
+                    <OutputBlock text={context.summary} />
+                  </>}
+                  {adoptedCompaction?.summary && !context.summary && <Collapsible className="context-raw">
+                    <CollapsibleTrigger>
+                      查看已采用摘要（#{requests.indexOf(adoptedCompaction) + 1}）
+                    </CollapsibleTrigger>
+                    <CollapsibleContent keepMounted>
+                      <div className="context-adopted-summary">
+                        <OutputBlock text={adoptedCompaction.summary} />
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>}
+                  {compactions.length > 0 && <>
+                    <h4 className="context-detail-subtitle">摘要请求 · {compactions.length}</h4>
+                    <ItemGroup className="context-list">
+                      {compactions.map((request, idx) => {
+                        const reqPos = requests.indexOf(request) + 1;
+                        const timeText = request.requestedAt
+                          ? ` · ${new Date(request.requestedAt).toLocaleTimeString('zh-CN', { hour12: false })}`
+                          : '';
+                        const usageText = request.usage
+                          ? ` · ${request.usage.promptTokens.toLocaleString()} tokens`
+                          : ' · 已提交请求';
+                        return <div key={request.key}>
+                          {idx > 0 && <ItemSeparator />}
+                          <Item
+                            size="xs"
+                            className="context-row"
+                            render={<button type="button" />}
+                            onClick={() => chooseRequest(request.key)}
+                          >
+                            <ItemMedia variant="icon"><Icon name="list" size="sm" /></ItemMedia>
+                            <ItemContent>
+                              <ItemTitle>#{reqPos} 摘要请求 · {requestState(request)}</ItemTitle>
+                              <ItemDescription>任务 {turnNumber(request.turnId)}{timeText}{usageText}</ItemDescription>
+                            </ItemContent>
+                            <ItemActions><Icon name="chevron-right" size="xs" /></ItemActions>
+                          </Item>
+                        </div>;
+                      })}
+                    </ItemGroup>
+                  </>}
+                  {compactions.some(request => !request.adopted) && (
+                    <p className="context-note">摘要请求已提交不代表已应用，以整理事实为准。</p>
+                  )}
+                </section>
+              </>}
             </div>
           </ScrollArea>
         </ResizablePanel>

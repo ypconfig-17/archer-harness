@@ -149,7 +149,6 @@ export const Markdown = memo(function Markdown({ text: sourceText, streaming = f
       className="typeset archer-markdown-typeset"
       mode={streaming ? 'streaming' : 'static'}
       isAnimating={streaming}
-      caret={streaming ? 'block' : undefined}
       plugins={plugins}
       remarkPlugins={remarkPlugins}
       components={components}

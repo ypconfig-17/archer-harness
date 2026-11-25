@@ -146,12 +146,21 @@
   flex-direction: column;
 }
 
+/* 独立视口包裹滚动区与悬浮入口，避免「回到最新」或定位条挤压阅读高度。 */
+.chat-viewport {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .chat-scroll {
   flex: 1;
   min-height: 0;
   overflow: auto;
   overflow-anchor: none;
-  padding: var(--space-6) var(--workspace-inset);
+  padding: var(--space-6) var(--workspace-inset) var(--space-8);
 }
 
 .conversation-width {
@@ -164,11 +173,13 @@
   flex: none;
   max-height: 65vh;
   overflow-y: auto;
-  padding: var(--space-3) var(--workspace-inset) var(--space-4);
+  padding: var(--space-2) var(--workspace-inset) var(--space-4);
 }
 
-.composer-dock .conversation-width > div {
-  margin-bottom: 10px;
+.composer-dock .conversation-width {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 /* 队列使用有界列表，避免积压任务挤走正文和输入框。 */
@@ -667,7 +678,19 @@
   color: var(--muted);
   font: var(--type-caption);
 }
-.conversation-tool-group { margin-top: var(--space-1); padding-left: var(--space-3); color: var(--secondary); font: var(--type-caption); }
+.conversation-tool-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+  padding-left: var(--space-3);
+  color: var(--secondary);
+  font: var(--type-caption);
+}
+/* 会话工具组内由父容器统一间距，避免独立行与折叠组切换时突然多出上下外边距。 */
+.conversation-tool-group .archer-activity-group {
+  margin-block: 0;
+}
 /* 根据主阅读列宽度重排，Inspector 占位也能触发，不依赖整个窗口宽度。 */
 @container conversation (max-width: 640px) {
   .file-changes-breakdown { display: none; }
@@ -859,10 +882,25 @@
 .conversation-turn-marks > button > span {
   width: var(--space-3);
   height: 2px;
+  border-radius: 999px;
   background: var(--border);
+  transition: background-color 140ms ease, width 140ms ease;
+}
+.conversation-turn-marks > button.is-running > span {
+  width: var(--space-4);
+  background: var(--accent);
+}
+.conversation-turn-marks > button.is-waiting > span {
+  background: var(--warning);
+}
+.conversation-turn-marks > button.is-failed > span {
+  background: var(--danger);
 }
 .conversation-turn-marks > button:hover > span,
-.conversation-turn-marks > button:focus-visible > span { background: var(--accent); }
+.conversation-turn-marks > button:focus-visible > span {
+  width: var(--space-4);
+  background: var(--accent);
+}
 
 /* 展开入口保留完整命中区；执行详情继续保持次要层级。 */
 .file-changes-trigger {
@@ -923,13 +961,17 @@
   order: 2;
   margin-left: auto;
 }
-@media (max-width: 700px) {
+/* 按对话列自身宽度换行，确保打开右栏工作台挤窄中间列时也能自然折行。 */
+@container conversation (max-width: 640px) {
   .workspace-turn-heading > .archer-turn-summary {
     flex-basis: 100%;
   }
 }
 
-/* 停止回执紧接前一执行内容，避免轮次间距与答复上边距重复叠加。 */
+/* 轮次之间保留清晰停顿，停止回执仍紧接前一执行内容。 */
+.workspace-turn-group + .workspace-turn-group {
+  margin-top: var(--space-4);
+}
 .workspace-turn-group + .workspace-stop-group {
   margin-top: 0;
 }

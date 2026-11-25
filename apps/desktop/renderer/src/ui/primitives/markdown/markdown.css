@@ -77,7 +77,7 @@
   font-size: var(--size-code);
 }
 
-/* 流式光标由 Streamdown 的 caret 渲染；继承正文色，避免主题切换时出现孤立的纯白或纯黑。 */
+/* 正文节点继承宿主文本颜色，避免主题切换时出现孤立的纯白或纯黑。 */
 .archer-markdown-typeset [data-streamdown] {
   color: inherit;
 }

@@ -8,7 +8,7 @@
 import { readFile } from 'node:fs/promises';
 import { channel } from 'node:diagnostics_channel';
 import { createHash } from 'node:crypto';
-import { canonicalJson } from '@archer/contracts';
+import { REASONING_LEVELS, canonicalJson } from '@archer/contracts';
 import type {
   AssistantMessage,
   Tool,
@@ -279,13 +279,16 @@ export function createPiInference(
       const model = selectModel(route, effect.config);
       const context = toPiContext(effect.messages, model);
       context.tools = (effect.tools ?? []).map(tool => ({ name: tool.name, description: tool.description, parameters: tool.parameters as Tool['parameters'] }));
+      const supportedLevels = route.modelReasoning[model.id]?.levels ?? [];
+      const lowestReasoning = REASONING_LEVELS.find(level => supportedLevels.includes(level));
       // 完整适配上下文按字符类别估算 token，并预留消息封装开销；这不是服务端 tokenizer。
       return { contextWindow: model.contextWindow, maxOutputTokens: model.maxTokens,
         // 图片编码长度不是视觉 token 数；以固定保守预留估算，避免 Base64 挤爆文本窗口。
         estimatedInputTokens: estimateTokens(JSON.stringify(context, (key, value) => key === 'data' ? undefined : value))
           + effect.messages.reduce((total, message) => total + (message.images?.length ?? 0) * 16_384, 0)
           + context.messages.length * 16,
-        method: 'pi-context-token-classes-v1' };
+        method: 'pi-context-token-classes-v1',
+        ...(lowestReasoning ? { lowestReasoning } : {}) };
     },
     async infer(effect: InferEffect, signal: AbortSignal, onProgress): Promise<InferResult> {
       if (signal.aborted) throw new PiInferenceError('ABORTED', '推理请求已取消');

@@ -5,6 +5,7 @@ import type { JsonObject, JsonValue, Snapshot } from './json.js';
 import type { FileAccess } from './workspace-files.js';
 import type { InferEffect, InferResult } from './effect.js';
 import type { InferenceChunk } from './progress.js';
+import type { ReasoningLevel } from './reasoning.js';
 import type { SchemaDescriptor } from './schema.js';
 
 export interface Contract<I = unknown, M extends object = JsonObject> {
@@ -87,6 +88,8 @@ export interface InferenceMeasurement {
   maxOutputTokens: number;
   estimatedInputTokens: number;
   method: string;
+  /** 模型实际支持的最低思考等级，供摘要等低推理任务选用。 */
+  lowestReasoning?: ReasoningLevel;
 }
 export interface Inference {
   /** 同步计量且不执行外部请求；相同模型和请求返回相同口径，追加完整消息不减少估算输入，供安全边界二分使用。 */

@@ -63,9 +63,8 @@
   font: var(--type-caption);
 }
 
-.context-select select {
-  flex: none;
-  min-width: 168px;
+.context-request-trigger {
+  min-width: 184px;
 }
 
 .context-position {
@@ -369,12 +368,11 @@
 }
 
 .context-trend-window {
-  width: 116px;
   margin-left: auto;
 }
 
-.context-trend-window select {
-  width: 100%;
+.context-trend-trigger {
+  min-width: 108px;
 }
 
 .context-trend-body {
@@ -640,17 +638,8 @@
 }
 
 .context-search {
-  display: flex;
   flex: 1;
-  align-items: center;
-  gap: var(--space-2);
   min-width: 180px;
-  color: var(--secondary);
-}
-
-.context-search input {
-  width: 100%;
-  min-width: 0;
 }
 
 .context-groups {
@@ -773,8 +762,23 @@
 }
 
 /* 详情标题只接收程序化焦点供读屏定位，不显示输入框式焦点框。 */
+.context-detail-back {
+  margin-left: calc(var(--space-2) * -1);
+  color: var(--secondary);
+}
+
+.context-detail-title {
+  margin: 0;
+  color: var(--text);
+  font: var(--type-folder);
+}
+
 .context-detail-title:focus {
   outline: none;
+}
+
+.context-adopted-summary {
+  margin-top: var(--space-1);
 }
 
 .context-state {

@@ -171,7 +171,7 @@ describe('上下文页', () => {
     const html = renderToStaticMarkup(createElement(ContextPanel, { events: requestEvents() }));
     expect(html).toContain('上下文扫描');
     expect(html).toContain('已加载 1 个请求');
-    expect(html).toContain('任务 1 · 模型请求 1');
+    expect(html).toContain('最近请求（随记录更新）');
     expect(html).toContain('#1 / 1');
     expect(html).toContain('输入 Token');
     expect(html).toContain('占额度 1.2%（100,000）');
@@ -214,8 +214,8 @@ describe('上下文页', () => {
     const html = renderToStaticMarkup(createElement(ContextPanel, { events }));
     expect(html).toContain('当前请求 #2');
     expect(html).toContain('较上次 ↓ 25.0%（-300）');
-    expect(html).toContain('任务 1 · 模型请求 1');
-    expect(html).toContain('任务 1 · 模型请求 2');
+    expect(html).toContain('#2 / 2');
+    expect(html).toContain('已加载 2 个请求');
   });
 
   it('最近请求贴近右缘时数值徽标向内对齐', () => {

@@ -317,3 +317,33 @@ it.each(['no-plan', 'invalid', 'no-gain', 'limit', 'recovered-limit'] as const)(
     });
   }
 });
+
+it('未显式指定摘要推理等级时自动选用模型支持的最低思考档，不继承主任务 high 推理', async () => {
+  const { planCompaction } = await import('../../packages/handler/src/compaction.js');
+  const source: InferEffect = {
+    type: 'INFER',
+    target,
+    promptPrefixCount: 1,
+    config: { reasoning: 'high', contextProfile: compactProfile({ reserveTokens: 0, keepRecentTokens: 100 }) },
+    messages: [
+      { role: 'system', content: 'Sys' },
+      { role: 'user', content: 'Req' },
+      { role: 'assistant', content: 'A1', toolCalls: [{ id: 'c1', name: 'read', input: {} }] },
+      { role: 'tool', toolCallId: 'c1', toolName: 'read', content: 'R1'.repeat(200) },
+      { role: 'assistant', content: 'A2', toolCalls: [{ id: 'c2', name: 'read', input: {} }] },
+      { role: 'tool', toolCallId: 'c2', toolName: 'read', content: 'R2'.repeat(200) },
+    ],
+  };
+  const model: Inference = {
+    measure: request => ({
+      contextWindow: 128_000,
+      maxOutputTokens: 64_000,
+      estimatedInputTokens: JSON.stringify(request.messages).length,
+      method: 'test-bytes',
+      lowestReasoning: 'low',
+    }),
+    infer: async () => ({ content: 'ok' }),
+  };
+  const planned = planCompaction(source, executionContext(model, [], []), 100);
+  expect(planned?.request.config?.reasoning).toBe('low');
+});

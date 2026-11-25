@@ -65,15 +65,17 @@ export function planCompaction(
     const index = Math.floor((low + high) / 2);
     const coveredMessageCount = cuts[index]!;
     // 推理模型的思考 token 与正文共享输出预算；上限过小时思考会写满预算，
-    // 摘要因正文为空且 stopReason=length 被拒绝。0 表示按模型窗口自动取值。
+    // 摘要因正文为空且 stopReason=length 被拒绝。0 表示按模型窗口自动取值（给思考留足余量）。
     const requestedBudget = options.summaryBudgetTokens && options.summaryBudgetTokens > 0
       ? options.summaryBudgetTokens
-      : 16_384;
+      : 32_768;
     const config = { ...effect.config };
-    // 摘要请求不携带 Profile，避免在摘要端口上伪装成一次策略执行。
+    // 摘要请求不携带 Profile；未显式指定摘要推理等级时优先选用模型支持的最低思考档，避免思考耗尽输出预算。
     delete config.contextProfile;
+    delete config.reasoning;
     config.maxTokens = Math.min(requestedBudget, measurement.maxOutputTokens, Math.max(1, Math.floor(measurement.contextWindow * 0.1)));
     if (options.reasoning) config.reasoning = options.reasoning;
+    else if (measurement.lowestReasoning) config.reasoning = measurement.lowestReasoning;
     const request: InferEffect = {
       type: 'INFER', target: effect.target, promptPrefixCount: 1,
       config,

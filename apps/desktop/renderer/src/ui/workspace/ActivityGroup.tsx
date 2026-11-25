@@ -1,11 +1,11 @@
-import type { ReactNode } from 'react';
+import { memo, type ReactNode } from 'react';
 import type { EffectEntry } from '../../lib/conversation';
 import { operationCategory, operationState } from '../../lib/operation';
 import { Icon, ActivityGroup as UIActivityGroup, Trace, ScrollArea } from '@archer/ui';
 import { InvocationRow } from './InvocationRow';
 
 /** 连续调用组保留事实顺序，异常与当前执行不被历史折叠吞掉。 */
-export function ActivityGroup({ entries, onInspect }: { entries: EffectEntry[]; onInspect?(effectId: string): void }) {
+export const ActivityGroup = memo(function ActivityGroup({ entries, onInspect }: { entries: EffectEntry[]; onInspect?(effectId: string): void }) {
   const row = (entry: EffectEntry) => <InvocationRow key={entry.effectId} entry={entry} compact onSelect={onInspect ? () => onInspect(entry.effectId) : undefined} />;
   const nodes: ReactNode[] = [];
   let folded: EffectEntry[] = [];
@@ -40,4 +40,4 @@ export function ActivityGroup({ entries, onInspect }: { entries: EffectEntry[]; 
   }
   flush();
   return <div className="conversation-tool-group" aria-label="工具活动">{nodes}</div>;
-}
+});
