@@ -7,11 +7,22 @@ import { SHELL_ROOT_DESCRIPTION, SHELL_SCHEMA, SHELL_SUMMARY } from './tools/pro
 export function shellProvider(options: ShellProviderOptions = {}) {
   const environment = Object.fromEntries(Object.entries(options.env ?? {}).filter(([, value]) => value !== undefined).sort(([a], [b]) => a.localeCompare(b)));
   const environmentRevision = createHash('sha256').update(JSON.stringify(environment)).digest('hex');
+  const sandboxRevision = createHash('sha256')
+    .update(JSON.stringify({
+      envMode: options.envMode ?? null,
+      allowEnv: options.allowEnv ?? [],
+      sandbox: options.sandbox ?? null,
+    }))
+    .digest('hex');
   return provider('shell', { bash: tool({
     description: SHELL_ROOT_DESCRIPTION, summary: SHELL_SUMMARY, inputSchema: SHELL_SCHEMA, execution: 'shell', resultView: 'output',
     invoke: async (input, context) => {
       if (!context.workspace) throw new OperationRejected('Shell requires an explicitly configured workspace.', 'PERMISSION_DENIED');
-      return new ShellProvider(context.workspace.cwd, options).execute(input, context.signal);
+      const readOnly = options.sandbox?.readOnly ?? (context.workspace.access === 'read');
+      const effectiveOptions: ShellProviderOptions = options.sandbox?.mode === 'os'
+        ? { ...options, sandbox: { ...options.sandbox, readOnly } }
+        : options;
+      return new ShellProvider(context.workspace.cwd, effectiveOptions).execute(input, context.signal);
     },
-  }) }, { identity: { implementation: 'host-shell', revision: 2, environmentRevision, timeoutMs: options.timeoutMs ?? 30_000, maxBuffer: options.maxBuffer ?? 10 * 1024 * 1024 } });
+  }) }, { identity: { implementation: 'host-shell', revision: 2, environmentRevision, sandboxRevision, timeoutMs: options.timeoutMs ?? 30_000, maxBuffer: options.maxBuffer ?? 10 * 1024 * 1024 } });
 }
