@@ -13,7 +13,7 @@ import {
 import { useSystemDark } from '../theme/system-appearance';
 import { Button, Dialog, Label, NativeSelect, RadioGroup, RadioGroupItem, SidebarGroup, SidebarMenu, SidebarMenuButton, SidebarMenuItem, Switch } from '@archer/ui';
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
-import { resolveContextProfile, type ModelSettings } from '@archer/contracts';
+import { type ModelSettings } from '@archer/contracts';
 import { SettingRow, type SettingsEditorState } from './SettingsControls';
 import { ContextManagement } from './ContextManagement';
 import { ModelSettingsEditor } from './ModelSettingsEditor';
@@ -33,7 +33,7 @@ const SECTIONS: readonly { key: Section; label: string; icon: IconName; descript
   { key: 'appearance', label: '外观与主题', icon: 'sun', group: '使用偏好', scope: '本机偏好 · 即时保存', description: '自定义 Archer 的外观、界面主题与强调色。' },
   { key: 'shortcuts', label: '快捷键', icon: 'terminal', group: '使用偏好', scope: '操作参考', description: '查看当前运行环境支持的快捷操作。' },
   { key: 'models', label: '模型设置', icon: 'spark', group: '模型与执行', scope: '服务端配置 · 保存后生效', description: '配置模型连接与默认选择，保存后用于后续对话。' },
-  { key: 'context', label: '上下文', icon: 'list', group: '模型与执行', scope: '本机默认值 · 保存后生效', description: '调整对话整理方式和每次任务的用量预算。' },
+  { key: 'context', label: '上下文', icon: 'list', group: '模型与执行', scope: '本机默认值 · 即时保存', description: '调整对话整理方式和每次任务的用量预算。' },
   { key: 'providers', label: '能力来源', icon: 'drive', group: '模型与执行', scope: '当前应用 · 只读', description: '查看已接入的能力来源、用途与契约声明。' },
   { key: 'sessions', label: '对话记录', icon: 'compose', group: '工作区与记录', scope: '当前服务', description: '查找、打开和整理已有对话。' },
   { key: 'projects', label: '工作区', icon: 'folder', group: '工作区与记录', scope: '本机导航', description: '选择工作文件夹，查看关联对话。' },
@@ -47,7 +47,6 @@ export function Settings({ agentId, onAddWorkspace }: { agentId: string | null; 
   const query = useModelSettings();
   const returnButton = useRef<HTMLButtonElement>(null);
   const [search, setSearch] = useState('');
-  const [contextDetail, setContextDetail] = useState(false);
   const [section, setSection] = useState<Section>(() => usePreferences.getState().settingsSection);
   const [modelState, setModelState] = useState(CLEAN_EDITOR);
   const [contextState, setContextState] = useState(CLEAN_EDITOR);
@@ -149,29 +148,19 @@ export function Settings({ agentId, onAddWorkspace }: { agentId: string | null; 
           </div>
           <div className="settings-page-heading">
             <div>
-              {section === 'context' && contextDetail && <Button variant="link" size="sm" className="settings-detail-back" onClick={() => setContextDetail(false)}><Icon name="arrow-left" size="sm" />返回上下文</Button>}
-              <h3 className="settings-title" id="settings-page-title">{section === 'context' && contextDetail ? '整理策略' : current.label}</h3><p className="settings-description">{current.description}</p></div>
+              <h3 className="settings-title" id="settings-page-title">{current.label}</h3><p className="settings-description">{current.description}</p></div>
           </div>
         </header>
         {/* 编辑器保持挂载，切换分类只切换可见性，未提交的草稿与错误反馈不丢失。 */}
         <div className="settings-editor-page" hidden={section !== 'models'} aria-label="模型设置内容">
           <ModelSettingsEditor onStateChange={onModelState} />
         </div>
-        <div className="settings-editor-page" hidden={section !== 'context' || !contextDetail} aria-label="上下文管理内容">
+        <div className="settings-editor-page" hidden={section !== 'context'} aria-label="上下文管理内容">
           <ContextManagement agentId={agentId} onStateChange={onContextState} />
         </div>
         <div className="settings-editor-page" hidden={section !== 'appearance'} aria-label="外观与主题内容">
           <AppearancePreferences />
         </div>
-        {section === 'context' && !contextDetail && <div className="settings-scroll">
-          <section className="settings-group">
-            <h4>对话整理</h4>
-            <SettingRow label="整理策略" hint={`当前生效：${resolveContextProfile(prefs.activeContextProfileId, prefs.customContextProfiles).name}。调整摘要、触发条件和任务预算。`}>
-              <Button variant="secondary" onClick={() => setContextDetail(true)}>编辑策略</Button>
-            </SettingRow>
-            {contextState.dirty && <p className="settings-note">策略详情中有未保存的修改。</p>}
-          </section>
-        </div>}
         {section !== 'models' && section !== 'context' && section !== 'appearance' && <div className="settings-scroll" key={section}>
           {section === 'general' && <GeneralPreferences models={query.data} modelsFailed={query.isError} onAddWorkspace={() => requestExit(onAddWorkspace)} onModels={() => setSection('models')} />}
           {section === 'shortcuts' && <ShortcutReference />}

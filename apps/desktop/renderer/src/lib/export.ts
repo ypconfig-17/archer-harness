@@ -46,7 +46,11 @@ function effectMarkdown(entry: EffectEntry, finalEffectId: string | undefined): 
   }
 
   if (entry.effect) {
-    const request = entry.effect.type === 'CALL' ? entry.effect.input : entry.effect;
+    const request = entry.effect.type === 'CALL'
+      ? entry.effect.input
+      : entry.effect.type === 'CALL_BATCH'
+        ? entry.effect.calls.map(call => ({ tool: call.toolName ?? call.target.capabilityId, input: call.input }))
+        : entry.effect;
     lines.push('', '请求：', '', fence(JSON.stringify(request, null, 2)));
   }
   if (end?.type === 'effect.completed') {
@@ -54,6 +58,16 @@ function effectMarkdown(entry: EffectEntry, finalEffectId: string | undefined): 
     if (command) {
       lines.push('', `工作目录：\`${command.cwd}\` · 退出码 ${command.exitCode}`, '', '标准输出：', '', fence(command.stdout || '（无）'));
       if (command.stderr) lines.push('', '标准错误：', '', fence(command.stderr));
+    } else if (end.data.effectType === 'CALL_BATCH') {
+      const calls = entry.effect?.type === 'CALL_BATCH' ? entry.effect.calls : [];
+      lines.push('', '结果：', '');
+      end.data.result.results.forEach((item, index) => {
+        const label = calls[index]?.toolName ?? calls[index]?.target.capabilityId ?? `#${index + 1}`;
+        const statusText = item.status === 'failed'
+          ? `失败（${item.error.message}）`
+          : item.result.isError ? '未成功' : '已完成';
+        lines.push(`- ${label}：${statusText}`);
+      });
     } else {
       lines.push('', '结果：', '', fence(JSON.stringify(end.data.result, null, 2)));
     }

@@ -654,7 +654,44 @@ function OperationResult({ entry }: { entry: EffectEntry }) {
     </div>;
     const change = fileChange(entry);
     if (change) return <AppliedChange before={change.before} after={change.after} path={change.path} />;
+    if (entry.effect?.type === 'CALL' && entry.effect.target.capabilityId === 'delegate') {
+      const delegated = record(data.result.value);
+      if (typeof delegated.output === 'string' && delegated.output) {
+        return <OutputBlock text={delegated.output} />;
+      }
+    }
     return <OutputBlock text={String(record(data.result.value).output ?? JSON.stringify(data.result.value))} />;
+  }
+  if (data.effectType === 'CALL_BATCH') {
+    const calls = entry.effect?.type === 'CALL_BATCH' ? entry.effect.calls : [];
+    return (
+      <div className="execution-batch-results">
+        {data.result.results.map((item, index) => {
+          const call = calls[index];
+          const input = call ? record(call.input) : {};
+          const label = typeof input.path === 'string'
+            ? input.path
+            : typeof input.pattern === 'string'
+              ? input.pattern
+              : typeof input.task === 'string'
+                ? input.task
+                : call?.toolName ?? `调用 #${index + 1}`;
+          if (item.status === 'failed') {
+            return (
+              <p key={call?.toolCallId ?? index} className="execution-muted">
+                {`${label} · 失败：${item.error.message}`}
+              </p>
+            );
+          }
+          const detail = item.result.isError ? '未成功' : '已完成';
+          return (
+            <p key={call?.toolCallId ?? index} className="execution-muted">
+              {`${label} · ${detail}`}
+            </p>
+          );
+        })}
+      </div>
+    );
   }
   return <OutputBlock text={JSON.stringify(data.result, null, 2)} />;
 }
