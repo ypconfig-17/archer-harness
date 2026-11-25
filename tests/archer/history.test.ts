@@ -130,3 +130,40 @@ it('超大结果只在真实请求中节选，回放后仍能分页读到完整�
     await app.stop();
   }
 });
+
+it('committedHistory 收录 CALL_BATCH 子项事实与可重读正文', async () => {
+  const { committedHistory } = await import('../../packages/runtime/src/archer/history');
+  const target = { providerId: 'files', capabilityId: 'read', contractId: 'archer.tool@1', revision: 'files@1' };
+  const state = {
+    turns: new Map([
+      ['t1', {
+        turnId: 't1',
+        effects: [{
+          effectId: 'e1',
+          status: 'completed',
+          abandoned: false,
+          effect: {
+            type: 'CALL_BATCH',
+            calls: [
+              { target, input: { path: 'a.txt' }, toolCallId: 'c1', toolName: 'files_read' },
+              { target, input: { path: 'b.txt' }, toolCallId: 'c2', toolName: 'files_read' },
+            ],
+          },
+          result: {
+            results: [
+              { status: 'completed', result: { value: 'ok', modelContent: 'CONTENT_A', isError: false } },
+              { status: 'failed', error: { code: 'PROVIDER_ERROR', message: 'boom' } },
+            ],
+          },
+        }],
+      }],
+    ]),
+  } as unknown as import('@archer/agent').SessionState;
+  const snapshot = committedHistory(state);
+  expect(snapshot.facts).toMatchObject([
+    { turnId: 't1', effectId: 'e1', callId: 'c1', status: 'completed' },
+    { turnId: 't1', effectId: 'e1', callId: 'c2', status: 'failed' },
+  ]);
+  expect(snapshot.history.read({ callId: 'c1' }).content).toBe('CONTENT_A');
+  expect(() => snapshot.history.read({ callId: 'c2' })).toThrow('No committed visible result');
+});

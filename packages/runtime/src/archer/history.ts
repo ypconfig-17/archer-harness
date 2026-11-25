@@ -1,5 +1,5 @@
 /** 只从已提交状态快照提供模型可见结果，不暴露 Journal 或重执行入口。 */
-import { HistoryReadInputSchema, HistoryListInputSchema, OperationRejected, type HistoryReader, type CallResult, type JsonValue, type JsonObject } from '@archer/contracts';
+import { HistoryReadInputSchema, HistoryListInputSchema, OperationRejected, type HistoryReader, type CallBatchResult, type CallResult, type CapabilityRef, type JsonValue, type JsonObject } from '@archer/contracts';
 import type { SessionState } from '@archer/agent';
 import type { ExecutionFact } from '@archer/handler';
 function object(value: JsonValue | undefined): JsonObject | undefined {
@@ -8,30 +8,67 @@ function object(value: JsonValue | undefined): JsonObject | undefined {
 export function committedHistory(state: SessionState): { history: HistoryReader; facts: ExecutionFact[] } {
   const pages = new Map<string, { content: string; isError: boolean } | null>();
   const facts: ExecutionFact[] = [];
-  const calls: { turnId: string; callId: string; target: import('@archer/contracts').CapabilityRef; isError: boolean }[] = [];
-  for (const turn of state.turns.values()) for (const entry of turn.effects) {
-    if (entry.effect.type !== 'CALL') continue;
-    const result = entry.status === 'completed' ? entry.result as CallResult | undefined : undefined;
+  const calls: { turnId: string; callId: string; target: CapabilityRef; isError: boolean }[] = [];
+
+  // 单条 CALL 与 CALL_BATCH 子项共用事实记录与可重读正文登记逻辑，保证并发工具输出同样可被裁剪与重读。
+  const recordCall = (
+    turnId: string,
+    effectId: string,
+    call: { target: CapabilityRef; toolCallId?: string; toolName?: string },
+    status: ExecutionFact['status'],
+    abandoned: boolean,
+    result?: CallResult,
+  ) => {
     const metadata = object(object(result?.value)?.metadata);
     const change = object(metadata?.fileChange);
     const command = object(metadata?.command);
     const fileChange = result && !result.isError && typeof change?.path === 'string' && typeof change.revisionAfter === 'string'
       ? { path: change.path, revisionAfter: change.revisionAfter,
         ...(change.revisionBefore === null || typeof change.revisionBefore === 'string' ? { revisionBefore: change.revisionBefore } : {}) } : undefined;
-    facts.push({ turnId: turn.turnId, effectId: entry.effectId,
-      ...(entry.effect.toolCallId ? { callId: entry.effect.toolCallId } : {}),
-      ...(entry.effect.toolName ? { toolName: entry.effect.toolName } : {}),
-      status: entry.status === 'completed' ? result?.isError ? 'business-error' : 'completed'
-        : entry.status === 'unknown' ? 'unknown' : entry.status === 'failed' ? 'failed'
-          : entry.status === 'cancelled' ? 'cancelled' : 'pending', abandoned: Boolean(entry.abandoned),
+    facts.push({
+      turnId,
+      effectId,
+      ...(call.toolCallId ? { callId: call.toolCallId } : {}),
+      ...(call.toolName ? { toolName: call.toolName } : {}),
+      status,
+      abandoned,
       ...(fileChange ? { fileChange } : {}),
       ...(typeof command?.exitCode === 'number' && Number.isSafeInteger(command.exitCode) ? { command: { exitCode: command.exitCode } } : {}),
     });
-    if (!result || !entry.effect.toolCallId) continue;
-    calls.push({ turnId: turn.turnId, callId: entry.effect.toolCallId, target: entry.effect.target, isError: result.isError === true });
-    const key = JSON.stringify([turn.turnId, entry.effect.toolCallId]);
+    if (!result || !call.toolCallId) return;
+    calls.push({ turnId, callId: call.toolCallId, target: call.target, isError: result.isError === true });
+    const key = JSON.stringify([turnId, call.toolCallId]);
     const value = { content: result.modelContent ?? JSON.stringify(result.value), isError: result.isError === true };
     pages.set(key, pages.has(key) ? null : value);
+  };
+
+  for (const turn of state.turns.values()) for (const entry of turn.effects) {
+    const baseStatus: ExecutionFact['status'] = entry.status === 'unknown' ? 'unknown'
+      : entry.status === 'failed' ? 'failed'
+        : entry.status === 'cancelled' ? 'cancelled' : 'pending';
+    if (entry.effect.type === 'CALL') {
+      const result = entry.status === 'completed' ? entry.result as CallResult | undefined : undefined;
+      const status: ExecutionFact['status'] = entry.status === 'completed'
+        ? (result?.isError ? 'business-error' : 'completed')
+        : baseStatus;
+      recordCall(turn.turnId, entry.effectId, entry.effect, status, Boolean(entry.abandoned), result);
+      continue;
+    }
+    if (entry.effect.type === 'CALL_BATCH') {
+      const batch = entry.status === 'completed' ? entry.result as CallBatchResult | undefined : undefined;
+      entry.effect.calls.forEach((call, index) => {
+        const item = batch?.results[index];
+        if (entry.status === 'completed' && item?.status === 'completed') {
+          const status: ExecutionFact['status'] = item.result.isError ? 'business-error' : 'completed';
+          recordCall(turn.turnId, entry.effectId, call, status, Boolean(entry.abandoned), item.result);
+          return;
+        }
+        const status: ExecutionFact['status'] = entry.status === 'completed' && item?.status === 'failed'
+          ? 'failed'
+          : baseStatus;
+        recordCall(turn.turnId, entry.effectId, call, status, Boolean(entry.abandoned));
+      });
+    }
   }
   return { facts, history: {
     list(raw) {

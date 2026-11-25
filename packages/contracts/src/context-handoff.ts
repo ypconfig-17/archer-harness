@@ -32,10 +32,17 @@ export class ContextHandoffUnavailable extends Error {
   constructor(readonly reason: z.infer<typeof NoContextHandoffSchema>['reason']) { super(`No usable handoff: ${reason}`); }
 }
 
+/** 剥离模型偶发附带的 Markdown JSON 代码块围栏，但不放松任何结构与引文校验。 */
+function stripJsonFence(content: string): string {
+  const trimmed = content.trim();
+  const match = /^```(?:json)?\s*\r?\n([\s\S]*?)\r?\n```$/i.exec(trimmed);
+  return match ? match[1]!.trim() : trimmed;
+}
+
 /** 索引固定到原始历史，不接受未来消息、伪造引文或与工具结果冲突的分类。 */
 export function validateContextHandoff(content: string, source: readonly Message[]): ContextHandoff {
   if (content.length > 16_384) throw new Error('Handoff exceeds size limit.');
-  const value: unknown = JSON.parse(content);
+  const value: unknown = JSON.parse(stripJsonFence(content));
   const unavailable = NoContextHandoffSchema.safeParse(value);
   if (unavailable.success) throw new ContextHandoffUnavailable(unavailable.data.reason);
   const handoff = ContextHandoffSchema.parse(value);

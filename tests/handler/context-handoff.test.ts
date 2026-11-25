@@ -67,3 +67,8 @@ it('区分引文开销、重复引用和字符占比，不据此推断任务质�
   expect(short.quoteCharShare).toBeLessThan(0.4);
   expect(short.responseChars).toBeLessThan(long.responseChars);
 });
+
+it('剥离模型偶发附带的 Markdown JSON 围栏后仍严格校验结构与引文', () => {
+  const fenced = `\`\`\`json\n${JSON.stringify(handoff())}\n\`\`\``;
+  expect(validateContextHandoff(fenced, source).findings).toHaveLength(1);
+});

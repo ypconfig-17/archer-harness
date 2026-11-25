@@ -67,6 +67,19 @@ export async function manageContext(
   const measureGrowth = needsUncoveredTokens(profile);
   // 上限来自已提交请求而非进程内计数，崩溃重启不能重新获得四次摘要额度。
   const compactionRequests = context.effectRequests.filter(request => request.purpose === 'compaction');
+  // 自最近一次已采纳摘要（或会话起点）之后，若已出现未采纳的历史摘要尝试，则仅在真正逼近容量上限时再尝试，避免每轮在增长线上重复空耗输入 token。
+  let lastAdoptedIndex = -1;
+  if (summary) {
+    for (let index = context.inferenceHistory.length - 1; index >= 0; index--) {
+      if (context.inferenceHistory[index]!.requestId === summary.requestId) {
+        lastAdoptedIndex = index;
+        break;
+      }
+    }
+  }
+  const hasFailedCompactionSinceAdopted = context.inferenceHistory
+    .slice(lastAdoptedIndex + 1)
+    .some(request => request.purpose === 'compaction' && request.status === 'completed');
   let lastCompactionError: OperationRejected | undefined;
 
   for (let pass = 0; pass < MAX_PASSES; pass++) {
@@ -95,6 +108,11 @@ export async function manageContext(
       prepared = trimmed;
       applied.push({ stepId: step.id, kind: step.kind, reason, beforeTokens, afterTokens: after.estimatedInputTokens });
       blocked.clear();
+      continue;
+    }
+
+    if (reason === 'growth' && hasFailedCompactionSinceAdopted) {
+      blocked.add(step.id);
       continue;
     }
 
