@@ -77,8 +77,10 @@ export function applyLifecycle(
       const index = state.queue.findIndex((item) => item.inputId === fact.data.inputId);
       if (index < 0) corrupt(`input.consumed 引用了不在队列中的输入：${fact.data.inputId}`);
       state.queue.splice(index, 1);
-      for (const record of state.requests.values()) {
-        if (record.inputId === fact.data.inputId) record.turnId = fact.data.turnId;
+      for (const [requestId, record] of state.requests.entries()) {
+        if (record.inputId === fact.data.inputId) {
+          state.requests.set(requestId, { ...record, turnId: fact.data.turnId });
+        }
       }
       break;
     }

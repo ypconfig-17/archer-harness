@@ -45,20 +45,38 @@ export interface AcceptedInput {
 // 草稿构建
 // ─────────────────────────────────────────────
 
-export function cloneSession(state: SessionState): SessionState {
+function cloneValue<T>(value: T): T {
   const clone = (globalThis as unknown as {
-    structuredClone: <T>(value: T) => T;
+    structuredClone: <V>(input: V) => V;
   }).structuredClone;
-  return clone(state);
+  return clone(value);
+}
+
+export function cloneSession(state: SessionState): SessionState {
+  return cloneValue(state);
+}
+
+/** 仅浅拷贝顶层容器；单 Turn 对象在首次写入时再按需深拷贝，避免长会话下的全量克隆开销。 */
+function shallowCloneSession(state: SessionState): SessionState {
+  return {
+    ...state,
+    messages: [...state.messages],
+    compactions: [...state.compactions],
+    queue: [...state.queue],
+    pendingSteering: [...state.pendingSteering],
+    turns: new Map(state.turns),
+    requests: new Map(state.requests),
+  };
 }
 
 export class DraftBuilder {
   private current: SessionState | null;
+  private readonly clonedTurns = new Set<string>();
   readonly drafts: AgentDraft[] = [];
   readonly commands: SessionCommand[] = [];
 
   constructor(state: SessionState | null) {
-    this.current = state ? cloneSession(state) : null;
+    this.current = state ? shallowCloneSession(state) : null;
   }
 
   get state(): SessionState {
@@ -69,6 +87,18 @@ export class DraftBuilder {
   }
 
   add(draft: AgentDraft): void {
+    if (
+      draft.scope === 'turn' &&
+      draft.event.type !== 'turn.created' &&
+      this.current &&
+      !this.clonedTurns.has(draft.turnId)
+    ) {
+      const existing = this.current.turns.get(draft.turnId);
+      if (existing) {
+        this.current.turns.set(draft.turnId, cloneValue(existing));
+        this.clonedTurns.add(draft.turnId);
+      }
+    }
     const seq = (this.current?.seq ?? 0) + 1;
     this.current = foldAgentDraft(this.current, draft, seq);
     this.drafts.push(draft);
