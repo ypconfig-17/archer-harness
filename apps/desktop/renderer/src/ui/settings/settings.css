@@ -1622,6 +1622,62 @@
   background: var(--success, #2e9a6b);
 }
 
+.context-sim-segmented {
+  display: flex;
+  gap: 2px;
+  background: transparent;
+}
+
+.context-sim-seg {
+  height: 100%;
+  transition: width 120ms ease;
+}
+
+.context-sim-seg:first-child {
+  border-top-left-radius: 999px;
+  border-bottom-left-radius: 999px;
+}
+
+.context-sim-seg:last-child {
+  border-top-right-radius: 999px;
+  border-bottom-right-radius: 999px;
+}
+
+.context-sim-seg-safe {
+  background: var(--success, #2e9a6b);
+}
+
+.context-sim-seg-trim {
+  background: var(--warning, #d9822b);
+}
+
+.context-sim-seg-compact {
+  background: var(--danger, #c44f6b);
+}
+
+.context-sim-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--settings-space-3);
+  margin-top: var(--settings-space-1);
+  font: var(--type-caption);
+  color: var(--muted);
+}
+
+.context-sim-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.context-sim-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  display: inline-block;
+  flex: none;
+}
+
 .context-advanced-header {
   display: flex;
   align-items: flex-start;

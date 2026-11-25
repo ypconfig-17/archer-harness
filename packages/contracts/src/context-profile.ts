@@ -131,6 +131,8 @@ export const ContextProfileSchema = z.strictObject({
   description: z.string().max(240, 'Profile 描述不能超过 240 个字符。'),
   /** 同一 Profile 每次保存递增，事实与界面据此识别实际使用的版本。 */
   revision: z.number().int().positive(),
+  /** 大窗口模型的实用工作区封顶上限（token）；缺省表示不额外封顶，仅按模型窗口比例触发。 */
+  targetWindowTokens: z.number().int('工作区上限必须是整数。').min(16_384, '工作区上限不能低于 16,384。').max(1_000_000, '工作区上限不能超过 1,000,000。').optional(),
   steps: z.array(ContextStepSchema).min(1, '至少保留一个步骤。').max(8, '策略链最多包含 8 个步骤。'),
 }).superRefine((profile, context) => {
   const ids = new Set<string>();
@@ -172,6 +174,7 @@ const BUILTIN_PROFILES: readonly ContextProfile[] = [
     name: '上下文质量优先',
     description: '更早整理旧历史，保留更多近期原文，并为摘要启用高推理等级。',
     revision: 1,
+    targetWindowTokens: 200_000,
     steps: [
       {
         kind: 'trim-tool-results',
@@ -199,6 +202,7 @@ const BUILTIN_PROFILES: readonly ContextProfile[] = [
     name: '均衡模式',
     description: '按默认阈值整理，摘要预算按模型窗口自动取值。',
     revision: 1,
+    targetWindowTokens: 160_000,
     steps: [
       {
         kind: 'trim-tool-results',
@@ -225,6 +229,7 @@ const BUILTIN_PROFILES: readonly ContextProfile[] = [
     name: 'Token 优化优先',
     description: '更早整理并压缩摘要预算，优先降低长会话的输入成本。',
     revision: 1,
+    targetWindowTokens: 100_000,
     steps: [
       {
         kind: 'trim-tool-results',

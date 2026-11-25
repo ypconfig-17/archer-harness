@@ -19,6 +19,8 @@ export type ContextWindowPreset = (typeof CONTEXT_WINDOW_PRESETS)[number]['value
 
 export interface ContextSimulation {
   inputLimit: number;
+  effectiveLimit: number;
+  windowCapped: boolean;
   compactEnabled: boolean;
   trimEnabled: boolean;
   trimTriggerTokens: number;
@@ -40,6 +42,10 @@ export function simulateContextProfile(
   inputLimit: number,
 ): ContextSimulation {
   const safeLimit = Math.max(1, Math.floor(inputLimit));
+  const effectiveLimit = profile.targetWindowTokens && profile.targetWindowTokens > 0
+    ? Math.min(safeLimit, profile.targetWindowTokens)
+    : safeLimit;
+  const windowCapped = effectiveLimit < safeLimit;
   const compact = profile.steps.find(
     (step): step is Extract<ContextProfile['steps'][number], { kind: 'compact' }> =>
       step.kind === 'compact' && step.enabled,
@@ -48,23 +54,25 @@ export function simulateContextProfile(
     (step) => step.kind === 'trim-tool-results' && step.enabled,
   );
 
-  const trimTriggerTokens = Math.floor(safeLimit * 0.85);
-  const maxReserve = Math.floor(safeLimit * 0.15);
-  const maxKeepRecent = Math.floor(safeLimit * 0.25);
+  const trimTriggerTokens = Math.floor(effectiveLimit * 0.85);
+  const maxReserve = Math.floor(effectiveLimit * 0.15);
+  const maxKeepRecent = Math.floor(effectiveLimit * 0.25);
 
   if (!compact) {
     return {
       inputLimit: safeLimit,
+      effectiveLimit,
+      windowCapped,
       compactEnabled: false,
       trimEnabled: Boolean(trim),
       trimTriggerTokens,
       effectiveReserveTokens: 0,
       reserveCapped: false,
-      compactTriggerTokens: safeLimit,
-      compactTriggerPercent: 100,
-      effectiveKeepRecentTokens: safeLimit,
+      compactTriggerTokens: effectiveLimit,
+      compactTriggerPercent: Number(((effectiveLimit / safeLimit) * 100).toFixed(1)),
+      effectiveKeepRecentTokens: effectiveLimit,
       keepRecentCapped: false,
-      keepRecentPercent: 100,
+      keepRecentPercent: Number(((effectiveLimit / safeLimit) * 100).toFixed(1)),
       reclaimableTokens: 0,
       reclaimRatioPercent: 0,
       growthTokens: 0,
@@ -72,7 +80,7 @@ export function simulateContextProfile(
   }
 
   const effectiveReserveTokens = Math.min(compact.params.reserveTokens, maxReserve);
-  const compactTriggerTokens = Math.max(0, safeLimit - effectiveReserveTokens);
+  const compactTriggerTokens = Math.max(0, effectiveLimit - effectiveReserveTokens);
   const effectiveKeepRecentTokens = Math.min(compact.params.keepRecentTokens, maxKeepRecent);
   const reclaimableTokens = Math.max(0, compactTriggerTokens - effectiveKeepRecentTokens);
   const reclaimRatioPercent =
@@ -82,6 +90,8 @@ export function simulateContextProfile(
 
   return {
     inputLimit: safeLimit,
+    effectiveLimit,
+    windowCapped,
     compactEnabled: true,
     trimEnabled: Boolean(trim),
     trimTriggerTokens,

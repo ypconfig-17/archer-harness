@@ -174,6 +174,7 @@ describe('上下文页', () => {
     expect(html).toContain('任务 1 · 模型请求 1');
     expect(html).toContain('#1 / 1');
     expect(html).toContain('输入 Token');
+    expect(html).toContain('占额度 1.2%（100,000）');
     expect(html).toContain('缓存 Token');
     expect(html).toContain('占输入 66.7%');
     expect(html).toContain('按请求快照中的字符数统计');
@@ -244,5 +245,37 @@ describe('上下文页', () => {
     const html = renderToStaticMarkup(createElement(ContextPanel, { events: [], hasEarlier: true }));
     expect(html).toContain('尚无推理上下文');
     expect(html).toContain('可加载更早记录');
+  });
+
+  it('当前请求缺失用量时不误报为上次无用量，零步骤整理不展示空步骤折叠', () => {
+    const first = requestEvents();
+    const failedEffect = inferEffect();
+    const second = [
+      turn(11, 'effect.created', { effectId: 'e2', effect: failedEffect, idempotencyKey: 'k-e2', createdAt: 200 }),
+      turn(12, 'inference.requested', { effectId: 'e2', requestId: 'r2', purpose: 'agent', request: failedEffect, requestedAt: 1_200 }),
+      turn(13, 'inference.responded', {
+        effectId: 'e2',
+        requestId: 'r2',
+        respondedAt: 2_200,
+        result: {
+          content: '',
+          error: { message: 'timeout' },
+          contextPlan: {
+            profileId: 'balanced',
+            profileName: '均衡',
+            profileRevision: 1,
+            beforeTokens: 2_000,
+            afterTokens: 2_000,
+            inputLimit: 100_000,
+            steps: [],
+          },
+        },
+      }),
+    ];
+    const html = renderToStaticMarkup(createElement(ContextPanel, { events: [...first, ...second] }));
+    expect(html).toContain('当前请求无用量');
+    expect(html).not.toContain('上次无用量');
+    expect(html).toContain('未触发压缩 · 估算 2,000 / 100,000 tokens');
+    expect(html).not.toContain('整理步骤 · 0');
   });
 });

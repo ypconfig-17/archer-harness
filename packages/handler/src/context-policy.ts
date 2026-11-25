@@ -66,19 +66,26 @@ function metricValue(metric: ContextMetric, metrics: ContextMetrics): number | u
   }
 }
 
+/** 若 Profile 指定了大窗口实用工作区上限，则与模型可用输入额度取小值。 */
+export function effectiveWindowLimit(profile: Pick<ContextProfile, 'targetWindowTokens'> | undefined, inputLimit: number): number {
+  return profile?.targetWindowTokens && profile.targetWindowTokens > 0
+    ? Math.min(inputLimit, profile.targetWindowTokens)
+    : inputLimit;
+}
+
 /**
  * 触发线：
- * - 摘要步骤在容量线或增长线命中时执行；容量线实际预留不超过输入额度的 15%。
- * - 工具结果节选在输入额度 85% 容量线启动，超窗仍明确记为补救。
+ * - 摘要步骤在容量线或增长线命中时执行；容量线实际预留不超过有效工作区上限的 15%。
+ * - 工具结果节选在有效工作区上限 85% 容量线启动，超窗仍明确记为补救。
  */
-function triggerReason(step: ContextStep, metrics: ContextMetrics): ContextStepReason | undefined {
+function triggerReason(step: ContextStep, metrics: ContextMetrics, effectiveLimit: number): ContextStepReason | undefined {
   if (step.kind === 'trim-tool-results') {
     if (metrics.estimatedInputTokens > metrics.inputLimit) return 'overflow';
-    // 提前释放可重读的大结果，避免直到硬超窗才开始补救。
-    return metrics.estimatedInputTokens > Math.floor(metrics.inputLimit * 0.85) ? 'capacity' : undefined;
+    // 提前释放可重读的大结果，避免直到硬超窗或 1M 窗口深处才开始补救。
+    return metrics.estimatedInputTokens > Math.floor(effectiveLimit * 0.85) ? 'capacity' : undefined;
   }
-  const reserve = Math.min(step.params.reserveTokens, Math.floor(metrics.inputLimit * 0.15));
-  if (metrics.estimatedInputTokens > metrics.inputLimit - reserve) return 'capacity';
+  const reserve = Math.min(step.params.reserveTokens, Math.floor(effectiveLimit * 0.15));
+  if (metrics.estimatedInputTokens > effectiveLimit - reserve) return 'capacity';
   if (metrics.uncoveredTokens !== undefined && metrics.uncoveredTokens > step.params.growthTokens) return 'growth';
   return undefined;
 }
@@ -92,18 +99,24 @@ export function selectContextStep(
   metrics: ContextMetrics,
   blocked: ReadonlySet<string> = new Set(),
 ): ContextStepSelection | undefined {
+  const effectiveLimit = effectiveWindowLimit(profile, metrics.inputLimit);
   for (const step of profile.steps) {
     if (!step.enabled || blocked.has(step.id)) continue;
     if (step.when && !conditionMatches(step.when, metrics)) continue;
-    const reason = triggerReason(step, metrics);
+    const reason = triggerReason(step, metrics, effectiveLimit);
     if (reason) return { step, reason };
   }
   return undefined;
 }
 
-/** 摘要后仍需保留的近期原文目标；绝对值不超过输入额度的 25%。 */
-export function recentTargetTokens(step: Extract<ContextStep, { kind: 'compact' }>, metrics: ContextMetrics): number {
-  return Math.min(step.params.keepRecentTokens, Math.floor(metrics.inputLimit * 0.25));
+/** 摘要后仍需保留的近期原文目标；绝对值不超过有效工作区上限的 25%。 */
+export function recentTargetTokens(
+  step: Extract<ContextStep, { kind: 'compact' }>,
+  metrics: ContextMetrics,
+  profile?: Pick<ContextProfile, 'targetWindowTokens'>,
+): number {
+  const effectiveLimit = effectiveWindowLimit(profile, metrics.inputLimit);
+  return Math.min(step.params.keepRecentTokens, Math.floor(effectiveLimit * 0.25));
 }
 
 function usesUncoveredMetric(condition: ContextCondition): boolean {

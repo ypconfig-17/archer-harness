@@ -27,8 +27,9 @@ describe('simulateContextProfile 上下文压缩模拟', () => {
     expect(sim.growthTokens).toBe(28_000);
   });
 
-  it('未超过比例上限时按真实配置数值计算', () => {
+  it('未超过比例上限且未封顶时按真实配置数值计算', () => {
     const profile = defaultContextProfile();
+    delete profile.targetWindowTokens;
     const compact = profile.steps.find((s) => s.kind === 'compact');
     if (compact?.kind === 'compact') {
       compact.params.reserveTokens = 10_000;
@@ -36,12 +37,22 @@ describe('simulateContextProfile 上下文压缩模拟', () => {
     }
 
     const sim = simulateContextProfile(profile, 200_000);
+    expect(sim.windowCapped).toBe(false);
     expect(sim.reserveCapped).toBe(false);
     expect(sim.effectiveReserveTokens).toBe(10_000);
     expect(sim.compactTriggerTokens).toBe(190_000);
     expect(sim.keepRecentCapped).toBe(false);
     expect(sim.effectiveKeepRecentTokens).toBe(20_000);
     expect(sim.reclaimableTokens).toBe(170_000);
+  });
+
+  it('在 1M 大窗口下启用工作区封顶时，按封顶上限计算 85% 节选线与触发线', () => {
+    const profile = defaultContextProfile(); // 默认 targetWindowTokens = 160_000
+    const sim = simulateContextProfile(profile, 1_000_000);
+    expect(sim.windowCapped).toBe(true);
+    expect(sim.effectiveLimit).toBe(160_000);
+    expect(sim.trimTriggerTokens).toBe(136_000);
+    expect(sim.compactTriggerTokens).toBe(143_616);
   });
 
   it('关闭自动摘要时返回 compactEnabled=false 与 85% 节选触发线', () => {

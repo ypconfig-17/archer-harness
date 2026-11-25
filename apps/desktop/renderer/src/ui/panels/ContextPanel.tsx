@@ -88,11 +88,19 @@ function trendLabel(point: TrendPoint, requests: readonly ContextRequest[]): str
   return point.tokens === undefined ? `${head} · 暂无用量` : `${head} · 输入 ${point.tokens.toLocaleString()} tokens`;
 }
 
-/** 与上一次请求比较真实输入 Token；上一次缺失用量时明确说未知，不按零计算。 */
-function trendDeltaText(delta: number | undefined, hasPrevious: boolean, previousTokens: number | undefined): {
+/** 与上一次请求比较真实输入 Token；当前或上一次缺失用量时明确说明，不按零计算。 */
+function trendDeltaText(
+  hasCurrentUsage: boolean,
+  delta: number | undefined,
+  hasPrevious: boolean,
+  previousTokens: number | undefined,
+): {
   text: string;
   tone: '' | 'flat' | 'down' | 'up';
 } {
+  if (!hasCurrentUsage) {
+    return { text: '当前请求无用量', tone: '' };
+  }
   if (delta === undefined) {
     return { text: hasPrevious ? '上次无用量' : '首次请求', tone: '' };
   }
@@ -187,8 +195,16 @@ export const ContextPanel = memo(function ContextPanel({ events, hasEarlier = fa
     summary: context.summary,
     compactedAt: context.compactedAt,
   }, null, 2) : '';
+  const inputShare = usage && contextPlan?.inputLimit && contextPlan.inputLimit > 0
+    ? `占额度 ${(usage.promptTokens / contextPlan.inputLimit * 100).toFixed(1)}%（${contextPlan.inputLimit.toLocaleString()}）`
+    : undefined;
   const metrics: { label: string; value: string; note: string; hint?: string }[] = [
-    { label: '输入 Token', value: usage ? usage.promptTokens.toLocaleString() : '—', note: usage ? '本次请求返回用量' : '暂无返回用量' },
+    {
+      label: '输入 Token',
+      value: usage ? usage.promptTokens.toLocaleString() : '—',
+      note: inputShare ?? (usage ? '本次请求返回用量' : contextPlan?.inputLimit ? `额度 ${contextPlan.inputLimit.toLocaleString()} · 暂无返回用量` : '暂无返回用量'),
+      hint: inputShare ? '输入 Token ÷ 模型输入额度' : undefined,
+    },
     { label: '消息数量', value: String(effect.messages.length), note: `系统指令 ${systemCount} 条` },
     { label: '工具声明', value: String(toolCount), note: '原生 tools 通道' },
     {
@@ -201,7 +217,7 @@ export const ContextPanel = memo(function ContextPanel({ events, hasEarlier = fa
 
   const previousTokens = requests[index - 1]?.usage?.promptTokens;
   const trendDelta = usage && previousTokens !== undefined ? usage.promptTokens - previousTokens : undefined;
-  const delta = trendDeltaText(trendDelta, index > 0, previousTokens);
+  const delta = trendDeltaText(Boolean(usage), trendDelta, index > 0, previousTokens);
   const trendMax = trend.max || 1;
   const trendHasUsage = trend.points.some(point => point.tokens !== undefined);
   const trendActiveIndex = trend.points.findIndex(point => point.key === context.key);
@@ -212,20 +228,8 @@ export const ContextPanel = memo(function ContextPanel({ events, hasEarlier = fa
   const trendBadgeEdge = trendActiveIndex < 0
     ? ''
     : trendX(trendActiveIndex) > 88 ? ' is-end' : trendX(trendActiveIndex) < 12 ? ' is-start' : '';
-  // 柱数多时按步长抽稀序号，当前请求始终保留；隐藏仍占网格列，避免标签整体错位。
-  const trendLabelStep = trend.points.length > 18 ? 3 : trend.points.length > 12 ? 2 : 1;
-  // 折线在缺失用量的请求处断开，不用 0 或插值补出未提交的数据。
-  const trendRuns: string[] = [];
-  let trendRun: string[] = [];
-  trend.points.forEach((point, position) => {
-    if (point.tokens === undefined) {
-      if (trendRun.length > 1) trendRuns.push(trendRun.join(' '));
-      trendRun = [];
-      return;
-    }
-    trendRun.push(`${trendX(position).toFixed(2)},${trendY(point.tokens).toFixed(2)}`);
-  });
-  if (trendRun.length > 1) trendRuns.push(trendRun.join(' '));
+  // 柱数多时按总量动态抽稀至最多约 9 个刻度，当前请求始终保留且避开紧邻刻度，防止文字重叠。
+  const trendLabelStep = trend.points.length > 10 ? Math.ceil(trend.points.length / 9) : 1;
 
   function choose(next: ContextSelection, source?: HTMLElement) {
     if (source) sourceButton.current = source;
@@ -262,10 +266,11 @@ export const ContextPanel = memo(function ContextPanel({ events, hasEarlier = fa
 
   return <div className="context-panel">
     <header className="context-head">
-      <span className="context-head-mark" aria-hidden="true"><Icon name="drive" size="md" /></span>
+      <Tooltip label="查看模型本次请求实际携带的上下文，以及各类内容的字符占用。" side="right">
+        <span className="context-head-mark" aria-hidden="true"><Icon name="drive" size="md" /></span>
+      </Tooltip>
       <div className="context-head-text">
         <h2>上下文扫描</h2>
-        <p>查看模型本次请求实际携带的上下文，以及各类内容的字符占用。</p>
       </div>
       <div className="context-request">
         <label className="context-select">
@@ -288,7 +293,7 @@ export const ContextPanel = memo(function ContextPanel({ events, hasEarlier = fa
             <Icon name="chevron-right" size="sm" />
           </Button>
         </Tooltip>
-        <p className="context-range">已加载 {requests.length} 个请求{hasEarlier ? ' · 更早记录尚未加载' : ''}</p>
+        <span className="context-range">已加载 {requests.length} 个请求{hasEarlier ? ' · 更早记录尚未加载' : ''}</span>
       </div>
     </header>
     <div className="context-metrics" role="group" aria-label="本次请求指标">
@@ -331,9 +336,17 @@ export const ContextPanel = memo(function ContextPanel({ events, hasEarlier = fa
                     <Icon name="chevron-right" size="xs" className="context-section-chevron" />
                     <h3>字符占用</h3>
                   </CollapsibleTrigger>
-                  <span className="context-section-note">按请求快照中的字符数统计，不等同于模型 Token</span>
                 </header>
                 <CollapsibleContent>
+                  <div className="context-composition-strip" aria-hidden="true">
+                    {composition
+                      .filter(slice => slice.share > 0)
+                      .map(slice => <span
+                        key={slice.key}
+                        className={`context-composition-seg is-${slice.key}`}
+                        style={{ width: `${slice.share}%` }}
+                      />)}
+                  </div>
                   <div className="context-bars">
                     {composition.map(slice => <Tooltip key={slice.key} label={`只看${slice.label}条目`} side="right">
                       <Button variant="ghost" className="context-bar-row" onClick={() => locateSlice(slice.key)}>
@@ -352,12 +365,12 @@ export const ContextPanel = memo(function ContextPanel({ events, hasEarlier = fa
                       </Button>
                     </Tooltip>)}
                   </div>
+                  <p className="context-note">按请求快照中的字符数统计，不等同于模型 Token。</p>
                 </CollapsibleContent>
               </Collapsible>
               <section className="context-section context-trend" aria-label="Token 趋势">
                 <header className="context-section-head">
                   <h3>上下文 Token 趋势</h3>
-                  <span className="context-section-note">柱高为真实输入 Token</span>
                   <label className="context-trend-window">
                     <NativeSelect
                       aria-label="趋势范围"
@@ -387,6 +400,11 @@ export const ContextPanel = memo(function ContextPanel({ events, hasEarlier = fa
                       <span>0</span>
                     </div>
                     <div className="context-trend-plot">
+                      <span className="context-trend-grid" aria-hidden="true">
+                        <span />
+                        <span />
+                        <span />
+                      </span>
                       {trend.points.map(point => <Tooltip key={point.key} label={trendLabel(point, requests)}>
                         <Button variant="ghost"
                           type="button"
@@ -414,18 +432,6 @@ export const ContextPanel = memo(function ContextPanel({ events, hasEarlier = fa
                         </Button>
                       </Tooltip>)}
                       <span className="context-trend-overlay" aria-hidden="true">
-                        <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-                          {trendRuns.map(points => <polyline
-                            key={points}
-                            points={points}
-                            vectorEffect="non-scaling-stroke"
-                          />)}
-                        </svg>
-                        {trend.points.map((point, position) => point.tokens === undefined ? null : <span
-                          key={point.key}
-                          className={`context-trend-dot${point.key === context.key ? ' is-current' : ''}`}
-                          style={{ left: `${trendX(position)}%`, top: `${trendY(point.tokens)}%` }}
-                        />)}
                         {trendActive?.tokens !== undefined && <span
                           className={`context-trend-badge${trendBadgeEdge}`}
                           style={{ left: `${trendX(trendActiveIndex)}%`, top: `${trendY(trendActive.tokens)}%` }}
@@ -434,11 +440,14 @@ export const ContextPanel = memo(function ContextPanel({ events, hasEarlier = fa
                     </div>
                     <div className="context-trend-labels" aria-hidden="true">
                       {trend.points.map((point, position) => {
-                        const sparse = (trend.points.length - 1 - position) % trendLabelStep !== 0
-                          && point.key !== context.key;
+                        const isCurrent = point.key === context.key;
+                        const nearCurrent = !isCurrent && trendActiveIndex >= 0
+                          && Math.abs(position - trendActiveIndex) < Math.max(1, Math.ceil(trendLabelStep * 0.7));
+                        const sparse = !isCurrent && ((trend.points.length - 1 - position) % trendLabelStep !== 0 || nearCurrent);
+                        const edge = position === trend.points.length - 1 ? ' is-end' : position === 0 ? ' is-start' : '';
                         return <span
                           key={point.key}
-                          className={`${point.key === context.key ? 'is-current' : ''}${sparse ? ' is-sparse' : ''}`}
+                          className={`${isCurrent ? 'is-current' : ''}${sparse ? ' is-sparse' : ''}${edge}`}
                         >{point.label}</span>;
                       })}
                     </div>
@@ -519,7 +528,7 @@ export const ContextPanel = memo(function ContextPanel({ events, hasEarlier = fa
               <section className="context-inspector-block" aria-label="请求概览">
                 <header className="context-inspector-head">
                   <h3>请求概览</h3>
-                  <span className="context-state">{requestState(context)}</span>
+                  <span className={`context-state${context.failed ? ' is-failed' : ''}`}>{requestState(context)}</span>
                 </header>
                 <dl className="context-facts">
                   <div><dt>请求目的</dt><dd>{purpose === 'compaction' ? '上下文摘要' : purpose === 'agent' ? '任务推理' : '尚未形成实际请求'}</dd></div>
@@ -553,9 +562,11 @@ export const ContextPanel = memo(function ContextPanel({ events, hasEarlier = fa
                 {contextPlan ? <>
                   <dl className="context-facts">
                     <div><dt>整理配置</dt><dd>{contextPlan.profileName} · revision {contextPlan.profileRevision}</dd></div>
-                    <div><dt>估算变化</dt><dd>{contextPlan.beforeTokens.toLocaleString()} → {contextPlan.afterTokens.toLocaleString()} tokens · 输入额度 {contextPlan.inputLimit.toLocaleString()}</dd></div>
+                    {contextPlan.steps.length > 0
+                      ? <div><dt>估算变化</dt><dd>{contextPlan.beforeTokens.toLocaleString()} → {contextPlan.afterTokens.toLocaleString()} tokens · 输入额度 {contextPlan.inputLimit.toLocaleString()}</dd></div>
+                      : <div><dt>整理结果</dt><dd>未触发压缩 · 估算 {contextPlan.afterTokens.toLocaleString()} / {contextPlan.inputLimit.toLocaleString()} tokens</dd></div>}
                   </dl>
-                  <Collapsible className="context-raw">
+                  {contextPlan.steps.length > 0 && <Collapsible className="context-raw">
                     <CollapsibleTrigger>整理步骤 · {contextPlan.steps.length}</CollapsibleTrigger>
                     <CollapsibleContent keepMounted>
                       <ul className="context-steps">
@@ -564,7 +575,7 @@ export const ContextPanel = memo(function ContextPanel({ events, hasEarlier = fa
                         </li>)}
                       </ul>
                     </CollapsibleContent>
-                  </Collapsible>
+                  </Collapsible>}
                 </> : <p className="context-note">本次请求未触发上下文整理。</p>}
                 {context.summary && <>
                   <h4 className="context-detail-subtitle">已采用摘要</h4>
@@ -574,23 +585,34 @@ export const ContextPanel = memo(function ContextPanel({ events, hasEarlier = fa
                 {compactions.length > 0 && <>
                   <h4 className="context-detail-subtitle">摘要请求 · {compactions.length}</h4>
                   <div className="context-list">
-                    {compactions.map(request => <Item
-                      key={request.key}
-                      size="xs"
-                      className="context-row"
-                      render={<button type="button" />}
-                      onClick={() => chooseRequest(request.key)}
-                    >
-                      <ItemMedia variant="icon"><Icon name="list" size="sm" /></ItemMedia>
-                      <ItemContent>
-                        <ItemTitle>摘要请求 · {requestState(request)}</ItemTitle>
-                        <ItemDescription>任务 {turnNumber(request.turnId)} · {request.usage ? '有返回用量' : '已提交请求'}</ItemDescription>
-                      </ItemContent>
-                      <ItemActions><Icon name="chevron-right" size="xs" /></ItemActions>
-                    </Item>)}
+                    {compactions.map(request => {
+                      const reqPos = requests.indexOf(request) + 1;
+                      const timeText = request.requestedAt
+                        ? ` · ${new Date(request.requestedAt).toLocaleTimeString('zh-CN', { hour12: false })}`
+                        : '';
+                      const usageText = request.usage
+                        ? ` · ${request.usage.promptTokens.toLocaleString()} tokens`
+                        : ' · 已提交请求';
+                      return <Item
+                        key={request.key}
+                        size="xs"
+                        className="context-row"
+                        render={<button type="button" />}
+                        onClick={() => chooseRequest(request.key)}
+                      >
+                        <ItemMedia variant="icon"><Icon name="list" size="sm" /></ItemMedia>
+                        <ItemContent>
+                          <ItemTitle>#{reqPos} 摘要请求 · {requestState(request)}</ItemTitle>
+                          <ItemDescription>任务 {turnNumber(request.turnId)}{timeText}{usageText}</ItemDescription>
+                        </ItemContent>
+                        <ItemActions><Icon name="chevron-right" size="xs" /></ItemActions>
+                      </Item>;
+                    })}
                   </div>
                 </>}
-                <p className="context-note">摘要请求已提交不代表已应用，以整理事实为准。</p>
+                {compactions.some(request => !request.adopted) && (
+                  <p className="context-note">摘要请求已提交不代表已应用，以整理事实为准。</p>
+                )}
               </section>
             </div>
           </ScrollArea>

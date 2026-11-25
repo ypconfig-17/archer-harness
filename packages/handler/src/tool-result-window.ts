@@ -3,21 +3,31 @@ import type { InferEffect } from '@archer/contracts';
 import type { HandlerContext } from './pipeline.js';
 import { measureWindow } from './context-window.js';
 
-/** 收益按完整输入比较；单条正文最多保留 4096 个估算 token，且不超过输入额度的四分之一，两者独立。 */
-export function boundToolResults(effect: InferEffect, context: HandlerContext, minSavingsRatio = 0.25): InferEffect {
+/** 收益按完整输入比较；单条正文最多保留 4096 个估算 token，且不超过有效工作区上限的四分之一，两者独立。 */
+export function boundToolResults(
+  effect: InferEffect,
+  context: HandlerContext,
+  minSavingsRatio = 0.25,
+  targetWindowTokens?: number,
+): InferEffect {
   const window = measureWindow(effect, context.inference);
   const historyTool = effect.tools?.find(tool =>
     tool.target.providerId === 'history' && tool.target.capabilityId === 'read');
-  if (!window || window.estimatedInputTokens <= Math.floor(window.inputLimit * 0.85) || !context.history
+  const effectiveLimit = targetWindowTokens && targetWindowTokens > 0 && window
+    ? Math.min(window.inputLimit, targetWindowTokens)
+    : window?.inputLimit ?? 0;
+  if (!window || window.estimatedInputTokens <= Math.floor(effectiveLimit * 0.85) || !context.history
     || !historyTool) return effect;
 
   const minimumSavings = Math.ceil(window.estimatedInputTokens * minSavingsRatio);
-  const excerptBudget = Math.min(4096, Math.floor(window.inputLimit / 4));
+  const excerptBudget = Math.min(4096, Math.floor(effectiveLimit / 4));
   let projected = effect;
-  const candidates = effect.messages
+  const allToolMessages = effect.messages
     .map((message, index) => ({ message, index }))
-    .filter(({ message, index }) => index >= effect.promptPrefixCount && message.role === 'tool' && message.toolCallId)
-    .sort((left, right) => right.message.content.length - left.message.content.length);
+    .filter(({ message, index }) => index >= effect.promptPrefixCount && message.role === 'tool' && message.toolCallId);
+  // 优先保护最近 2 条刚产生的工具结果，避免模型刚读完的文件立刻被折掉又要回头重读；仅当总数不足 3 条时才全量参与。
+  const eligible = allToolMessages.length > 2 ? allToolMessages.slice(0, -2) : allToolMessages;
+  const candidates = [...eligible].sort((left, right) => right.message.content.length - left.message.content.length);
 
   for (const { message, index } of candidates) {
     let page;

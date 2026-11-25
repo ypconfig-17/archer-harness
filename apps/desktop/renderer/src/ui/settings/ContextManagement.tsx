@@ -26,6 +26,12 @@ import { SettingRow, type SettingsEditorState } from './SettingsControls';
 const REASON_LABELS = { capacity: '容量线', growth: '增长线', overflow: '超窗' } as const;
 const KIND_LABELS = { compact: '历史摘要', 'trim-tool-results': '工具结果节选' } as const;
 const EMPTY_EVENTS: readonly Snapshot<AgentEvent>[] = [];
+const WORKSPACE_CEILING_OPTIONS = [
+  { value: '100000', label: '100K' },
+  { value: '160000', label: '160K（推荐）' },
+  { value: '200000', label: '200K' },
+  { value: '0', label: '不封顶' },
+] as const;
 
 type CompactStep = Extract<ContextStep, { kind: 'compact' }>;
 
@@ -187,6 +193,13 @@ export function ContextManagement({
 
       <ContextSimulator
         profile={draft}
+        onChangeWindowCeiling={(targetWindowTokens) => {
+          const next = buildNextProfile(draftRef.current, (profile) => {
+            if (targetWindowTokens > 0) profile.targetWindowTokens = targetWindowTokens;
+            else delete profile.targetWindowTokens;
+          });
+          persistProfile(next);
+        }}
         onPreviewReserve={(reserveTokens) => previewCompactSlider((step) => { step.params.reserveTokens = reserveTokens; })}
         onPreviewKeepRecent={(keepRecentTokens) => previewCompactSlider((step) => { step.params.keepRecentTokens = keepRecentTokens; })}
         onCommitSlider={flushSliderPreview}
@@ -256,11 +269,13 @@ export function ContextManagement({
 /** 策略效果模拟器：按后端 15% 预留与 25% 近期保护边界，实时预览触发水位与保留空间。 */
 function ContextSimulator({
   profile,
+  onChangeWindowCeiling,
   onPreviewReserve,
   onPreviewKeepRecent,
   onCommitSlider,
 }: {
   profile: ContextProfile;
+  onChangeWindowCeiling(targetWindowTokens: number): void;
   onPreviewReserve(value: number): void;
   onPreviewKeepRecent(value: number): void;
   onCommitSlider(): void;
@@ -270,15 +285,19 @@ function ContextSimulator({
   const sim = useMemo(() => simulateContextProfile(profile, inputLimit), [profile, inputLimit]);
   const hasCompactStep = profile.steps.some((step) => step.kind === 'compact');
 
-  const reserveRatio = Math.min(15, Math.round((sim.effectiveReserveTokens / sim.inputLimit) * 100));
-  const keepRecentRatio = Math.min(25, Math.max(1, Math.round((sim.effectiveKeepRecentTokens / sim.inputLimit) * 100)));
+  const reserveRatio = Math.min(15, Math.round((sim.effectiveReserveTokens / sim.effectiveLimit) * 100));
+  const keepRecentRatio = Math.min(25, Math.max(1, Math.round((sim.effectiveKeepRecentTokens / sim.effectiveLimit) * 100)));
 
   return (
     <section className="settings-group context-simulator" aria-label="上下文压缩策略模拟">
       <div className="context-simulator-head">
         <div>
           <h4>效果预览与水位</h4>
-          <p className="settings-note">按参考窗口预览触发整理线与近期原文保留上限。</p>
+          <p className="settings-note">
+            {sim.windowCapped
+              ? `当前已启用 ${(sim.effectiveLimit / 1000).toLocaleString()}K 工作区封顶（小窗口模型仍按自身 85% 兜底）。`
+              : '按参考窗口预览触发整理线与近期原文保留上限。'}
+          </p>
         </div>
         <SegmentedControl
           label="参考模型窗口"
@@ -288,6 +307,23 @@ function ContextSimulator({
         />
       </div>
 
+      <SettingRow
+        label="大窗口工作区封顶"
+        hint="防止在 256K / 1M 大模型上等到 85% 才清理；小窗口模型自动按自身 85% 兜底。"
+      >
+        <NativeSelect
+          aria-label="大窗口工作区封顶"
+          value={String(profile.targetWindowTokens ?? 0)}
+          onChange={(event) => onChangeWindowCeiling(Number(event.target.value))}
+        >
+          {WORKSPACE_CEILING_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </NativeSelect>
+      </SettingRow>
+
       {sim.compactEnabled ? (
         <>
           {hasCompactStep && (
@@ -295,7 +331,7 @@ function ContextSimulator({
               <label className="context-slider-row">
                 <div className="context-slider-meta">
                   <span>容量触发水位（预留 0%–15%）</span>
-                  <strong>{sim.compactTriggerPercent}%（预留 {reserveRatio}%）</strong>
+                  <strong>{100 - reserveRatio}%（预留 {reserveRatio}%）</strong>
                 </div>
                 <input
                   type="range"
@@ -306,7 +342,7 @@ function ContextSimulator({
                   value={reserveRatio}
                   onChange={(event) => {
                     const pct = Number(event.target.value);
-                    onPreviewReserve(Math.round((sim.inputLimit * pct) / 100));
+                    onPreviewReserve(Math.round((sim.effectiveLimit * pct) / 100));
                   }}
                   onPointerUp={onCommitSlider}
                   onKeyUp={onCommitSlider}
@@ -316,7 +352,7 @@ function ContextSimulator({
               <label className="context-slider-row">
                 <div className="context-slider-meta">
                   <span>近期原文保护（1%–25%）</span>
-                  <strong>{sim.keepRecentPercent}%</strong>
+                  <strong>{keepRecentRatio}%</strong>
                 </div>
                 <input
                   type="range"
@@ -327,7 +363,7 @@ function ContextSimulator({
                   value={keepRecentRatio}
                   onChange={(event) => {
                     const pct = Number(event.target.value);
-                    onPreviewKeepRecent(Math.max(1, Math.round((sim.inputLimit * pct) / 100)));
+                    onPreviewKeepRecent(Math.max(1, Math.round((sim.effectiveLimit * pct) / 100)));
                   }}
                   onPointerUp={onCommitSlider}
                   onKeyUp={onCommitSlider}
@@ -338,18 +374,47 @@ function ContextSimulator({
           )}
 
           <div className="context-simulator-bars">
-            <div className="context-sim-row">
-              <div className="context-sim-meta">
-                <span>容量触发整理线</span>
-                <strong>{sim.compactTriggerTokens.toLocaleString()} tokens</strong>
-              </div>
-              <div className="context-sim-track">
-                <div
-                  className="context-sim-fill context-sim-trigger"
-                  style={{ width: `${Math.min(100, Math.max(2, sim.compactTriggerPercent))}%` }}
-                />
-              </div>
-            </div>
+            {(() => {
+              const safeEndPct = sim.trimEnabled
+                ? Math.min(100, (sim.trimTriggerTokens / sim.effectiveLimit) * 100)
+                : Math.min(100, (sim.compactTriggerTokens / sim.effectiveLimit) * 100);
+              const compactStartPct = Math.max(safeEndPct, Math.min(100, (sim.compactTriggerTokens / sim.effectiveLimit) * 100));
+              const trimSpanPct = sim.trimEnabled ? Math.max(0, compactStartPct - safeEndPct) : 0;
+              const compactSpanPct = Math.max(0, 100 - compactStartPct);
+              return (
+                <div className="context-sim-row">
+                  <div className="context-sim-meta">
+                    <span>工作区触发阶段（上限 {sim.effectiveLimit.toLocaleString()} tokens）</span>
+                    <strong>LLM 摘要线 {sim.compactTriggerTokens.toLocaleString()} tokens</strong>
+                  </div>
+                  <div className="context-sim-track context-sim-segmented" role="img" aria-label="上下文触发阶段分段条">
+                    <div className="context-sim-seg context-sim-seg-safe" style={{ width: `${safeEndPct}%` }} />
+                    {trimSpanPct > 0 && (
+                      <div className="context-sim-seg context-sim-seg-trim" style={{ width: `${trimSpanPct}%` }} />
+                    )}
+                    {compactSpanPct > 0 && (
+                      <div className="context-sim-seg context-sim-seg-compact" style={{ width: `${compactSpanPct}%` }} />
+                    )}
+                  </div>
+                  <div className="context-sim-legend">
+                    <span>
+                      <i className="context-sim-dot context-sim-seg-safe" />
+                      安全区 0–{(sim.trimEnabled ? sim.trimTriggerTokens : sim.compactTriggerTokens).toLocaleString()}
+                    </span>
+                    {sim.trimEnabled && (
+                      <span>
+                        <i className="context-sim-dot context-sim-seg-trim" />
+                        免费裁剪 {sim.trimTriggerTokens.toLocaleString()}–{sim.compactTriggerTokens.toLocaleString()}
+                      </span>
+                    )}
+                    <span>
+                      <i className="context-sim-dot context-sim-seg-compact" />
+                      LLM 摘要 {sim.compactTriggerTokens.toLocaleString()}–{sim.effectiveLimit.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="context-sim-row">
               <div className="context-sim-meta">
@@ -359,7 +424,7 @@ function ContextSimulator({
               <div className="context-sim-track">
                 <div
                   className="context-sim-fill context-sim-keep"
-                  style={{ width: `${Math.min(100, Math.max(2, sim.keepRecentPercent))}%` }}
+                  style={{ width: `${Math.min(100, Math.max(2, keepRecentRatio))}%` }}
                 />
               </div>
             </div>

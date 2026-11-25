@@ -99,7 +99,7 @@ export async function manageContext(
     const { step, reason } = selection;
     const beforeTokens = window.estimatedInputTokens;
     if (step.kind === 'trim-tool-results') {
-      const trimmed = boundToolResults(prepared, context, step.params.minSavingsRatio);
+      const trimmed = boundToolResults(prepared, context, step.params.minSavingsRatio, profile.targetWindowTokens);
       const after = measureWindow(trimmed, context.inference);
       if (!after || after.estimatedInputTokens >= beforeTokens) {
         blocked.add(step.id);
@@ -116,7 +116,7 @@ export async function manageContext(
       continue;
     }
 
-    const plan = planCompaction(effect, context, recentTargetTokens(step, metrics), summary, prepared, step.params);
+    const plan = planCompaction(effect, context, recentTargetTokens(step, metrics, profile), summary, prepared, step.params);
     if (!plan) {
       blocked.add(step.id);
       continue;
