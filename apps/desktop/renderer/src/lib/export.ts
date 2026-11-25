@@ -45,11 +45,6 @@ function effectMarkdown(entry: EffectEntry, finalEffectId: string | undefined): 
     return lines.join('\n');
   }
 
-  if (end?.type === 'effect.completed' && end.data.effectType === 'ASK_HUMAN') {
-    lines.push('', `回答：${end.data.result.approved ? '已同意' : '已拒绝'}${end.data.result.response ? ` · ${end.data.result.response}` : ''}`);
-    return lines.join('\n');
-  }
-
   if (entry.effect) {
     const request = entry.effect.type === 'CALL' ? entry.effect.input : entry.effect;
     lines.push('', '请求：', '', fence(JSON.stringify(request, null, 2)));

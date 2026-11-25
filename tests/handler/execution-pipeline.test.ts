@@ -141,13 +141,27 @@ describe('可靠执行包装', () => {
     expect(calls).toBe(1);
   });
 
-  it('人工请求只持久化等待，不开始执行或向流程伪造完成结果', async () => {
+  it('人工交互 CALL 只持久化等待，不开始执行或向流程伪造完成结果', async () => {
     const { withHumanInteraction, withJournal } = await import('@archer/handler');
     const order: string[] = [];
     const handler: EffectHandler = async () => { order.push('execute'); return null; };
-    const outcome = await composeMiddleware(handler, [withHumanInteraction, withJournal])({ type: 'ASK_HUMAN', reason: 'Approve?' }, { ...context(), journal: {
-      begin: async () => { order.push('begin'); return true; }, complete: async () => { order.push('complete'); }, suspend: async () => { order.push('persist-wait'); },
-    } });
+    const humanCall: Effect = {
+      type: 'CALL',
+      target: { providerId: 'human', capabilityId: 'ask', contractId: 'archer.tool@1', revision: 'test' },
+      input: { reason: 'Approve?' },
+      interaction: 'human',
+    };
+    const outcome = await composeMiddleware(handler, [withHumanInteraction, withJournal])(humanCall, {
+      ...context(),
+      target: {
+        ref: humanCall.target,
+        metadata: { description: 'Ask user', inputSchema: { type: 'object', properties: { reason: { type: 'string' } }, required: ['reason'] }, execution: 'read', interaction: 'human' },
+        implementation: { invoke: async () => ({}) },
+      },
+      journal: {
+        begin: async () => { order.push('begin'); return true; }, complete: async () => { order.push('complete'); }, suspend: async () => { order.push('persist-wait'); },
+      },
+    });
     expect(outcome).toBeNull();
     expect(order).toEqual(['persist-wait']);
   });

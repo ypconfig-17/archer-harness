@@ -45,7 +45,6 @@ export function operationState(entry: EffectEntry): { label: string; tone: 'runn
 export function operationSummary(entry: EffectEntry): { title: string; target: string; detail?: string } {
   const effect = entry.effect;
   if (!effect) return { title: entry.effectType ?? '操作', target: '' };
-  if (effect.type === 'ASK_HUMAN') return { title: '询问', target: effect.reason };
   if (effect.type !== 'CALL') return { title: effect.type, target: '' };
   const payload = record(effect.input);
   const metadata = resultMetadata(entry);

@@ -35,7 +35,7 @@ export function eventNavigation(events: readonly TimelineEvent[], filter: EventF
         : capabilityLabel(tool)
       : undefined;
     const human = fact.type === 'command.accepted' || fact.type === 'turn.authorization.changed'
-      || (fact.type === 'effect.resumed' && fact.data.kind === 'human') || effectType === 'ASK_HUMAN';
+      || (fact.type === 'effect.resumed' && fact.data.kind === 'human');
     return {
       event, view, turnId, effectId, state,
       title: effectType === 'INFER' ? '模型推理' : summary?.title ?? (effectId ? '操作记录（声明未加载）' : '任务记录'),

@@ -122,9 +122,8 @@ export function createDispatcher(
   middlewares: readonly EffectMiddleware[] = [],
 ): EffectHandler {
   const dispatch: EffectHandler = (effect, context) => {
-    // 人工请求已由外层包装器处理；其余未支持类型在这里明确拒绝。
     if (!isDispatchedEffect(effect)) return Promise.resolve({
-      status: 'failed', error: { code: 'EFFECT_UNSUPPORTED', message: `Effect 类型没有执行实现：${effect.type}` }, durationMs: 0,
+      status: 'failed', error: { code: 'EFFECT_UNSUPPORTED', message: `Effect 类型没有执行实现：${String((effect as { type: unknown }).type)}` }, durationMs: 0,
     });
     const handler = table[effect.type] as EffectHandler;
     return handler(effect, context);

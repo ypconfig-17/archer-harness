@@ -502,11 +502,10 @@ function PlanEventRow({ record: { plan: declaration, previous, kind, versions },
 function HumanRecord({ entry, command = false }: { entry: EffectEntry; command?: boolean }) {
   const effect = entry.effect;
   const input = effect?.type === 'CALL' ? record(effect.input) : {};
-  const question = effect?.type === 'ASK_HUMAN' ? effect.reason : typeof input.reason === 'string' ? input.reason : entry.humanRequest?.reason;
+  const question = typeof input.reason === 'string' ? input.reason : entry.humanRequest?.reason;
   const end = entry.end;
-  const result = end?.type === 'effect.completed'
-    ? end.data.effectType === 'ASK_HUMAN' ? end.data.result
-      : end.data.effectType === 'CALL' && !command ? record(end.data.result.value) : undefined
+  const result = end?.type === 'effect.completed' && end.data.effectType === 'CALL' && !command
+    ? record(end.data.result.value)
     : undefined;
   const answered = result && typeof result.approved === 'boolean';
   const response = result && typeof result.response === 'string' ? result.response : '';
@@ -657,7 +656,6 @@ function OperationResult({ entry }: { entry: EffectEntry }) {
     if (change) return <AppliedChange before={change.before} after={change.after} path={change.path} />;
     return <OutputBlock text={String(record(data.result.value).output ?? JSON.stringify(data.result.value))} />;
   }
-  if (data.effectType === 'ASK_HUMAN') return <p>{data.result.approved ? '已回答' : '已拒绝回答'}{data.result.response ? ` · ${data.result.response}` : ''}</p>;
   return <OutputBlock text={JSON.stringify(data.result, null, 2)} />;
 }
 

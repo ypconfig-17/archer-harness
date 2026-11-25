@@ -4,8 +4,6 @@
  * 观察文本不是系统提示词的一部分，也不会进入 Turn 的固定 Prompt 前缀。
  */
 
-import type { AskHumanResult } from '@archer/contracts';
-
 /**
  * 统一观察外壳。
  *
@@ -14,11 +12,6 @@ import type { AskHumanResult } from '@archer/contracts';
  */
 export function formatObservation(label: string, content: string): string {
   return `[System observation]\n[${label}]\n${content}`;
-}
-
-/** 人工观察保留完整回复结果。 */
-export function formatOperationResult(result: AskHumanResult): string {
-  return JSON.stringify(result, null, 2);
 }
 
 /** 动作失败时的观察文本 */

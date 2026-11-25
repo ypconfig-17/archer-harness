@@ -39,14 +39,6 @@ function effectLabel(effect: Snapshot<Effect>): string {
       return '请求推理';
     case 'CALL':
       return `调用 ${`${effect.target.providerId}.${effect.target.capabilityId}`}`;
-    case 'ASK_HUMAN':
-      return `请求人工确认：${effect.reason}`;
-    case 'SPAWN':
-      return `派生子 Agent：${effect.spec.name}`;
-    case 'COMPACT':
-      return `压缩上下文（约 ${effect.currentTokens} tokens）`;
-    case 'ABORT':
-      return `中止：${effect.reason}`;
   }
 }
 

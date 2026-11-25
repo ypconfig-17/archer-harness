@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { InferenceToolSchema, ToolCallSchema } from './inference-tools.js';
 import { PreparationSchema, CapabilityRefSchema } from './provider.js';
 import { JsonValueSchema } from './json-schema.js';
-import { AgentSpecSchema } from './agent.js';
 import { InferConfigSchema, MessageSchema, TokenUsageSchema, ReasoningReplaySchema } from './message.js';
 import { ReasoningLevelSchema } from './reasoning.js';
 import { ContextStepKindSchema } from './context-profile.js';
@@ -47,45 +46,12 @@ export const CallResultSchema = z.object({
 });
 export type CallResult = z.infer<typeof CallResultSchema>;
 
-/** 请求人类输入或审批 */
-export const AskHumanEffectSchema = z.object({
-  type: z.literal('ASK_HUMAN'),
-  reason: z.string(),
-  options: z.array(z.string()).optional(),
-});
-
-/** 派生子 Agent */
-export const SpawnEffectSchema = z.object({
-  type: z.literal('SPAWN'),
-  spec: AgentSpecSchema,
-});
-
-/** 请求上下文压缩 */
-export const CompactEffectSchema = z.object({
-  type: z.literal('COMPACT'),
-  currentTokens: z.number().int().nonnegative(),
-});
-
-/** 中止当前 Agent 执行 */
-export const AbortEffectSchema = z.object({
-  type: z.literal('ABORT'),
-  reason: z.string(),
-});
-
 export const EffectSchema = z.discriminatedUnion('type', [
   InferEffectSchema,
   CallEffectSchema,
-  AskHumanEffectSchema,
-  SpawnEffectSchema,
-  CompactEffectSchema,
-  AbortEffectSchema,
 ]);
 
 export type InferEffect = z.infer<typeof InferEffectSchema>;
-export type AskHumanEffect = z.infer<typeof AskHumanEffectSchema>;
-export type SpawnEffect = z.infer<typeof SpawnEffectSchema>;
-export type CompactEffect = z.infer<typeof CompactEffectSchema>;
-export type AbortEffect = z.infer<typeof AbortEffectSchema>;
 export type Effect = z.infer<typeof EffectSchema>;
 export type EffectType = Effect['type'];
 
@@ -108,10 +74,6 @@ export type EffectStatus = z.infer<typeof EffectStatusSchema>;
 export const EFFECT_TYPES = [
   'INFER',
   'CALL',
-  'ASK_HUMAN',
-  'SPAWN',
-  'COMPACT',
-  'ABORT',
 ] as const;
 
 export const EffectTypeSchema = z.enum(EFFECT_TYPES);
@@ -169,38 +131,10 @@ export const InferResultSchema = z.object({
 });
 export type InferResult = z.infer<typeof InferResultSchema>;
 
-export const AskHumanResultSchema = z.object({
-  approved: z.boolean(),
-  response: z.string(),
-});
-export type AskHumanResult = z.infer<typeof AskHumanResultSchema>;
-
-/** SPAWN 结果只暴露可序列化的子 Agent 标识，不传递运行时句柄 */
-export const SpawnResultSchema = z.object({
-  agentId: z.string(),
-  name: z.string(),
-});
-export type SpawnResult = z.infer<typeof SpawnResultSchema>;
-
-export const CompactResultSchema = z.object({
-  newTokenCount: z.number().int().nonnegative(),
-  summary: z.string(),
-});
-export type CompactResult = z.infer<typeof CompactResultSchema>;
-
-export const AbortResultSchema = z.object({
-  acknowledged: z.literal(true),
-});
-export type AbortResult = z.infer<typeof AbortResultSchema>;
-
 /** Effect 类型到其结果类型的映射 */
 export interface EffectResultMap {
   INFER: InferResult;
   CALL: CallResult;
-  ASK_HUMAN: AskHumanResult;
-  SPAWN: SpawnResult;
-  COMPACT: CompactResult;
-  ABORT: AbortResult;
 }
 
 /** 获取给定 Effect 的结果类型 */
@@ -210,8 +144,4 @@ export type EffectResult<E extends Effect> = EffectResultMap[E['type']];
 export const EFFECT_RESULT_SCHEMAS = {
   INFER: InferResultSchema,
   CALL: CallResultSchema,
-  ASK_HUMAN: AskHumanResultSchema,
-  SPAWN: SpawnResultSchema,
-  COMPACT: CompactResultSchema,
-  ABORT: AbortResultSchema,
 } as const satisfies Record<EffectType, z.ZodType>;

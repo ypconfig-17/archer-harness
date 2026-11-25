@@ -71,14 +71,6 @@ function effectTarget(effect: Snapshot<Effect>): string {
     }
     case 'INFER':
       return effect.config?.model ?? '默认模型';
-    case 'ASK_HUMAN':
-      return effect.reason;
-    case 'SPAWN':
-      return effect.spec.name;
-    case 'COMPACT':
-      return `当前 ${effect.currentTokens.toLocaleString()} tokens`;
-    case 'ABORT':
-      return effect.reason;
   }
 }
 
@@ -319,7 +311,7 @@ function turnPresentation(fact: TurnFact, turnId: string): EventPresentation {
         category: 'effect',
       };
     case 'inference.planned': {
-      const actions = fact.data.actions.map(action => action.kind === 'call' ? `${callAction(action.target.capabilityId)} ${capabilityLabel(action.target)}` : `询问：${action.reason}`);
+      const actions = fact.data.actions.map(action => `${callAction(action.target.capabilityId)} ${capabilityLabel(action.target)}`);
       const terminal = fact.data.terminal?.kind === 'done' ? '结束任务' : fact.data.terminal?.kind === 'respond' ? '生成答复' : undefined;
       return {
         title: '推理已产生计划',
@@ -398,12 +390,6 @@ function turnPresentation(fact: TurnFact, turnId: string): EventPresentation {
           : truncate(data.result.content, 80) || '已完成';
       } else if (data.effectType === 'CALL') {
         summary = '已完成';
-      } else if (data.effectType === 'ASK_HUMAN') {
-        summary = data.result.approved ? '已同意' : '已拒绝';
-      } else if (data.effectType === 'SPAWN') {
-        summary = `${data.result.name}（${data.result.agentId}）`;
-      } else if (data.effectType === 'COMPACT') {
-        summary = `压缩后 ${data.result.newTokenCount.toLocaleString()} tokens`;
       }
       return {
         title: unsuccessful ? resultState.label : '操作已完成',

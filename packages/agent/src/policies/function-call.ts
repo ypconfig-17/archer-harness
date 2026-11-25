@@ -1,9 +1,9 @@
 import { cloneContextProfile, type InferConfig } from '@archer/contracts';
 import { completionReviewTarget } from '../completion.js';
 /** 默认会话 Agent 策略：模型协议、消息、计划与推理意图。 */
-import type { Effect, ActionPlan, Message, TurnTerminal, AskHumanResult, InferResult, InferenceTool, CallResult, ToolCall } from '@archer/contracts';
-import { HUMAN_RESPONSE_LABEL, formatOperationResult,
-  formatObservation, formatObservationCancelled, formatObservationError,
+import type { Effect, ActionPlan, Message, TurnTerminal, InferResult, InferenceTool, CallResult, ToolCall } from '@archer/contracts';
+import {
+  formatObservation, formatObservationCancelled,
   TOOL_BATCH_REJECTION_LABEL, COMPLETION_REVIEW_LABEL, COMPLETION_REVIEW_NOTICE, EMPTY_RESPONSE_LABEL, EMPTY_RESPONSE_NOTICE, formatToolCallRejection, formatToolBatchRejection } from '../prompt/index.js';
 import { agentInputText, agentInputMessage, isTerminalTurnStatus } from '@archer/contracts';
 import { toolResultContent } from '../prompt/tool-result.js';
@@ -191,16 +191,14 @@ function createActionEffect(
   ctx: SessionContext,
 ): void {
   const effectId = effectIdFor(turn);
-  let effect: Effect;
-  if (action.kind === 'call') {
-    effect = { type: 'CALL', target: action.target, input: action.input, toolCallId: action.toolCallId, toolName: action.toolName,  ...(action.interaction ? { interaction: action.interaction } : {}) };
-  } else {
-    effect = {
-      type: 'ASK_HUMAN',
-      reason: action.reason,
-      ...(action.options ? { options: action.options } : {}),
-    };
-  }
+  const effect: Effect = {
+    type: 'CALL',
+    target: action.target,
+    input: action.input,
+    toolCallId: action.toolCallId,
+    toolName: action.toolName,
+    ...(action.interaction ? { interaction: action.interaction } : {}),
+  };
 
   builder.turn(turn.turnId, {
     type: 'effect.created',
@@ -407,19 +405,6 @@ function decide(state: SessionState, input: SessionPolicyInput, ctx: SessionCont
         failTurn(builder, turn, { code: 'PERMISSION_DENIED', message: '用户拒绝了本次请求，剩余计划未执行。' }, ctx);
         return builder.finish();
       }
-    } else if (effect.effect.type === 'ASK_HUMAN') {
-      const reply = outcome.result as AskHumanResult;
-      addObservation(builder, turn.turnId, HUMAN_RESPONSE_LABEL, formatOperationResult(reply));
-      if (!reply.approved) {
-        failTurn(builder, turn, { code: 'PERMISSION_DENIED', message: '用户拒绝了本次请求，剩余计划未执行。' }, ctx);
-        return builder.finish();
-      }
-    } else {
-      failTurn(builder, turn, {
-        code: 'EFFECT_UNSUPPORTED',
-        message: `Effect 类型没有执行实现：${effect.effect.type}`,
-      }, ctx);
-      return builder.finish();
     }
 
     continuePlan(builder, turn.turnId, ctx);
@@ -432,9 +417,7 @@ function decide(state: SessionState, input: SessionPolicyInput, ctx: SessionCont
     }
     if (effect.effect.type === 'CALL') {
       builder.turn(turn.turnId, { type: 'message.appended', data: { message: { role: 'tool', content: JSON.stringify({ outcome: 'failed', error: outcome.error }), toolCallId: effect.effect.toolCallId, toolName: effect.effect.toolName, isError: true } } });
-    } else addObservation(builder, turn.turnId,
-      `${effect.effect.type.toLowerCase()}`,
-      formatObservationError(outcome.error.message));
+    }
   } else {
     addObservation(builder, turn.turnId, effect.effect.type.toLowerCase(), formatObservationCancelled(outcome.reason));
   }

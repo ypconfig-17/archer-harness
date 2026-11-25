@@ -9,15 +9,11 @@ import { z } from 'zod';
 import { ActionPlanSchema, TurnTerminalSchema } from './agent.js';
 import { ErrorDataSchema, type ErrorData } from './archer-error.js';
 import {
-  AbortResultSchema,
-  AskHumanResultSchema,
-  CompactResultSchema,
   EffectSchema,
   EffectTypeSchema,
   InferResultSchema,
   InferEffectSchema,
   CallResultSchema,
-  SpawnResultSchema,
 } from './effect.js';
 import { JsonObjectSchema } from './json-schema.js';
 import { type InferConfig, InferConfigSchema, MessageSchema, ImageBlockSchema, type Message } from './message.js';
@@ -424,35 +420,6 @@ const EffectCompletedDataSchema = z.discriminatedUnion('effectType', [
     effectId: z.string(),
     effectType: z.literal('INFER'),
     result: InferResultSchema,
-    durationMs: z.number().int().nonnegative(),
-    finishedAt: z.number().int(),
-  }),
-
-  z.object({
-    effectId: z.string(),
-    effectType: z.literal('ASK_HUMAN'),
-    result: AskHumanResultSchema,
-    durationMs: z.number().int().nonnegative(),
-    finishedAt: z.number().int(),
-  }),
-  z.object({
-    effectId: z.string(),
-    effectType: z.literal('SPAWN'),
-    result: SpawnResultSchema,
-    durationMs: z.number().int().nonnegative(),
-    finishedAt: z.number().int(),
-  }),
-  z.object({
-    effectId: z.string(),
-    effectType: z.literal('COMPACT'),
-    result: CompactResultSchema,
-    durationMs: z.number().int().nonnegative(),
-    finishedAt: z.number().int(),
-  }),
-  z.object({
-    effectId: z.string(),
-    effectType: z.literal('ABORT'),
-    result: AbortResultSchema,
     durationMs: z.number().int().nonnegative(),
     finishedAt: z.number().int(),
   }),

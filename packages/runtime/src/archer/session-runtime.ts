@@ -1,10 +1,3 @@
-import { committedHistory } from './history.js';
-import { compileModelTools } from '../prompt/model-tools.js';
-import { INFERENCE, INFERENCE_PREPARE } from '@archer/camp';
-import { resolveCall } from '../execution/targets.js';
-import { workspaceFiles } from '@archer/providers';
-import { KernelErrorSchema, assertJsonValue, validateInput, canonicalJson } from '@archer/contracts';
-import { automaticallyApproved } from '../execution/command-approval.js';
 /**
  * Archer Harness — 单个 Agent 的串行提交与执行
  *
@@ -12,7 +5,6 @@ import { automaticallyApproved } from '../execution/command-approval.js';
  * 每个 Agent 一把提交锁；Effect 执行在锁外进行，结果回到锁内收束。
  */
 
-import { run } from '@archer/kernel';
 import { channel } from 'node:diagnostics_channel';
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import type {
@@ -23,169 +15,87 @@ import type {
   AgentJournal,
   AgentSnapshot,
   AgentSummary,
+  Camp,
+  CapabilityRef,
   ErrorData,
   EventReadInput,
-  JsonObject,
-  KernelError,
+  FollowUpOptions,
+  HumanReply,
+  HumanTarget,
+  HumanToken,
+  InferenceChunk,
+  InferenceProgress,
   PromptOptions,
   ReadOptions,
+  ReconcileInput,
   Snapshot,
   SteerOptions,
   SubmitOptions,
-  FollowUpOptions,
   TurnEvent,
   TurnLimits,
   TurnRef,
   TurnSnapshot,
   WaitOptions,
   WatchOptions,
-  Effect,
-  InferenceChunk,
-  InferenceProgress,
-  HumanTarget,
-  HumanToken,
-  HumanReply,
-  ReconcileInput,
 } from '@archer/contracts';
 import {
-  InferenceChunkSchema,
   AgentInputSchema,
   ArcherError,
-  TurnLimitsSchema,
   InferConfigSchema,
+  InferenceChunkSchema,
+  TurnLimitsSchema,
   freezeSnapshot,
-  isJsonValue,
   isTerminalTurnStatus,
 } from '@archer/contracts';
-import type { Camp, CapabilityRef } from '@archer/contracts';
-import type { EffectTarget } from '@archer/handler';
-import type { AcceptedInput, SessionCommand, SessionDecision, SessionEffect, SessionState, SessionAgentPolicy, SessionContext, SessionTurn } from '@archer/agent';
-import { abortDecision, acceptInputDecision, beginEffectDecision, canConsumeQueuedInput, clearQueueDecision, consumeQueuedDecision, effectOutcomeDecision, previewInputAcceptance, recoverDecision, removeDecision, renameDecision, resumeQueueDecision, configureExecutionDecision, steerDecision, suspendEffectDecision, humanReplyDecision, reconcileDecision } from '../execution/session-step.js';
-import { DraftBuilder, activeTurnOf, agentSnapshot, compileTurnPrompt, turnSnapshot, type PromptFrame, type SessionEffectOutcome } from '@archer/agent';
-import type { EffectExecutionRecord, EffectHandler } from '@archer/handler';
-import { createExecutionPipeline, ExecutionCommitError } from '@archer/handler';
+import { run } from '@archer/kernel';
+import type {
+  AcceptedInput,
+  PromptFrame,
+  SessionAgentPolicy,
+  SessionCommand,
+  SessionContext,
+  SessionDecision,
+  SessionEffect,
+  SessionState,
+  SessionTurn,
+} from '@archer/agent';
+import { activeTurnOf, agentSnapshot, turnSnapshot } from '@archer/agent';
+import { createExecutionPipeline, type EffectHandler } from '@archer/handler';
+import {
+  abortDecision,
+  acceptInputDecision,
+  canConsumeQueuedInput,
+  clearQueueDecision,
+  configureExecutionDecision,
+  consumeQueuedDecision,
+  humanReplyDecision,
+  previewInputAcceptance,
+  reconcileDecision,
+  recoverDecision,
+  removeDecision,
+  renameDecision,
+  resumeQueueDecision,
+  steerDecision,
+  suspendEffectDecision,
+} from '../execution/session-step.js';
+import { dispatchEffect, type DispatchHost } from './session-dispatch.js';
+import { withPreparedPrompt, type PromptCoordinatorHost } from './session-prompt.js';
+import {
+  STALE_PROMPT,
+  SUSPEND_TTL_MS,
+  TERMINAL_TURN_FACTS,
+  eventWindow,
+  mapError,
+  turnEventsOf,
+  turnFailure,
+  type DispatchPlan,
+  type InFlight,
+  type PromptPreparation,
+  type SessionRuntimeOptions,
+  type Waiter,
+} from './session-runtime-types.js';
 
-const SUSPEND_TTL_MS = 24 * 60 * 60 * 1000;
-const TERMINAL_TURN_FACTS = new Set(['turn.completed', 'turn.failed', 'turn.cancelled']);
-/** 仅用于进程内准备失效，不进入事件日志或公开错误协议。 */
-const STALE_PROMPT = Symbol('stale-prompt');
-
-interface PromptPreparation {
-  seq: number;
-  controller: AbortController;
-  snapshot: Pick<SessionState, 'instructions' | 'workspace'>;
-}
-
-interface Waiter {
-  turnId: string;
-  resolve(): void;
-  reject(error: unknown): void;
-}
-
-interface InFlight {
-  controller: AbortController;
-}
-
-interface Preflight extends EffectTarget { release: () => void }
-
-interface DispatchPlan {
-  authorizationRevision: number;
-  effectId: string;
-  turnId: string;
-  effect: Effect;
-  preflight: Preflight | null;
-  preflightError: KernelError | null;
-  controller: AbortController;
-  commands: SessionCommand[];
-}
-
-export interface SessionRuntimeOptions {
-  /** 显式纯决策策略，身份必须与会话创建事实匹配 */
-  agentPolicy?: SessionAgentPolicy;
-  state: SessionState;
-  events: readonly AgentEvent[];
-  journal: AgentJournal;
-  inference: CapabilityRef;
-  camp: Camp;
-  preparations: readonly CapabilityRef[];
-  clock: () => number;
-  onError: (error: ArcherError) => void;
-  /** 执行层观测回调；不得写入事件日志 */
-  onEffectExecuted?: (record: EffectExecutionRecord) => void;
-}
-
-/** 终态 Turn 对应的公开错误；非终态返回 null */
-function turnFailure(turn: SessionTurn): ArcherError | null {
-  if (turn.status === 'failed') {
-    return new ArcherError(
-      'TURN_FAILED',
-      turn.error?.message ?? `Turn 失败：${turn.turnId}`,
-      {
-        turnId: turn.turnId,
-        ...(turn.error?.code ? { errorCode: turn.error.code } : {}),
-      },
-    );
-  }
-  if (turn.status === 'cancelled') {
-    return new ArcherError(
-      'TURN_CANCELLED',
-      turn.error?.message ?? `Turn 已取消：${turn.turnId}`,
-      { turnId: turn.turnId },
-    );
-  }
-  return null;
-}
-
-/** 增量窗口与历史窗口互斥；历史窗口保留目标序号之前最近的一页。 */
-function eventWindow<T extends { seq: number }>(
-  entries: readonly T[],
-  input: EventReadInput,
-  limit: number,
-): T[] {
-  if (input.beforeSeq !== undefined && input.afterSeq !== undefined) {
-    throw new ArcherError('INVALID_ARGUMENT', 'beforeSeq 与 afterSeq 不能同时使用');
-  }
-  if (input.beforeSeq !== undefined) {
-    if (!Number.isSafeInteger(input.beforeSeq) || input.beforeSeq <= 0) {
-      throw new ArcherError('INVALID_ARGUMENT', 'beforeSeq 必须为正整数');
-    }
-    return entries.filter((entry) => entry.seq < input.beforeSeq!).slice(-limit);
-  }
-  const afterSeq = input.afterSeq ?? 0;
-  return entries.filter((entry) => entry.seq > afterSeq).slice(0, limit);
-}
-
-function isArcherErrorLike(value: unknown): value is ErrorData {
-  return (
-    typeof value === 'object'
-    && value !== null
-    && typeof (value as { code?: unknown }).code === 'string'
-    && typeof (value as { message?: unknown }).message === 'string'
-  );
-}
-
-function mapError(error: unknown): ErrorData {
-  if (error instanceof ArcherError) {
-    return {
-      code: error.code,
-      message: error.message,
-      ...(error.details ? { details: error.details } : {}),
-    };
-  }
-  if (isArcherErrorLike(error)) {
-    return {
-      code: error.code,
-      message: error.message,
-      ...(error.details && isJsonValue(error.details)
-        ? { details: error.details as JsonObject }
-        : {}),
-    };
-  }
-  return {
-    code: 'INTERNAL',
-    message: error instanceof Error ? error.message : String(error),
-  };
-}
+export type { SessionRuntimeOptions } from './session-runtime-types.js';
 
 export class SessionRuntime {
   private state: SessionState;
@@ -212,13 +122,50 @@ export class SessionRuntime {
   private readonly wakeups = new Set<() => void>();
   private readonly waiters = new Set<Waiter>();
   private latestProgress: Snapshot<InferenceProgress> | null = null;
-  private readonly progressListeners = new Set<(progress: Snapshot<InferenceProgress> | null) => void>();
+  private readonly progressListeners = new Set<
+    (progress: Snapshot<InferenceProgress> | null) => void
+  >();
 
   private readonly agentPolicy?: SessionAgentPolicy;
 
   private get decisionContext(): SessionContext {
     return { now: this.clock(), agentPolicy: this.agentPolicy };
   }
+
+  private readonly promptHost: PromptCoordinatorHost = {
+    withLock: (task) => this.withLock(task),
+    getState: () => this.state,
+    getCamp: () => this.camp,
+    getInference: () => this.inference,
+    getPreparations: () => this.preparations,
+    getLifecycleSignal: () => this.lifecycle.signal,
+    getPromptPreparations: () => this.promptPreparations,
+    getPreparationTasks: () => this.preparationTasks,
+  };
+
+  private readonly dispatchHost: DispatchHost = {
+    get id() {
+      return this.getState().agentId;
+    },
+    withLock: (task) => this.withLock(task),
+    commit: (decision) => this.commit(decision),
+    getState: () => this.state,
+    getCamp: () => this.camp,
+    getInference: () => this.inference,
+    getClock: () => this.clock,
+    getDecisionContext: () => this.decisionContext,
+    getEffectPipeline: () => this.effectPipeline,
+    isAdmitted: () => this.admitted,
+    isStopping: () => this.stopping,
+    hasFault: () => this.faultData !== null,
+    getInFlight: () => this.inFlight,
+    getBlocked: () => this.blocked,
+    locateEffect: (effectId) => this.locateEffect(effectId),
+    publishProgress: (plan, chunk, phase) => this.publishProgress(plan, chunk, phase),
+    getLatestProgress: () => this.latestProgress,
+    suspend: (effectId) => this.suspend(effectId),
+    maybeConsumeQueue: () => this.maybeConsumeQueue(),
+  };
 
   constructor(options: SessionRuntimeOptions) {
     this.agentPolicy = options.agentPolicy;
@@ -239,8 +186,6 @@ export class SessionRuntime {
   get id(): string {
     return this.state.agentId;
   }
-
-
 
   get createKey(): string {
     return this.state.createKey;
@@ -333,10 +278,13 @@ export class SessionRuntime {
     if (this.faultData) return;
     const data = mapError(error);
     this.faultData = data;
-    for (const preparation of this.promptPreparations) preparation.controller.abort(this.isolatedError());
-    const reported = error instanceof ArcherError
-      ? error
-      : new ArcherError('INTERNAL', data.message, { agentId: this.state.agentId });
+    for (const preparation of this.promptPreparations) {
+      preparation.controller.abort(this.isolatedError());
+    }
+    const reported =
+      error instanceof ArcherError
+        ? error
+        : new ArcherError('INTERNAL', data.message, { agentId: this.state.agentId });
     try {
       this.onError(reported);
     } catch {
@@ -353,7 +301,10 @@ export class SessionRuntime {
     }
   }
 
-  private async commit(decision: SessionDecision, preparationAbortReason: unknown = STALE_PROMPT): Promise<AgentEvent[]> {
+  private async commit(
+    decision: SessionDecision,
+    preparationAbortReason: unknown = STALE_PROMPT,
+  ): Promise<AgentEvent[]> {
     if (decision.drafts.length === 0) return [];
     let committed: readonly AgentEvent[];
     try {
@@ -364,8 +315,8 @@ export class SessionRuntime {
       });
     } catch (error: unknown) {
       if (
-        error instanceof ArcherError
-        && (error.code === 'COMMIT_UNKNOWN' || error.code === 'EVENT_LOG_CORRUPT')
+        error instanceof ArcherError &&
+        (error.code === 'COMMIT_UNKNOWN' || error.code === 'EVENT_LOG_CORRUPT')
       ) {
         this.isolate(error);
       }
@@ -381,13 +332,18 @@ export class SessionRuntime {
     }
     this.state = decision.state;
     this.state.seq = last.seq;
-    for (const preparation of this.promptPreparations) preparation.controller.abort(preparationAbortReason);
+    for (const preparation of this.promptPreparations) {
+      preparation.controller.abort(preparationAbortReason);
+    }
     this.eventsLog.push(...committed);
     if (this.state.removed) for (const listener of this.progressListeners) listener(null);
     if (this.latestProgress?.phase === 'generating') {
       const effect = this.locateEffect(this.latestProgress.effectId)?.effect;
       if (effect && ['completed', 'failed', 'cancelled', 'unknown'].includes(effect.status)) {
-        this.latestProgress = freezeSnapshot({ ...this.latestProgress, phase: effect.status === 'completed' ? 'settled' : 'interrupted' });
+        this.latestProgress = freezeSnapshot({
+          ...this.latestProgress,
+          phase: effect.status === 'completed' ? 'settled' : 'interrupted',
+        });
         for (const listener of this.progressListeners) listener(this.latestProgress);
       }
     }
@@ -405,10 +361,7 @@ export class SessionRuntime {
           // 监听器异常彼此隔离
         }
       }
-      if (
-        event.fact.scope === 'turn'
-        && TERMINAL_TURN_FACTS.has(event.fact.event.type)
-      ) {
+      if (event.fact.scope === 'turn' && TERMINAL_TURN_FACTS.has(event.fact.event.type)) {
         this.resolveWaiters(event.fact.turnId);
       }
     }
@@ -454,34 +407,47 @@ export class SessionRuntime {
   ): Promise<{ turnId: string | null }> {
     const parsedInput = this.parseInput(input);
     const limits = this.parseLimits(options.limits);
-    const inference = options.inference === undefined ? undefined : InferConfigSchema.safeParse(options.inference);
-    if (inference && !inference.success) throw new ArcherError('INVALID_ARGUMENT', '推理配置不合法');
+    const inference =
+      options.inference === undefined ? undefined : InferConfigSchema.safeParse(options.inference);
+    if (inference && !inference.success) {
+      throw new ArcherError('INVALID_ARGUMENT', '推理配置不合法');
+    }
     const requestId = options.requestId ?? randomUUID();
     const allowShell = options.allowShell === true;
     const commandMode = options.commandMode ?? 'ask';
-    if (!['ask', 'auto', 'full'].includes(commandMode)) throw new ArcherError('INVALID_ARGUMENT', '命令模式不合法');
+    if (!['ask', 'auto', 'full'].includes(commandMode)) {
+      throw new ArcherError('INVALID_ARGUMENT', '命令模式不合法');
+    }
     let commands: SessionCommand[] = [];
     let turnId: string | null = null;
 
     const base: Omit<AcceptedInput, 'promptFrame'> = {
-      command, requestId, input: parsedInput, allowShell, commandMode,
+      command,
+      requestId,
+      input: parsedInput,
+      allowShell,
+      commandMode,
       ...(limits ? { limits } : {}),
       ...(inference?.success ? { inference: inference.data } : {}),
     };
-    await this.withPreparedPrompt(() => {
-      this.requireOpen();
-      this.requireWritable();
-      const preview = previewInputAcceptance(this.state, base);
-      if (!preview.ok) throw preview.error;
-      return preview.value.startsTurn;
-    }, async promptFrame => {
-      const accepted: AcceptedInput = { ...base, ...(promptFrame ? { promptFrame } : {}) };
-      const decision = acceptInputDecision(this.state, accepted, this.decisionContext);
-      if (!decision.ok) throw decision.error;
-      commands = decision.value.decision.commands;
-      turnId = decision.value.turnId;
-      await this.commit(decision.value.decision);
-    });
+    await withPreparedPrompt(
+      this.promptHost,
+      () => {
+        this.requireOpen();
+        this.requireWritable();
+        const preview = previewInputAcceptance(this.state, base);
+        if (!preview.ok) throw preview.error;
+        return preview.value.startsTurn;
+      },
+      async (promptFrame) => {
+        const accepted: AcceptedInput = { ...base, ...(promptFrame ? { promptFrame } : {}) };
+        const decision = acceptInputDecision(this.state, accepted, this.decisionContext);
+        if (!decision.ok) throw decision.error;
+        commands = decision.value.decision.commands;
+        turnId = decision.value.turnId;
+        await this.commit(decision.value.decision);
+      },
+    );
 
     this.runCommands(commands);
     return { turnId };
@@ -516,10 +482,15 @@ export class SessionRuntime {
     await this.withLock(async () => {
       this.requireOpen();
       this.requireWritable();
-      const decision = steerDecision(this.state, parsedInput, {
-        requestId,
-        ...(options.turnId !== undefined ? { turnId: options.turnId } : {}),
-      }, this.decisionContext);
+      const decision = steerDecision(
+        this.state,
+        parsedInput,
+        {
+          requestId,
+          ...(options.turnId !== undefined ? { turnId: options.turnId } : {}),
+        },
+        this.decisionContext,
+      );
       if (!decision.ok) throw decision.error;
       await this.commit(decision.value);
     });
@@ -531,11 +502,15 @@ export class SessionRuntime {
     await this.withLock(async () => {
       this.requireOpen();
       this.requireWritable();
-      const decision = abortDecision(this.state, {
-        requestId,
-        ...(options.turnId !== undefined ? { turnId: options.turnId } : {}),
-        ...(options.reason !== undefined ? { reason: options.reason } : {}),
-      }, this.decisionContext);
+      const decision = abortDecision(
+        this.state,
+        {
+          requestId,
+          ...(options.turnId !== undefined ? { turnId: options.turnId } : {}),
+          ...(options.reason !== undefined ? { reason: options.reason } : {}),
+        },
+        this.decisionContext,
+      );
       if (!decision.ok) throw decision.error;
       commands = decision.value.commands;
       await this.commit(decision.value, new ArcherError('ABORTED', '输入准备已取消'));
@@ -585,22 +560,40 @@ export class SessionRuntime {
   // 管理命令
   // ─────────────────────────────────────────────
 
-  async configureExecution(expectedRevision: number, workspaceAccess?: import('@archer/contracts').Workspace['access'], commandAuthorization?: import('@archer/contracts').ConfigureExecutionInput['commandAuthorization']): Promise<void> {
+  async configureExecution(
+    expectedRevision: number,
+    workspaceAccess?: import('@archer/contracts').Workspace['access'],
+    commandAuthorization?: import('@archer/contracts').ConfigureExecutionInput['commandAuthorization'],
+  ): Promise<void> {
     const commands = await this.withLock(async () => {
       this.requireWritable();
       const now = this.clock();
       const approval = commandAuthorization?.approveCommand;
       if (approval) {
         // 凭证只用于进程内校验，不写入配置事实；同一锁内固定原任务与命令。
-        const effect = this.pendingTarget({ turnId: commandAuthorization.turnId, effectId: approval.effectId }, 'human');
+        const effect = this.pendingTarget(
+          { turnId: commandAuthorization.turnId, effectId: approval.effectId },
+          'human',
+        );
         const expected = Buffer.from(effect.suspended?.resumeTokenHash ?? '', 'hex');
         const actual = createHash('sha256').update(approval.token).digest();
-        if (!effect.suspended || effect.suspended.expiresAt === undefined || now >= effect.suspended.expiresAt
-          || expected.length !== actual.length || !timingSafeEqual(expected, actual)) {
+        if (
+          !effect.suspended ||
+          effect.suspended.expiresAt === undefined ||
+          now >= effect.suspended.expiresAt ||
+          expected.length !== actual.length ||
+          !timingSafeEqual(expected, actual)
+        ) {
           throw new ArcherError('CONFLICT', '人工凭证已过期或不匹配，请重新确认');
         }
       }
-      const decision = configureExecutionDecision(this.state, expectedRevision, workspaceAccess, commandAuthorization, { ...this.decisionContext, now });
+      const decision = configureExecutionDecision(
+        this.state,
+        expectedRevision,
+        workspaceAccess,
+        commandAuthorization,
+        { ...this.decisionContext, now },
+      );
       if (!decision.ok) throw decision.error;
       await this.commit(decision.value);
       return decision.value.commands;
@@ -661,15 +654,25 @@ export class SessionRuntime {
   // ─────────────────────────────────────────────
 
   async recover(signal?: AbortSignal): Promise<void> {
-    const commands = await this.withPreparedPrompt(() => {
-      if (this.state.removed || this.stopping || this.faultData) return false;
-      return canConsumeQueuedInput(this.state);
-    }, async promptFrame => {
-      if (this.state.removed || this.stopping || this.faultData) return [];
-      const decision = recoverDecision(this.state, promptFrame ?? { prefix: [], tools: [], preparations: [] }, this.decisionContext);
-      await this.commit(decision);
-      return decision.commands;
-    }, false, signal);
+    const commands = await withPreparedPrompt(
+      this.promptHost,
+      () => {
+        if (this.state.removed || this.stopping || this.faultData) return false;
+        return canConsumeQueuedInput(this.state);
+      },
+      async (promptFrame) => {
+        if (this.state.removed || this.stopping || this.faultData) return [];
+        const decision = recoverDecision(
+          this.state,
+          promptFrame ?? { prefix: [], tools: [], preparations: [] },
+          this.decisionContext,
+        );
+        await this.commit(decision);
+        return decision.commands;
+      },
+      false,
+      signal,
+    );
     this.runCommands(commands);
   }
 
@@ -685,7 +688,10 @@ export class SessionRuntime {
     if (this.faultData || this.stopping || this.state.removed || !this.admitted) return;
     for (const effectId of [...this.blocked]) {
       const located = this.locateEffect(effectId);
-      if (!located || (located.effect.status !== 'created' && located.effect.status !== 'resumed')) {
+      if (
+        !located ||
+        (located.effect.status !== 'created' && located.effect.status !== 'resumed')
+      ) {
         this.blocked.delete(effectId);
         continue;
       }
@@ -702,14 +708,24 @@ export class SessionRuntime {
     this.requireReadable(options);
     let pending = this.latestProgress;
     let wake: (() => void) | undefined;
-    const listener = (progress: Snapshot<InferenceProgress> | null) => { pending = progress; wake?.(); };
+    const listener = (progress: Snapshot<InferenceProgress> | null) => {
+      pending = progress;
+      wake?.();
+    };
     const abort = () => wake?.();
     this.progressListeners.add(listener);
     options.signal?.addEventListener('abort', abort, { once: true });
     try {
       while (!options.signal?.aborted && this.admitted && !this.state.removed) {
-        if (pending) { const frame = pending; pending = null; yield frame; }
-        else await new Promise<void>(resolve => { wake = resolve; });
+        if (pending) {
+          const frame = pending;
+          pending = null;
+          yield frame;
+        } else {
+          await new Promise<void>((resolve) => {
+            wake = resolve;
+          });
+        }
       }
     } finally {
       this.progressListeners.delete(listener);
@@ -717,16 +733,40 @@ export class SessionRuntime {
     }
   }
 
-  private publishProgress(plan: DispatchPlan, chunk: InferenceChunk, phase: InferenceProgress['phase'] = 'generating'): void {
+  private publishProgress(
+    plan: DispatchPlan,
+    chunk: InferenceChunk,
+    phase: InferenceProgress['phase'] = 'generating',
+  ): void {
     if (plan.effect.type !== 'INFER' || !this.admitted) return;
-    if (phase === 'generating' && (this.inFlight.get(plan.effectId)?.controller !== plan.controller || this.locateEffect(plan.effectId)?.effect.status !== 'started')) return;
+    if (
+      phase === 'generating' &&
+      (this.inFlight.get(plan.effectId)?.controller !== plan.controller ||
+        this.locateEffect(plan.effectId)?.effect.status !== 'started')
+    ) {
+      return;
+    }
     const parsed = InferenceChunkSchema.safeParse(chunk);
     if (!parsed.success) return;
-    const frame = freezeSnapshot({ ...parsed.data, agentId: this.id, turnId: plan.turnId, effectId: plan.effectId, phase });
+    const frame = freezeSnapshot({
+      ...parsed.data,
+      agentId: this.id,
+      turnId: plan.turnId,
+      effectId: plan.effectId,
+      phase,
+    });
     // 临时通道诊断只观察实际发布时机，不改变锁、提交或慢消费者合并规则。
     const diagnostics = channel('archer.stream');
-    if (diagnostics.hasSubscribers) diagnostics.publish({ stage: 'Runtime', agentId: this.id,
-      effectId: plan.effectId, event: phase, content: frame.content.length, reasoning: frame.reasoning?.length ?? 0 });
+    if (diagnostics.hasSubscribers) {
+      diagnostics.publish({
+        stage: 'Runtime',
+        agentId: this.id,
+        effectId: plan.effectId,
+        event: phase,
+        content: frame.content.length,
+        reasoning: frame.reasoning?.length ?? 0,
+      });
+    }
     this.latestProgress = frame;
     for (const listener of this.progressListeners) listener(frame);
   }
@@ -741,7 +781,12 @@ export class SessionRuntime {
   async getState(options: ReadOptions = {}): Promise<Snapshot<AgentSnapshot>> {
     this.requireReadable(options);
     return freezeSnapshot(
-      agentSnapshot(this.state, this.lastCommittedAt, this.currentExecution, this.faultData ?? undefined),
+      agentSnapshot(
+        this.state,
+        this.lastCommittedAt,
+        this.currentExecution,
+        this.faultData ?? undefined,
+      ),
     );
   }
 
@@ -771,9 +816,9 @@ export class SessionRuntime {
       const request = this.state.requests.get(requestId);
       if (!request?.turnId) return null;
       if (
-        request.command !== 'prompt'
-        && request.command !== 'send'
-        && request.command !== 'followUp'
+        request.command !== 'prompt' &&
+        request.command !== 'send' &&
+        request.command !== 'followUp'
       ) {
         return null;
       }
@@ -788,8 +833,7 @@ export class SessionRuntime {
       const limit = Math.min(Math.max(input.limit ?? 50, 1), 200);
       return [...this.state.turns.values()]
         .filter(
-          (turn) =>
-            input.beforeAgentSeq === undefined || turn.agentSeq < input.beforeAgentSeq,
+          (turn) => input.beforeAgentSeq === undefined || turn.agentSeq < input.beforeAgentSeq,
         )
         .sort((a, b) => b.agentSeq - a.agentSeq)
         .slice(0, limit)
@@ -802,7 +846,9 @@ export class SessionRuntime {
     ): Promise<readonly Snapshot<TurnEvent>[]> => {
       this.requireReadable(options);
       const limit = Math.min(Math.max(input.limit ?? 200, 1), 200);
-      return eventWindow(this.turnEvents(turnId), input, limit).map((entry) => freezeSnapshot(entry));
+      return eventWindow(turnEventsOf(this.eventsLog, this.state.turns, turnId), input, limit).map(
+        (entry) => freezeSnapshot(entry),
+      );
     },
     watch: (turnId: string, options: WatchOptions): AsyncIterable<Snapshot<TurnEvent>> =>
       this.watchTurn(turnId, options),
@@ -812,24 +858,6 @@ export class SessionRuntime {
     if (options.signal?.aborted) {
       throw new ArcherError('ABORTED', '读取已取消');
     }
-  }
-
-  private turnEvents(turnId: string): TurnEvent[] {
-    const result: TurnEvent[] = [];
-    if (!this.state.turns.has(turnId)) return result;
-    for (const event of this.eventsLog) {
-      if (event.fact.scope !== 'turn' || event.fact.turnId !== turnId) continue;
-      result.push({
-        id: event.id,
-        agentId: event.agentId,
-        turnId,
-        agentSeq: event.seq,
-        seq: event.fact.turnSeq,
-        ts: event.ts,
-        ...event.fact.event,
-      });
-    }
-    return result;
   }
 
   private async *watchTurn(
@@ -842,7 +870,9 @@ export class SessionRuntime {
     let cursor = options.afterSeq;
     while (true) {
       if (this.faultData) throw this.isolatedError();
-      const batch = this.turnEvents(turnId).filter((entry) => entry.seq > cursor);
+      const batch = turnEventsOf(this.eventsLog, this.state.turns, turnId).filter(
+        (entry) => entry.seq > cursor,
+      );
       for (const entry of batch) {
         cursor = entry.seq;
         yield freezeSnapshot(entry);
@@ -897,94 +927,7 @@ export class SessionRuntime {
   }
 
   // ─────────────────────────────────────────────
-  // Prompt 编译
-  // ─────────────────────────────────────────────
-
-  /** 锁内选择事实版本，锁外准备；提交前校验版本，失效结果不进入事实。 */
-  private async withPreparedPrompt<T>(
-    needsPrompt: () => boolean,
-    apply: (frame: PromptFrame | undefined) => Promise<T>,
-    inputRequest = true,
-    parentSignal?: AbortSignal,
-  ): Promise<T> {
-    for (;;) {
-      const selected = await this.withLock(async (): Promise<{ result: T } | { preparation: PromptPreparation }> => {
-        if (!needsPrompt()) return { result: await apply(undefined) };
-        const preparation: PromptPreparation = {
-          seq: this.state.seq,
-          controller: new AbortController(),
-          snapshot: structuredClone({ instructions: this.state.instructions, workspace: this.state.workspace }),
-        };
-        this.promptPreparations.add(preparation);
-        return { preparation };
-      });
-      if ('result' in selected) return selected.result;
-      const preparation = selected.preparation;
-      const signal = AbortSignal.any([this.lifecycle.signal, preparation.controller.signal, ...(parentSignal ? [parentSignal] : [])]);
-      try {
-        const frame = await this.preparePrompt(preparation, signal);
-        const applied = await this.withLock(async (): Promise<{ result: T } | { retry: true }> => {
-          this.promptPreparations.delete(preparation);
-          if (signal.aborted) throw signal.reason;
-          if (this.state.seq !== preparation.seq) return { retry: true };
-          // 状态未变仍重做准入检查，避免停止或隔离后接收迟到的输入。
-          if (!needsPrompt()) return { retry: true };
-          // 编译完成且事实重验后固定准备能力及其输入。
-          const preparations = this.preparations.map(ref => {
-            this.camp.resolve(ref, INFERENCE_PREPARE);
-            const item = this.camp.list(INFERENCE_PREPARE).find(item => canonicalJson(item.ref) === canonicalJson(ref));
-            if (!item) throw new Error('Preparation capability is unavailable.');
-            return { ref, input: structuredClone(item.metadata.input), ...(item.metadata.order === undefined ? {} : { order: item.metadata.order }) };
-          }).sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || canonicalJson(a.ref).localeCompare(canonicalJson(b.ref)));
-          const preparedFrame = { ...frame, preparations };
-          return { result: await apply(preparedFrame) };
-        });
-        if ('result' in applied) return applied.result;
-      } catch (error) {
-        if (signal.aborted) {
-          if (parentSignal?.aborted) throw new ArcherError('ABORTED', '恢复准备已取消');
-          if (signal.reason === STALE_PROMPT || !inputRequest) continue;
-          if (signal.reason instanceof ArcherError) throw signal.reason;
-          throw new ArcherError('ABORTED', '输入准备已取消');
-        }
-        throw error;
-      } finally {
-        this.promptPreparations.delete(preparation);
-      }
-    }
-  }
-
-  /** 调用方可提前停止等待；实际准备工作仍跟踪到结束，保护租约与共享依赖。 */
-  private preparePrompt(preparation: PromptPreparation, signal: AbortSignal): Promise<PromptFrame> {
-    if (signal.aborted) return Promise.reject(signal.reason);
-    const task = this.promptFrame(preparation, signal);
-    this.preparationTasks.add(task);
-    void task.then(() => this.preparationTasks.delete(task), () => this.preparationTasks.delete(task));
-    return new Promise((resolve, reject) => {
-      const abort = () => reject(signal.reason);
-      signal.addEventListener('abort', abort, { once: true });
-      if (signal.aborted) abort();
-      void task.then(resolve, reject).finally(() => signal.removeEventListener('abort', abort));
-    });
-  }
-
-  /** 只使用捕获的会话快照编译工具，准备过程不持有提交锁。 */
-  private async promptFrame(preparation: PromptPreparation, signal: AbortSignal): Promise<PromptFrame> {
-    const check = () => { if (signal.aborted) throw signal.reason; };
-    check();
-    const snapshot = preparation.snapshot;
-    const tools = compileModelTools(this.camp);
-    check();
-    const frame = compileTurnPrompt({
-      instructions: snapshot.instructions,
-      workspace: snapshot.workspace,
-    });
-    check();
-    return { ...frame, tools, inference: this.inference };
-  }
-
-  // ─────────────────────────────────────────────
-  // 命令执行
+  // 命令执行与人工交互
   // ─────────────────────────────────────────────
 
   private runCommands(commands: readonly SessionCommand[]): void {
@@ -1010,7 +953,7 @@ export class SessionRuntime {
       if (this.stopping || this.faultData) {
         return [];
       }
-      return this.dispatch(command.effectId);
+      return dispatchEffect(this.dispatchHost, command.effectId);
     })
       .catch((error: unknown) => this.isolate(error))
       .finally(() => {
@@ -1033,7 +976,15 @@ export class SessionRuntime {
     this.requireWritable();
     const turn = activeTurnOf(this.state);
     const effect = turn && turn.effects.at(-1);
-    if (!turn || turn.turnId !== input.turnId || !effect || effect.effectId !== input.effectId || turn.pending?.kind !== kind) throw new ArcherError('CONFLICT', '待处理的 Turn 或 Effect 已经改变');
+    if (
+      !turn ||
+      turn.turnId !== input.turnId ||
+      !effect ||
+      effect.effectId !== input.effectId ||
+      turn.pending?.kind !== kind
+    ) {
+      throw new ArcherError('CONFLICT', '待处理的 Turn 或 Effect 已经改变');
+    }
     return effect;
   }
 
@@ -1043,7 +994,13 @@ export class SessionRuntime {
       const token = randomBytes(32).toString('hex');
       const now = this.clock();
       const expiresAt = now + SUSPEND_TTL_MS;
-      const decision = suspendEffectDecision(this.state, input.effectId, createHash('sha256').update(token).digest('hex'), expiresAt, { now });
+      const decision = suspendEffectDecision(
+        this.state,
+        input.effectId,
+        createHash('sha256').update(token).digest('hex'),
+        expiresAt,
+        { now },
+      );
       if (!decision.ok) throw decision.error;
       await this.commit(decision.value);
       return { ...input, token, expiresAt };
@@ -1056,8 +1013,22 @@ export class SessionRuntime {
       const now = this.clock();
       const expected = Buffer.from(effect.suspended?.resumeTokenHash ?? '', 'hex');
       const actual = createHash('sha256').update(input.token).digest();
-      if (!effect.suspended || effect.suspended.expiresAt === undefined || now >= effect.suspended.expiresAt || expected.length !== actual.length || !timingSafeEqual(expected, actual)) throw new ArcherError('CONFLICT', '人工凭证已过期或不匹配，请重新提交回答');
-      const decision = humanReplyDecision(this.state, input.effectId, input.approved, input.response, { ...this.decisionContext, now });
+      if (
+        !effect.suspended ||
+        effect.suspended.expiresAt === undefined ||
+        now >= effect.suspended.expiresAt ||
+        expected.length !== actual.length ||
+        !timingSafeEqual(expected, actual)
+      ) {
+        throw new ArcherError('CONFLICT', '人工凭证已过期或不匹配，请重新提交回答');
+      }
+      const decision = humanReplyDecision(
+        this.state,
+        input.effectId,
+        input.approved,
+        input.response,
+        { ...this.decisionContext, now },
+      );
       if (!decision.ok) throw decision.error;
       await this.commit(decision.value);
       return decision.value.commands;
@@ -1069,7 +1040,12 @@ export class SessionRuntime {
   async reconcile(input: ReconcileInput): Promise<void> {
     const commands = await this.withLock(async () => {
       this.pendingTarget(input, 'reconcile');
-      const decision = reconcileDecision(this.state, input.effectId, input.decision, this.decisionContext);
+      const decision = reconcileDecision(
+        this.state,
+        input.effectId,
+        input.decision,
+        this.decisionContext,
+      );
       if (!decision.ok) throw decision.error;
       await this.commit(decision.value);
       return decision.value.commands;
@@ -1081,11 +1057,24 @@ export class SessionRuntime {
     await this.withLock(async () => {
       if (!this.admitted || this.faultData || this.stopping || this.state.removed) return;
       const located = this.locateEffect(effectId);
-      if (!located || (located.effect.effect.type !== 'ASK_HUMAN' && !(located.effect.effect.type === 'CALL' && located.effect.effect.interaction === 'human')) || located.turn.cancel) return;
+      if (
+        !located ||
+        located.effect.effect.type !== 'CALL' ||
+        located.effect.effect.interaction !== 'human' ||
+        located.turn.cancel
+      ) {
+        return;
+      }
       const token = randomBytes(32);
       const hash = createHash('sha256').update(token).digest('hex');
       const now = this.clock();
-      const decision = suspendEffectDecision(this.state, effectId, hash, now + SUSPEND_TTL_MS, { now });
+      const decision = suspendEffectDecision(
+        this.state,
+        effectId,
+        hash,
+        now + SUSPEND_TTL_MS,
+        { now },
+      );
       if (!decision.ok) {
         if (decision.error.code === 'CONFLICT') return;
         throw decision.error;
@@ -1094,238 +1083,27 @@ export class SessionRuntime {
     });
   }
 
-  private async dispatch(effectId: string): Promise<SessionCommand[]> {
-    const plan = await this.withLock(async () => this.prepareDispatch(effectId));
-    if (!plan) return [];
-    try {
-      if (plan.effect.type === 'CALL' && plan.preflight) {
-        try {
-          validateInput(plan.preflight.metadata.inputSchema, plan.effect.input);
-        } catch (error) {
-          const parsed = KernelErrorSchema.safeParse(error);
-          plan.preflightError = parsed.success ? parsed.data : { code: 'PROVIDER_ERROR', message: error instanceof Error ? error.message : String(error) };
-        }
-        if (!await this.approveCommand(plan)) return [];
-      }
-      await this.perform(plan);
-      await this.maybeConsumeQueue();
-      return plan.commands;
-    } finally {
-      if (this.latestProgress?.effectId === plan.effectId && this.latestProgress.phase === 'generating') {
-        const effect = this.locateEffect(plan.effectId)?.effect;
-        this.publishProgress(plan, this.latestProgress, effect?.status === 'completed' ? 'settled' : 'interrupted');
-      }
-      plan.preflight?.release();
-      this.inFlight.delete(effectId);
-    }
-  }
-
-  /** 能力已固定到本次执行；这里只检查当前事实并提交命令等待。 */
-  private async approveCommand(plan: DispatchPlan): Promise<boolean> {
-    return this.withLock(async () => {
-      const located = this.locateEffect(plan.effectId);
-      if (!located || this.stopping || this.faultData || located.turn.cancel
-        || !['created', 'resumed'].includes(located.effect.status)) return false;
-      const { turn, effect } = located;
-      if (effect.effect.type === 'CALL' && !plan.preflightError && plan.preflight?.metadata.execution === 'shell'
-        && turn.allowShell && !effect.commandApproved && turn.commandMode !== 'full'
-        && !(turn.commandMode === 'auto' && automaticallyApproved(effect.effect.input, process.platform))) {
-        const now = this.clock();
-        const hash = createHash('sha256').update(randomBytes(32)).digest('hex');
-        const decision = suspendEffectDecision(this.state, plan.effectId, hash, now + SUSPEND_TTL_MS, { now });
-        if (!decision.ok) throw decision.error;
-        await this.commit(decision.value);
-        return false;
-      }
-      plan.authorizationRevision = this.state.executionRevision;
-      return true;
-    });
-  }
-
-  private async prepareDispatch(effectId: string): Promise<DispatchPlan | null> {
-    if (!this.admitted || this.faultData || this.stopping || this.state.removed) return null;
-    if (this.inFlight.has(effectId)) return null;
-
-    const located = this.locateEffect(effectId);
-    if (!located) return null;
-    const { turn, effect } = located;
-    if (turn.turnId !== this.state.activeTurnId) return null;
-    if (effect.status !== 'created' && effect.status !== 'resumed') return null;
-
-    let preflight: Preflight | null = null;
-    let preflightError: KernelError | null = null;
-    try {
-      if (effect.effect.type === 'CALL') {
-        const target = resolveCall(this.camp, effect.effect);
-        preflight = { ...target, release: this.camp.acquire() };
-      } else if (effect.effect.type === 'INFER') this.camp.resolve(effect.effect.target, INFERENCE);
-    } catch (error) {
-      if (error instanceof ArcherError && error.code === 'CAPABILITY_UNAVAILABLE') { this.blocked.add(effectId); return null; }
-      preflightError = { code: 'PROVIDER_ERROR', message: error instanceof Error ? error.message : String(error) };
-    }
-
-    this.blocked.delete(effectId);
-
-    const controller = new AbortController();
-    this.inFlight.set(effectId, { controller });
-
-    return {
-      effectId,
-      authorizationRevision: this.state.executionRevision,
-      turnId: turn.turnId,
-      effect: effect.effect,
-      preflight,
-      preflightError,
-      controller,
-      commands: [],
-    };
-  }
-
-  /** 包装器通过此端口在串行边界内提交开始与结果，始终只有一个日志写入方。 */
-  private executionJournal(plan: DispatchPlan) {
-    return {
-      begin: () => this.withLock(async () => {
-        if (!this.admitted || this.stopping || this.faultData || this.state.removed) return false;
-        // 授权在准入与开始提交之间改变时，重新准入尚未开始的操作。
-        if (plan.authorizationRevision !== this.state.executionRevision) {
-          plan.commands.push({ type: 'dispatch_effect', effectId: plan.effectId });
-          return false;
-        }
-        const decision = beginEffectDecision(this.state, plan.effectId, this.decisionContext);
-        if (!decision.ok) {
-          if (decision.error.code === 'CONFLICT') return false;
-          throw decision.error;
-        }
-        await this.commit(decision.value);
-        return true;
-      }),
-      complete: (outcome: SessionEffectOutcome) => this.withLock(async () => {
-        if (this.faultData) return;
-        const decision = effectOutcomeDecision(this.state, plan.effectId, outcome, this.decisionContext);
-        if (!decision.ok) {
-          if (decision.error.code === 'CONFLICT') return;
-          throw decision.error;
-        }
-        await this.commit(decision.value);
-        plan.commands.push(...decision.value.commands);
-      }),
-      suspend: () => this.suspend(plan.effectId),
-    };
-  }
-
-  /** 每个真实模型请求先提交实际输入，确认响应后再交回 Handler；提交异常不能被误归类。 */
-  private async executeModelRequest(plan: DispatchPlan, request: import('@archer/contracts').InferEffect,
-    purpose: 'agent' | 'compaction', execute: () => Promise<import('@archer/contracts').InferResult>) {
-    const commitFact = async (build: (builder: DraftBuilder) => void) => this.withLock(async () => {
-      if (this.faultData) throw new ExecutionCommitError(new ArcherError('CONFLICT', '会话已隔离，不能继续提交模型请求'));
-      const builder = new DraftBuilder(this.state);
-      build(builder);
-      try { await this.commit(builder.finish()); } catch (error) { throw new ExecutionCommitError(error); }
-    });
-    let requestId = '';
-    await commitFact(builder => {
-      const located = this.locateEffect(plan.effectId);
-      if (!located || located.effect.status !== 'started' || this.stopping || plan.controller.signal.aborted) throw new Error('模型请求已失效');
-      requestId = `${plan.effectId}:request:${located.effect.inferenceRequests.length + 1}`;
-      builder.turn(plan.turnId, { type: 'inference.requested', data: { effectId: plan.effectId, requestId, purpose, request, requestedAt: this.clock() } });
-    });
-    // 请求指纹关联 Provider 本次调用；requestId 仍是正式事实中的响应关联标识。
-    const diagnostics = channel('archer.stream');
-    if (diagnostics.hasSubscribers) diagnostics.publish({ stage: 'Request', agentId: this.id,
-      effectId: plan.effectId, requestId, purpose,
-      responseId: createHash('sha256').update(canonicalJson(JSON.parse(JSON.stringify(request)))).digest('hex').slice(0, 16), event: 'start' });
-    let result: import('@archer/contracts').InferResult;
-    try {
-      if (plan.controller.signal.aborted) throw new Error('Inference was cancelled before invocation.');
-      result = await execute();
-    } catch (error) {
-      // 停止时保留已开始且未确认的请求；不把未知用量记为零。
-      if (!this.stopping) await commitFact(builder => {
-        builder.turn(plan.turnId, { type: 'inference.request.failed', data: { effectId: plan.effectId, requestId,
-          error: { code: 'PROVIDER_ERROR', message: error instanceof Error ? error.message : String(error) }, failedAt: this.clock() } });
-      });
-      throw error;
-    }
-    await commitFact(builder => {
-      builder.turn(plan.turnId, { type: 'inference.responded', data: { effectId: plan.effectId, requestId, result, respondedAt: this.clock() } });
-    });
-    return { requestId, attempt: this.locateEffect(plan.effectId)!.effect.attempt, purpose, request, status: 'completed' as const, result };
-  }
-
-  /** 采用摘要只追加事实；摘要必须对应已经确认的模型响应。 */
-  private async commitCompaction(plan: DispatchPlan, requestId: string, coveredMessageCount: number) {
-    return this.withLock(async () => {
-      if (this.faultData || this.stopping || plan.controller.signal.aborted) throw new ArcherError('CONFLICT', '摘要准备已失效');
-      const effect = this.locateEffect(plan.effectId)?.effect;
-      const request = effect?.inferenceRequests.find(item => item.requestId === requestId);
-      if (!request?.result) throw new ArcherError('CONFLICT', '摘要响应尚未确认');
-      const existing = this.state.compactions.find(item => item.requestId === requestId);
-      if (existing) return existing;
-      const builder = new DraftBuilder(this.state);
-      builder.turn(plan.turnId, { type: 'context.compacted', data: { effectId: plan.effectId, requestId, coveredMessageCount, summary: request.result.content, compactedAt: this.clock() } });
-      try { await this.commit(builder.finish()); } catch (error) { throw new ExecutionCommitError(error); }
-      return this.state.compactions.at(-1)!;
-    });
-  }
-
-  private async perform(plan: DispatchPlan): Promise<SessionEffectOutcome | null> {
-    const effect = plan.effect;
-    const snapshot = committedHistory(this.state);
-    return this.effectPipeline(effect, {
-      history: snapshot.history,
-      executionFacts: snapshot.facts,
-      agentId: this.state.agentId,
-      turnId: plan.turnId,
-      effectId: plan.effectId,
-      tokenBudget: this.state.turns.get(plan.turnId)?.limits.tokenBudget,
-      inferenceHistory: this.state.turns.get(plan.turnId)?.effects.flatMap(item => item.inferenceRequests) ?? [],
-      effectRequests: this.locateEffect(plan.effectId)?.effect.inferenceRequests ?? [],
-      compactions: this.state.compactions,
-      executeInference: (request, purpose, execute) => this.executeModelRequest(plan, request, purpose, execute),
-      commitCompaction: (requestId, coveredMessageCount) => this.commitCompaction(plan, requestId, coveredMessageCount),
-      signal: plan.controller.signal,
-      now: this.clock,
-      inference: plan.effect.type === 'INFER' ? this.camp.resolve(plan.effect.target, INFERENCE) : this.camp.resolve(this.inference, INFERENCE),
-      onInferenceProgress: chunk => {
-        if (!plan.controller.signal.aborted && !this.stopping && !this.faultData) this.publishProgress(plan, chunk);
-      },
-      journal: this.executionJournal(plan),
-      allowShell: this.state.turns.get(plan.turnId)?.allowShell === true,
-      workspace: this.state.workspace,
-      files: this.state.workspace ? workspaceFiles(this.state.workspace, plan.controller.signal) : undefined,
-      prepare: async request => {
-        const implementation = this.camp.resolve(request.ref, INFERENCE_PREPARE);
-        const files = this.state.workspace ? workspaceFiles(this.state.workspace, plan.controller.signal) : undefined;
-        const value = await implementation.prepare(structuredClone(request.input), {
-          signal: plan.controller.signal, workspace: this.state.workspace,
-          inference: plan.effect.type === 'INFER' ? freezeSnapshot({ messages: plan.effect.messages, ...(plan.effect.config ? { config: plan.effect.config } : {}) }) : undefined,
-          files: files ? { ...files, write: async () => { throw new Error('Read-only preparation cannot write files.'); } } : undefined,
-        });
-        assertJsonValue(value, 'Preparation result');
-        return freezeSnapshot(value);
-      },
-      target: plan.preflight,
-      targetError: plan.preflightError,
-      isStopping: () => this.stopping,
-    });
-  }
-
   // ─────────────────────────────────────────────
   // 队列推进
   // ─────────────────────────────────────────────
 
   private async maybeConsumeQueue(): Promise<void> {
-    const commands = await this.withPreparedPrompt(() => {
-      if (!this.admitted || this.faultData || this.stopping || this.state.removed) return false;
-      return canConsumeQueuedInput(this.state);
-    }, async promptFrame => {
-      if (!this.admitted || this.faultData || this.stopping || this.state.removed) return [];
-      if (!promptFrame) return [];
-      const decision = consumeQueuedDecision(this.state, promptFrame, this.decisionContext);
-      if (!decision) return [];
-      await this.commit(decision);
-      return decision.commands;
-    }, false);
+    const commands = await withPreparedPrompt(
+      this.promptHost,
+      () => {
+        if (!this.admitted || this.faultData || this.stopping || this.state.removed) return false;
+        return canConsumeQueuedInput(this.state);
+      },
+      async (promptFrame) => {
+        if (!this.admitted || this.faultData || this.stopping || this.state.removed) return [];
+        if (!promptFrame) return [];
+        const decision = consumeQueuedDecision(this.state, promptFrame, this.decisionContext);
+        if (!decision) return [];
+        await this.commit(decision);
+        return decision.commands;
+      },
+      false,
+    );
     this.runCommands(commands);
   }
 }
