@@ -197,7 +197,7 @@ it('容量充足时增长触发仍生成并采用摘要，采用后未覆盖历�
   expect(adopted).toHaveLength(1);
   expect(requests).toHaveLength(2);
   expect(requests[1]!.messages[0]!).toMatchObject({ role: 'user' });
-  expect(requests[1]!.messages[0]!.content).toContain('"version":2');
+  expect(requests[1]!.messages[0]!.content).toContain('## Goal');
 });
 it('动态能力不支持计量时继续普通推理，不伪造窗口容量', async () => {
   const requests: InferEffect[] = [];
