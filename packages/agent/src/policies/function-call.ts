@@ -1,7 +1,7 @@
 import { cloneContextProfile, type InferConfig } from '@archer/contracts';
 import { completionReviewTarget } from '../completion.js';
 /** 默认会话 Agent 策略：模型协议、消息、计划与推理意图。 */
-import type { Effect, ActionPlan, Message, TurnTerminal, InferResult, InferenceTool, CallResult, ToolCall } from '@archer/contracts';
+import type { Effect, ActionPlan, Message, TurnTerminal, InferResult, InferenceTool, CallResult, CallBatchResult, ToolCall } from '@archer/contracts';
 import {
   formatObservation, formatObservationCancelled,
   TOOL_BATCH_REJECTION_LABEL, COMPLETION_REVIEW_LABEL, COMPLETION_REVIEW_NOTICE, EMPTY_RESPONSE_LABEL, EMPTY_RESPONSE_NOTICE, formatToolCallRejection, formatToolBatchRejection } from '../prompt/index.js';
@@ -183,29 +183,69 @@ function createInferEffect(
   });
   builder.commands.push({ type: 'dispatch_effect', effectId });
 }
+function isBatchableReadAction(action: ActionPlan): boolean {
+  return action.readOnly === true && !action.interaction;
+}
+
 function createActionEffect(
   builder: DraftBuilder,
   turn: SessionTurn,
-  action: ActionPlan,
+  actions: readonly ActionPlan[],
   index: number,
   ctx: SessionContext,
 ): void {
+  const first = actions[index]!;
   const effectId = effectIdFor(turn);
-  const effect: Effect = {
-    type: 'CALL',
-    target: action.target,
-    input: action.input,
-    toolCallId: action.toolCallId,
-    toolName: action.toolName,
-    ...(action.interaction ? { interaction: action.interaction } : {}),
-  };
+  let effect: Effect;
+  let idempotencyKey: string;
+
+  if (isBatchableReadAction(first)) {
+    const batch: ActionPlan[] = [first];
+    for (let cursor = index + 1; cursor < actions.length; cursor += 1) {
+      const candidate = actions[cursor]!;
+      if (!isBatchableReadAction(candidate)) break;
+      batch.push(candidate);
+    }
+    if (batch.length >= 2) {
+      effect = {
+        type: 'CALL_BATCH',
+        calls: batch.map(item => ({
+          target: item.target,
+          input: item.input,
+          toolCallId: item.toolCallId,
+          toolName: item.toolName,
+        })),
+      };
+      idempotencyKey = `${effectId}:batch:${index}:${batch.length}`;
+    } else {
+      effect = {
+        type: 'CALL',
+        target: first.target,
+        input: first.input,
+        toolCallId: first.toolCallId,
+        toolName: first.toolName,
+        ...(first.interaction ? { interaction: first.interaction } : {}),
+      };
+      idempotencyKey = `${effectId}:action:${index}:${first.kind}`;
+    }
+  } else {
+    effect = {
+      type: 'CALL',
+      target: first.target,
+      input: first.input,
+      toolCallId: first.toolCallId,
+      toolName: first.toolName,
+      ...(first.interaction ? { interaction: first.interaction } : {}),
+    };
+    idempotencyKey = `${effectId}:action:${index}:${first.kind}`;
+  }
 
   builder.turn(turn.turnId, {
     type: 'effect.created',
     data: {
       effectId,
       effect,
-      idempotencyKey: `${effectId}:action:${index}:${action.kind}`,
+      idempotencyKey,
       createdAt: ctx.now,
     },
   });
@@ -251,7 +291,7 @@ function continuePlan(
   }
 
   if (plan.nextIndex < plan.actions.length) {
-    createActionEffect(builder, turn, plan.actions[plan.nextIndex], plan.nextIndex, ctx);
+    createActionEffect(builder, turn, plan.actions, plan.nextIndex, ctx);
     return;
   }
 
@@ -344,7 +384,7 @@ function decide(state: SessionState, input: SessionPolicyInput, ctx: SessionCont
           continue;
         }
         const tool = tools.find(entry => entry.name === call.name)!;
-        actions.push({ kind: 'call', target: tool.target, input: tool.wrappedInput ? (call.input as import('@archer/contracts').JsonObject).input : call.input, toolCallId: call.id, toolName: call.name, ...(tool.interaction ? { interaction: tool.interaction } : {}) });
+        actions.push({ kind: 'call', target: tool.target, input: tool.wrappedInput ? (call.input as import('@archer/contracts').JsonObject).input : call.input, toolCallId: call.id, toolName: call.name, ...(tool.interaction ? { interaction: tool.interaction } : {}), ...(tool.readOnly ? { readOnly: true } : {}) });
       }
       if (representable) {
         builder.turn(turn.turnId, {
@@ -405,6 +445,39 @@ function decide(state: SessionState, input: SessionPolicyInput, ctx: SessionCont
         failTurn(builder, turn, { code: 'PERMISSION_DENIED', message: '用户拒绝了本次请求，剩余计划未执行。' }, ctx);
         return builder.finish();
       }
+    } else if (effect.effect.type === 'CALL_BATCH') {
+      const batchResult = outcome.result as CallBatchResult;
+      for (let i = 0; i < effect.effect.calls.length; i += 1) {
+        const call = effect.effect.calls[i]!;
+        const item = batchResult.results[i];
+        if (item?.status === 'completed') {
+          builder.turn(turn.turnId, {
+            type: 'message.appended',
+            data: {
+              message: {
+                role: 'tool',
+                content: toolResultContent(item.result),
+                ...(item.result.isError ? { isError: true } : {}),
+                toolCallId: call.toolCallId,
+                toolName: call.toolName,
+              },
+            },
+          });
+        } else {
+          builder.turn(turn.turnId, {
+            type: 'message.appended',
+            data: {
+              message: {
+                role: 'tool',
+                content: JSON.stringify({ outcome: 'failed', error: item?.error ?? { code: 'INTERNAL', message: 'Missing batch call result.' } }),
+                toolCallId: call.toolCallId,
+                toolName: call.toolName,
+                isError: true,
+              },
+            },
+          });
+        }
+      }
     }
 
     continuePlan(builder, turn.turnId, ctx);
@@ -417,6 +490,10 @@ function decide(state: SessionState, input: SessionPolicyInput, ctx: SessionCont
     }
     if (effect.effect.type === 'CALL') {
       builder.turn(turn.turnId, { type: 'message.appended', data: { message: { role: 'tool', content: JSON.stringify({ outcome: 'failed', error: outcome.error }), toolCallId: effect.effect.toolCallId, toolName: effect.effect.toolName, isError: true } } });
+    } else if (effect.effect.type === 'CALL_BATCH') {
+      for (const call of effect.effect.calls) {
+        builder.turn(turn.turnId, { type: 'message.appended', data: { message: { role: 'tool', content: JSON.stringify({ outcome: 'failed', error: outcome.error }), toolCallId: call.toolCallId, toolName: call.toolName, isError: true } } });
+      }
     }
   } else {
     addObservation(builder, turn.turnId, effect.effect.type.toLowerCase(), formatObservationCancelled(outcome.reason));

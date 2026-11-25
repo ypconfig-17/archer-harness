@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { InferenceToolSchema, ToolCallSchema } from './inference-tools.js';
 import { PreparationSchema, CapabilityRefSchema } from './provider.js';
 import { JsonValueSchema } from './json-schema.js';
+import { ErrorDataSchema } from './archer-error.js';
 import { InferConfigSchema, MessageSchema, TokenUsageSchema, ReasoningReplaySchema } from './message.js';
 import { ReasoningLevelSchema } from './reasoning.js';
 import { ContextStepKindSchema } from './context-profile.js';
@@ -46,9 +47,37 @@ export const CallResultSchema = z.object({
 });
 export type CallResult = z.infer<typeof CallResultSchema>;
 
+/** 并发只读批次中的单项调用 */
+export const CallBatchItemSchema = z.object({
+  target: CapabilityRefSchema,
+  input: JsonValueSchema,
+  toolCallId: z.string().optional(),
+  toolName: z.string().optional(),
+});
+export type CallBatchItem = z.infer<typeof CallBatchItemSchema>;
+
+/** 并发执行多个只读且非人工交互的能力调用 */
+export const CallBatchEffectSchema = z.object({
+  type: z.literal('CALL_BATCH'),
+  calls: z.array(CallBatchItemSchema).min(2),
+});
+export type CallBatchEffect = z.infer<typeof CallBatchEffectSchema>;
+
+export const CallBatchItemResultSchema = z.discriminatedUnion('status', [
+  z.object({ status: z.literal('completed'), result: CallResultSchema }),
+  z.object({ status: z.literal('failed'), error: ErrorDataSchema }),
+]);
+export type CallBatchItemResult = z.infer<typeof CallBatchItemResultSchema>;
+
+export const CallBatchResultSchema = z.object({
+  results: z.array(CallBatchItemResultSchema),
+});
+export type CallBatchResult = z.infer<typeof CallBatchResultSchema>;
+
 export const EffectSchema = z.discriminatedUnion('type', [
   InferEffectSchema,
   CallEffectSchema,
+  CallBatchEffectSchema,
 ]);
 
 export type InferEffect = z.infer<typeof InferEffectSchema>;
@@ -74,6 +103,7 @@ export type EffectStatus = z.infer<typeof EffectStatusSchema>;
 export const EFFECT_TYPES = [
   'INFER',
   'CALL',
+  'CALL_BATCH',
 ] as const;
 
 export const EffectTypeSchema = z.enum(EFFECT_TYPES);
@@ -135,6 +165,7 @@ export type InferResult = z.infer<typeof InferResultSchema>;
 export interface EffectResultMap {
   INFER: InferResult;
   CALL: CallResult;
+  CALL_BATCH: CallBatchResult;
 }
 
 /** 获取给定 Effect 的结果类型 */
@@ -144,4 +175,5 @@ export type EffectResult<E extends Effect> = EffectResultMap[E['type']];
 export const EFFECT_RESULT_SCHEMAS = {
   INFER: InferResultSchema,
   CALL: CallResultSchema,
+  CALL_BATCH: CallBatchResultSchema,
 } as const satisfies Record<EffectType, z.ZodType>;

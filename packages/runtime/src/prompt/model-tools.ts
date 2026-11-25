@@ -13,7 +13,7 @@ export function compileModelTools(camp: Camp): InferenceTool[] {
     tools.push({ name: nameFor(`${item.ref.providerId}_${item.ref.capabilityId}`), target: item.ref,
       description: item.metadata.description,
       parameters: wrapped ? { type: 'object', properties: { input: schema }, required: ['input'], additionalProperties: false } : schema,
-      ...(wrapped ? { wrappedInput: true } : {}), ...(item.metadata.interaction ? { interaction: item.metadata.interaction } : {}) });
+      ...(wrapped ? { wrappedInput: true } : {}), ...(item.metadata.interaction ? { interaction: item.metadata.interaction } : {}), ...(item.metadata.execution === 'read' ? { readOnly: true } : {}) });
   }
   for (const item of camp.list(SKILL)) {
     // 技能描述通常自带句号；避免拼接出重复标点，同时保持与后句的边界。
@@ -21,7 +21,8 @@ export function compileModelTools(camp: Camp): InferenceTool[] {
     const sentence = /[.!?]$/.test(description) ? description : `${description}.`;
     tools.push({ name: nameFor(`load_${item.metadata.name}`), target: item.ref,
       description: `Load guidance for ${item.metadata.name}: ${sentence} Guidance grants no additional permissions.`,
-      parameters: { type: 'object', properties: {}, additionalProperties: false } });
+      parameters: { type: 'object', properties: {}, additionalProperties: false },
+      readOnly: true });
   }
   if (tools.length > 256) throw new Error('Model tool projection exceeds 256 tools; narrow the Archer provider composition.');
   if (new Set(tools.map(tool => tool.name)).size !== tools.length) throw new Error('Model tool name collision.');

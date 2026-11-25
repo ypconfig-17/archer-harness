@@ -55,6 +55,9 @@ export interface DispatchPlan {
   effect: Effect;
   preflight: Preflight | null;
   preflightError: KernelError | null;
+  batchTargets?: readonly (EffectTarget | null)[];
+  batchErrors?: readonly (KernelError | null)[];
+  batchRelease?: () => void;
   controller: AbortController;
   commands: SessionCommand[];
 }

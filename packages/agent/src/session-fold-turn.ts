@@ -226,12 +226,16 @@ export function applyTurn(
         attempt: 0,
         createdAt: fact.data.createdAt,
       });
-      if (
-        turn.plan &&
-        turn.plan.nextIndex < turn.plan.actions.length &&
-        matchesAction(turn.plan.actions[turn.plan.nextIndex], fact.data.effect.type)
-      ) {
-        turn.plan.nextIndex += 1;
+      if (turn.plan && turn.plan.nextIndex < turn.plan.actions.length) {
+        if (fact.data.effect.type === 'CALL_BATCH') {
+          const count = fact.data.effect.calls.length;
+          const slice = turn.plan.actions.slice(turn.plan.nextIndex, turn.plan.nextIndex + count);
+          if (slice.length === count && slice.every((action) => action.kind === 'call')) {
+            turn.plan.nextIndex += count;
+          }
+        } else if (matchesAction(turn.plan.actions[turn.plan.nextIndex], fact.data.effect.type)) {
+          turn.plan.nextIndex += 1;
+        }
       }
       break;
     }
@@ -423,7 +427,7 @@ export function applyTurn(
         corrupt('操作尚未执行或人工回复未经恢复许可');
       }
       if (!validateEffectResult(effect.effect.type, fact.data.result).ok) corrupt('Effect 完成结果不符合协议');
-      if (effect.effect.type === 'INFER') {
+      if (effect.effect.type === 'INFER' && fact.data.effectType === 'INFER') {
         const confirmed = effect.inferenceRequests.find((item) => item.purpose === 'agent' && item.status === 'completed');
         if (!confirmed?.result || canonicalJson(confirmed.result) !== canonicalJson(fact.data.result)) {
           corrupt('INFER 完成必须复用已确认的普通模型响应');

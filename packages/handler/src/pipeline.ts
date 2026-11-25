@@ -12,13 +12,13 @@ import type { SessionEffectOutcome, SessionInferenceRequest, SessionCompaction }
 export type { EffectExecutionRecord } from '@archer/contracts';
 
 /** 当前允许通过管线执行的 Effect 类型；其余类型由 Runtime 直接拒绝或走等待 */
-export type DispatchedEffectType = 'INFER' | 'CALL';
+export type DispatchedEffectType = 'INFER' | 'CALL' | 'CALL_BATCH';
 
 /** 判断 Effect 是否通过 handler 管线执行 */
 export function isDispatchedEffect(
   effect: Effect,
 ): effect is Extract<Effect, { type: DispatchedEffectType }> {
-  return effect.type === 'CALL' || effect.type === 'INFER';
+  return effect.type === 'CALL' || effect.type === 'CALL_BATCH' || effect.type === 'INFER';
 }
 
 /** 本次 CALL 的固定 Provider 实现，函数仅存在于进程内。 */
@@ -67,6 +67,8 @@ export interface HandlerContext {
   readonly prepare: (request: Preparation) => Promise<JsonValue>;
   readonly target: EffectTarget | null;
   readonly targetError: KernelError | null;
+  readonly batchTargets?: readonly (EffectTarget | null)[];
+  readonly batchErrors?: readonly (KernelError | null)[];
   /**
    * Runtime 正在停止。停止期间的中止无法区分“未执行”与“已执行但结果未知”，
    * handler 返回 null 保留 started，交给恢复流程判定。

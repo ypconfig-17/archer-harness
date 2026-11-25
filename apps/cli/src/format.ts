@@ -39,6 +39,8 @@ function effectLabel(effect: Snapshot<Effect>): string {
       return '请求推理';
     case 'CALL':
       return `调用 ${`${effect.target.providerId}.${effect.target.capabilityId}`}`;
+    case 'CALL_BATCH':
+      return `并发只读调用（${effect.calls.length} 项）`;
   }
 }
 

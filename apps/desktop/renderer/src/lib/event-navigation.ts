@@ -42,7 +42,7 @@ export function eventNavigation(events: readonly TimelineEvent[], filter: EventF
       target: summary?.target,
       toolKey: entry?.effect?.type === 'CALL' ? JSON.stringify([entry.effect.target.providerId, entry.effect.target.capabilityId, entry.effect.target.contractId, entry.effect.target.revision]) : undefined,
       toolLabel,
-      tools: effectType === 'CALL',
+      tools: effectType === 'CALL' || effectType === 'CALL_BATCH',
       inference: effectType === 'INFER',
       failure: view.tone === 'error',
       attention: view.tone === 'error' || view.tone === 'warning',

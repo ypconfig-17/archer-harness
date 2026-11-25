@@ -33,7 +33,7 @@ import {
   type SessionState,
   type SessionTurn,
 } from '@archer/agent';
-import { ExecutionCommitError, type EffectHandler } from '@archer/handler';
+import { ExecutionCommitError, type EffectHandler, type EffectTarget } from '@archer/handler';
 import { workspaceFiles } from '@archer/providers';
 import { committedHistory } from './history.js';
 import { automaticallyApproved } from '../execution/command-approval.js';
@@ -111,6 +111,7 @@ export async function dispatchEffect(
       );
     }
     plan.preflight?.release();
+    plan.batchRelease?.();
     host.getInFlight().delete(effectId);
   }
 }
@@ -173,10 +174,41 @@ function prepareDispatch(host: DispatchHost, effectId: string): DispatchPlan | n
   const camp = host.getCamp();
   let preflight: Preflight | null = null;
   let preflightError: KernelError | null = null;
+  let batchTargets: (EffectTarget | null)[] | undefined;
+  let batchErrors: (KernelError | null)[] | undefined;
+  let batchRelease: (() => void) | undefined;
   try {
     if (effect.effect.type === 'CALL') {
       const target = resolveCall(camp, effect.effect);
       preflight = { ...target, release: camp.acquire() };
+    } else if (effect.effect.type === 'CALL_BATCH') {
+      batchTargets = [];
+      batchErrors = [];
+      const release = camp.acquire();
+      batchRelease = release;
+      try {
+        for (const item of effect.effect.calls) {
+          try {
+            const target = resolveCall(camp, { type: 'CALL', target: item.target, input: item.input });
+            batchTargets.push(target);
+            batchErrors.push(null);
+          } catch (error) {
+            if (error instanceof ArcherError && error.code === 'CAPABILITY_UNAVAILABLE') {
+              release();
+              host.getBlocked().add(effectId);
+              return null;
+            }
+            batchTargets.push(null);
+            batchErrors.push({
+              code: 'PROVIDER_ERROR',
+              message: error instanceof Error ? error.message : String(error),
+            });
+          }
+        }
+      } catch (error) {
+        release();
+        throw error;
+      }
     } else if (effect.effect.type === 'INFER') {
       camp.resolve(effect.effect.target, INFERENCE);
     }
@@ -203,6 +235,9 @@ function prepareDispatch(host: DispatchHost, effectId: string): DispatchPlan | n
     effect: effect.effect,
     preflight,
     preflightError,
+    ...(batchTargets ? { batchTargets } : {}),
+    ...(batchErrors ? { batchErrors } : {}),
+    ...(batchRelease ? { batchRelease } : {}),
     controller,
     commands: [],
   };
@@ -451,6 +486,8 @@ async function performPlan(
     },
     target: plan.preflight,
     targetError: plan.preflightError,
+    ...(plan.batchTargets ? { batchTargets: plan.batchTargets } : {}),
+    ...(plan.batchErrors ? { batchErrors: plan.batchErrors } : {}),
     isStopping: () => host.isStopping(),
   });
 }

@@ -69,6 +69,8 @@ function effectTarget(effect: Snapshot<Effect>): string {
       const command = string(record(effect.input).command);
       return command ? `$ ${command}` : capabilityLabel(effect.target);
     }
+    case 'CALL_BATCH':
+      return `${effect.calls.length} 项只读调用`;
     case 'INFER':
       return effect.config?.model ?? '默认模型';
   }
@@ -390,6 +392,9 @@ function turnPresentation(fact: TurnFact, turnId: string): EventPresentation {
           : truncate(data.result.content, 80) || '已完成';
       } else if (data.effectType === 'CALL') {
         summary = '已完成';
+      } else if (data.effectType === 'CALL_BATCH') {
+        const failed = data.result.results.filter(item => item.status === 'failed').length;
+        summary = failed > 0 ? `完成 ${data.result.results.length - failed} 项 · 失败 ${failed} 项` : `已完成 ${data.result.results.length} 项`;
       }
       return {
         title: unsuccessful ? resultState.label : '操作已完成',

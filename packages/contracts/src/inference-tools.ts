@@ -6,6 +6,7 @@ export const InferenceToolSchema = z.object({
   name: z.string().regex(/^[a-zA-Z0-9_-]+$/), target: CapabilityRefSchema,
   description: z.string(), parameters: z.record(z.string(), JsonValueSchema),
   interaction: z.literal('human').optional(), wrappedInput: z.boolean().optional(),
+  readOnly: z.boolean().optional(),
 }).strict();
 export type InferenceTool = z.infer<typeof InferenceToolSchema>;
 export const ToolCallSchema = z.object({ id: z.string().min(1), name: z.string().min(1), input: JsonValueSchema,

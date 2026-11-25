@@ -6,10 +6,10 @@ import { withJournal } from './journal.js';
 import { withAuthorization } from './authorization.js';
 import { withAudit } from './audit.js';
 import { executeInference } from './inference-pipeline.js';
-import { call } from './call.js';
+import { call, callBatch } from './call.js';
 
 export function createExecutionPipeline(onEffectExecuted?: (record: EffectExecutionRecord) => void): EffectHandler {
-  return createDispatcher({ INFER: executeInference, CALL: call }, [
+  return createDispatcher({ INFER: executeInference, CALL: call, CALL_BATCH: callBatch }, [
     withHumanInteraction,
     withJournal,
     withAuthorization,

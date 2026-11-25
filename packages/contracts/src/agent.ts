@@ -8,7 +8,7 @@ import { JsonValueSchema } from './json-schema.js';
 
 /** 回合内的一次动作计划 */
 export const ActionPlanSchema = z.discriminatedUnion('kind', [
-  z.strictObject({ kind: z.literal('call'), target: CapabilityRefSchema, input: JsonValueSchema, toolCallId: z.string(), toolName: z.string(), interaction: z.literal('human').optional() }),
+  z.strictObject({ kind: z.literal('call'), target: CapabilityRefSchema, input: JsonValueSchema, toolCallId: z.string(), toolName: z.string(), interaction: z.literal('human').optional(), readOnly: z.boolean().optional() }),
 ]);
 export type ActionPlan = z.infer<typeof ActionPlanSchema>;
 

@@ -37,6 +37,7 @@ export const MESSAGE_ROLE_LABELS = {
 export const EFFECT_TYPE_LABELS = {
   INFER: '模型推理',
   CALL: '能力调用',
+  CALL_BATCH: '并发只读调用',
 } as const satisfies Record<EffectType, string>;
 
 /** 命令授权同时包含开关与审批模式，界面只展示一个结论。 */

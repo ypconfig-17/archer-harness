@@ -14,6 +14,7 @@ import {
   InferResultSchema,
   InferEffectSchema,
   CallResultSchema,
+  CallBatchResultSchema,
 } from './effect.js';
 import { JsonObjectSchema } from './json-schema.js';
 import { type InferConfig, InferConfigSchema, MessageSchema, ImageBlockSchema, type Message } from './message.js';
@@ -416,6 +417,7 @@ export type AgentLifecycleFact = z.infer<typeof AgentLifecycleFactSchema>;
 
 const EffectCompletedDataSchema = z.discriminatedUnion('effectType', [
   z.object({ effectId: z.string(), effectType: z.literal('CALL'), result: CallResultSchema, durationMs: z.number().int().nonnegative(), finishedAt: z.number().int() }),
+  z.object({ effectId: z.string(), effectType: z.literal('CALL_BATCH'), result: CallBatchResultSchema, durationMs: z.number().int().nonnegative(), finishedAt: z.number().int() }),
   z.object({
     effectId: z.string(),
     effectType: z.literal('INFER'),
