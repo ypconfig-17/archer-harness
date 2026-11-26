@@ -57,7 +57,7 @@ Contract 声明版本、可序列化元数据和进程内接口。Provider 通�
 
 例如，本地技能 Provider 为每个技能声明一个 `Skill.load`，同时提供一个 `Tool.invoke` 读取参考资源。两种能力由同一个 Provider 提供，各自保留调用语义。 [本地技能 Provider 源码](packages/skills/src/index.ts#L90)
 
-![Archer 设置中的能力来源页，按 Provider 显示工具、技能、推理准备、推理和日志能力。](showcase/images/desktop-capability-sources.png)
+![Archer 设置中的能力来源页，按 Provider 显示工具、技能、子 Agent、推理准备、推理和日志能力。](showcase/images/desktop-capability-sources.png)
 
 桌面端「能力来源」展示宿主已接入的 Provider、能力类型和用途。
 
@@ -88,6 +88,8 @@ flowchart TD
 长会话中，桌面端「上下文」面板可实时查看每次请求的输入结构占比、Token 趋势和条目明细。超过工作区预算时，系统按预设策略自动整理旧工具输出与历史摘要，并将实际执行结果记录到会话事件中，原始事实仍完整保留在日志里。
 
 ![Archer 桌面端的上下文扫描视图，显示输入构成、Token 趋势与历史条目。](showcase/images/desktop-context.png)
+
+![Archer 设置中的上下文整理策略与水位预览。](showcase/images/desktop-context-settings.png)
 
 ## 从源码运行
 
