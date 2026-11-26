@@ -180,7 +180,7 @@ const BUILTIN_PROFILES: readonly ContextProfile[] = [
         kind: 'trim-tool-results',
         id: 'trim-tool-results',
         enabled: true,
-        params: { minSavingsRatio: 0.2 },
+        params: { minSavingsRatio: 0.12 },
       },
       {
         kind: 'compact',
@@ -208,7 +208,7 @@ const BUILTIN_PROFILES: readonly ContextProfile[] = [
         kind: 'trim-tool-results',
         id: 'trim-tool-results',
         enabled: true,
-        params: { minSavingsRatio: 0.25 },
+        params: { minSavingsRatio: 0.1 },
       },
       {
         kind: 'compact',
@@ -235,7 +235,7 @@ const BUILTIN_PROFILES: readonly ContextProfile[] = [
         kind: 'trim-tool-results',
         id: 'trim-tool-results',
         enabled: true,
-        params: { minSavingsRatio: 0.15 },
+        params: { minSavingsRatio: 0.08 },
       },
       {
         kind: 'compact',

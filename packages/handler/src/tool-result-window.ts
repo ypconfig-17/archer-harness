@@ -3,11 +3,11 @@ import type { InferEffect } from '@archer/contracts';
 import type { HandlerContext } from './pipeline.js';
 import { measureWindow } from './context-window.js';
 
-/** 收益按完整输入比较；单条正文最多保留 4096 个估算 token，且不超过有效工作区上限的四分之一，两者独立。 */
+/** 收益按完整输入比较；单条正文最多保留 2048 个估算 token，且不超过有效工作区上限的四分之一，两者独立。 */
 export function boundToolResults(
   effect: InferEffect,
   context: HandlerContext,
-  minSavingsRatio = 0.25,
+  minSavingsRatio = 0.1,
   targetWindowTokens?: number,
 ): InferEffect {
   const window = measureWindow(effect, context.inference);
@@ -20,7 +20,7 @@ export function boundToolResults(
     || !historyTool) return effect;
 
   const minimumSavings = Math.ceil(window.estimatedInputTokens * minSavingsRatio);
-  const excerptBudget = Math.min(4096, Math.floor(effectiveLimit / 4));
+  const excerptBudget = Math.min(2048, Math.floor(effectiveLimit / 4));
   let projected = effect;
   const allToolMessages = effect.messages
     .map((message, index) => ({ message, index }))
