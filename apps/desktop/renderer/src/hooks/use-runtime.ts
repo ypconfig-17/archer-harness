@@ -326,8 +326,8 @@ export function useAgentEvents(
   };
 }
 
-/** 临时推理快照独立订阅，不和 Agent 日志游标混用。 */
-export function useInferenceProgress(agentId: string, reconnectVersion: number) {
+/** 临时推理快照独立订阅，不和 Agent 日志游标混用；仅维护连接与按帧写入，不触发外层组件订阅。 */
+export function useInferenceProgress(agentId: string, reconnectVersion: number): void {
   const update = useProgress(state => state.update);
   const release = useProgress(state => state.release);
   useEffect(() => {
@@ -360,7 +360,6 @@ export function useInferenceProgress(agentId: string, reconnectVersion: number) 
       release(agentId);
     };
   }, [agentId, reconnectVersion, update, release]);
-  return useProgress(state => state.frames[agentId]);
 }
 
 function useInvalidatingMutation<TData, TVariables>(

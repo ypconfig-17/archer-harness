@@ -94,7 +94,7 @@ export function AgentDetail({
     ? { turnId: changesTurn.turnId, path: changesTurn.path }
     : undefined, [changesTurn, agentId]);
   const turnIndex = useAgentTurns(agentId);
-  const progress = useInferenceProgress(agentId, reconnectVersion);
+  useInferenceProgress(agentId, reconnectVersion);
   const streamError = useAgentStreamStore(s => s.errorsByAgent[agentId]);
   const send = useSendMessage(agentId);
   const steer = useSteerMessage(agentId);
@@ -457,11 +457,22 @@ export function AgentDetail({
       {/* 三页保持挂载，切换不丢失对话滚动位置、待提交输入或上下文选择。 */}
       <div className="conversation-view" id="center-panel-conversation" role="tabpanel"
         aria-labelledby="center-tab-conversation" hidden={centerView !== 'conversation'}>
+      <div className="chat-viewport">
       {turnEntries.length > 1 && <nav className="conversation-turn-rail" aria-label="对话快速定位">
         <ScrollArea className="conversation-turn-scroll"><div className="conversation-turn-marks">
-        {[...turnEntries].reverse().map((turn, index) => <Tooltip key={turn.id} label={`任务 ${turn.id.split(':t').at(-1)} · ${TURN_STATUS_LABELS[turn.status]}`}><Button variant="ghost" size="icon-xs"
-          aria-label={`跳到第 ${index + 1} 轮对话`} title={`任务 ${turn.id.split(':t').at(-1)} · ${TURN_STATUS_LABELS[turn.status]} · ${new Date(turn.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
-          disabled={locating !== null} onClick={() => void jumpToTurn(turn)}><span /></Button></Tooltip>)}
+        {[...turnEntries].reverse().map((turn, index) => {
+          const statusClass = turn.status === 'running'
+            ? 'is-running'
+            : turn.status === 'failed'
+              ? 'is-failed'
+              : turn.status === 'waiting'
+                ? 'is-waiting'
+                : '';
+          return <Tooltip key={turn.id} label={`任务 ${turn.id.split(':t').at(-1)} · ${TURN_STATUS_LABELS[turn.status]}`}><Button variant="ghost" size="icon-xs"
+            className={statusClass}
+            aria-label={`跳到第 ${index + 1} 轮对话`} title={`任务 ${turn.id.split(':t').at(-1)} · ${TURN_STATUS_LABELS[turn.status]} · ${new Date(turn.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+            disabled={locating !== null} onClick={() => void jumpToTurn(turn)}><span /></Button></Tooltip>;
+        })}
         </div></ScrollArea>
       </nav>}
       <div className="chat-scroll" ref={scroll} tabIndex={0} aria-label="对话记录" onWheel={event => {
@@ -497,7 +508,7 @@ export function AgentDetail({
             executionPaused={state.execution !== 'ready'}
             events={events}
             active={Boolean(active)}
-            progress={progress}
+            agentId={agentId}
             pendingInteraction={active?.pending && approvedPending !== `${active.turnId}:${active.pending.effectId}` ? {
               turnId: active.turnId, effectId: active.pending.effectId,
               content: <PendingInteraction key={`${active.turnId}:${active.pending.effectId}`} agentId={agentId} turn={active} events={events} workspacePath={state.workspace?.cwd} />,
@@ -510,6 +521,7 @@ export function AgentDetail({
         setAwayFromLatest(false);
         scroll.current?.scrollTo({ top: scroll.current.scrollHeight, behavior: 'smooth' });
       }}><Icon name="arrow-down" size="sm" />回到最新</Button>}
+      </div>
       <div className="composer-dock"><div className="conversation-width">
           <CurrentPlan events={events} turnId={active?.turnId} />
           {state.execution === 'blocked' && <div className="warning-banner" role="status">原执行能力暂不可用，或需要处理未确认的结果。请由宿主核查 Provider 配置与来源身份。</div>}

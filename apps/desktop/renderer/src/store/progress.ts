@@ -24,3 +24,11 @@ export const useProgress = create<ProgressState>(set => ({
     return { frames };
   }),
 }));
+
+/** 叶节点按 effectId 精确订阅临时推理快照，避免单帧增量触发整棵会话树重渲染。 */
+export function useEffectProgress(
+  agentId: string | undefined,
+  effectId: string | undefined,
+): Snapshot<InferenceProgress> | undefined {
+  return useProgress(state => (agentId && effectId ? state.frames[agentId]?.[effectId] : undefined));
+}

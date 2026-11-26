@@ -196,14 +196,18 @@
 .conversation-column {
   position: relative;
 }
+/* 悬浮在滚动视口底部上方，避免插入文档流引起阅读内容跳动。 */
 .jump-latest {
-  align-self: center;
+  position: absolute;
+  left: 50%;
+  bottom: var(--space-3);
+  z-index: 3;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   gap: var(--space-2);
   min-height: var(--control-height);
   padding: var(--space-1) var(--space-3);
-  margin: var(--space-2) 0;
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-panel);
   box-shadow: var(--shadow-popover);

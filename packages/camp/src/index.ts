@@ -4,6 +4,7 @@ import { ArcherError, assertJsonValue, canonicalJson, JsonObjectSchema, JsonValu
 import type { Camp, Contract, Contribution, Provider, ProviderDefinition, CapabilityRef, CapabilityDescriptor, JsonObject,
   Tool, ToolMetadata, Skill, SkillMetadata, Inference, AgentJournal, InferencePrepare, PrepareMetadata } from '@archer/contracts';
 export type { Camp, Contract, Contribution, Provider, ProviderDefinition, CapabilityRef } from '@archer/contracts';
+export { scopeCamp, type CampScopePolicy } from './scope.js';
 
 /** 固定契约声明，避免注册后修改接口方法清单。 */
 export function contract<I, M extends object>(

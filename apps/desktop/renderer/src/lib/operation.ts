@@ -37,6 +37,12 @@ export function operationState(entry: EffectEntry): { label: string; tone: 'runn
     const command = commandResult(entry);
     if (command && command.exitCode !== 0) return { label: '命令失败', tone: 'error', detail: `退出码 ${command.exitCode}` };
     if (end.data.effectType === 'CALL' && end.data.result.isError) return { label: '操作未成功', tone: 'error' };
+    if (end.data.effectType === 'CALL_BATCH') {
+      const failed = end.data.result.results.filter(
+        item => item.status === 'failed' || (item.status === 'completed' && item.result.isError),
+      ).length;
+      if (failed > 0) return { label: `部分失败（${failed}/${end.data.result.results.length}）`, tone: 'error' };
+    }
     return { label: '已完成', tone: 'ok' };
   }
   if (entry.suspendedReason) return { label: entry.effect?.type === 'CALL' && entry.effect.interaction !== 'human' ? '等待审批' : '等待回答', tone: 'warning', detail: entry.suspendedReason };
@@ -45,7 +51,18 @@ export function operationState(entry: EffectEntry): { label: string; tone: 'runn
 export function operationSummary(entry: EffectEntry): { title: string; target: string; detail?: string } {
   const effect = entry.effect;
   if (!effect) return { title: entry.effectType ?? '操作', target: '' };
-  if (effect.type === 'ASK_HUMAN') return { title: '询问', target: effect.reason };
+  if (effect.type === 'CALL_BATCH') {
+    const labels = effect.calls.slice(0, 3).map((item) => {
+      const itemPayload = record(item.input);
+      return string(itemPayload.path) ?? string(itemPayload.pattern) ?? string(itemPayload.task) ?? capabilityLabel(item.target);
+    });
+    const suffix = effect.calls.length > 3 ? ` 等 ${effect.calls.length} 项` : '';
+    return {
+      title: '并发只读调用',
+      target: `${labels.join('、')}${suffix}`,
+      detail: `共 ${effect.calls.length} 项`,
+    };
+  }
   if (effect.type !== 'CALL') return { title: effect.type, target: '' };
   const payload = record(effect.input);
   const metadata = resultMetadata(entry);
@@ -54,6 +71,14 @@ export function operationSummary(entry: EffectEntry): { title: string; target: s
   // 命令载荷本身只表明执行意图，不据此宣称成功或推测能力权限。
   if (typeof payload.command === 'string') return { title: '执行命令', target: payload.command, detail: string(payload.cwd) };
   const name = effect.target.capabilityId;
+  if (name === 'delegate') {
+    const task = string(payload.task) ?? capabilityLabel(effect.target);
+    const completedValue = entry.end?.type === 'effect.completed' && entry.end.data.effectType === 'CALL'
+      ? record(entry.end.data.result.value)
+      : {};
+    const childId = string(completedValue.agentId);
+    return { title: '子 Agent 任务', target: task, ...(childId ? { detail: `子会话 ${childId}` } : {}) };
+  }
   const path = string(payload.path) ?? capabilityLabel(effect.target);
   if (name === 'read') {
     const read = record(metadata.read);
@@ -71,6 +96,7 @@ export function operationSummary(entry: EffectEntry): { title: string; target: s
 /** 工具活动分类只用于折叠行摘要，不改变单次调用的事实或状态。 */
 export type OperationCategory = 'read' | 'write' | 'command' | 'other';
 export function operationCategory(entry: EffectEntry): OperationCategory {
+  if (entry.effect?.type === 'CALL_BATCH' || entry.effectType === 'CALL_BATCH') return 'read';
   const title = operationSummary(entry).title;
   if (['读取文件', '搜索内容', '查找文件', '浏览目录'].includes(title)) return 'read';
   if (['写入文件', '编辑文件'].includes(title)) return 'write';
@@ -90,6 +116,7 @@ export function operationDisplay(entry: EffectEntry) {
   const summary = operationSummary(entry);
   const icons = {
     '浏览目录': 'folder', '搜索内容': 'search', '查找文件': 'search',
+    '并发只读调用': 'search', '子 Agent 任务': 'spark',
     '执行命令': 'terminal', '编辑文件': 'pencil', '写入文件': 'pencil',
   } as const;
   const icon: IconName = entry.effectType === 'INFER' ? 'spark'

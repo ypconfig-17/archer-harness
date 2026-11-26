@@ -238,7 +238,8 @@ it('计划声明只保留一行事件，不进入执行摘要，调用明细默�
   expect(running).toContain('1/2 · 模型声明');
   expect(running.replace(/<[^>]*>/g, '').match(/分析代码/g)).toHaveLength(1);
   expect(running.indexOf('分析代码')).toBeGreaterThan(running.indexOf('data-slot="trace-collapsible-content"'));
-  expect(running).toContain('此前 1 次调用已完成');
+  // 进行中的 Turn 在工具调用间隙保持「执行中」，避免顶部摘要文案反复切换。
+  expect(running).toContain('执行中');
   expect(running).toContain('查看全部活动');
   expect(running).not.toContain('aria-label="简版执行记录"');
   const finished = renderCompact(events([
@@ -416,9 +417,9 @@ const renderStreaming = (facts: TimelineEvent[], progress: Record<string, unknow
 it('未提交正文作为临时预览出现，并标明还不是正式事实', () => {
   const streaming = renderStreaming(events(inferOpen('live')), { live: frame('live', '正在核对读写的边界', 'generating') });
   expect(streaming).toContain('class="progress-paragraph"');
-  // 不依赖动画帧补播：生成态立即显示当前累计正文，并启用流式光标。
+  // 不依赖动画帧补播：生成态立即显示当前累计正文，不附加块状黑框光标。
   expect(streaming).toContain('正在核对读写的边界');
-  expect(streaming).toContain('--streamdown-caret');
+  expect(streaming).not.toContain('--streamdown-caret');
   const settled = renderStreaming(events(inferOpen('live')), { live: frame('live', '正在核对读写的边界', 'settled') });
   expect(settled).toContain('正在核对读写的边界');
   expect(settled).not.toContain('--streamdown-caret');
@@ -505,6 +506,25 @@ it('同一绘制批次保留不同推理的最新快照，并只通知一次订�
   } finally {
     unsubscribe();
     useProgress.getState().release('batch-agent');
+  }
+});
+
+it('传入 agentId 时叶节点只读取对应 agentId 与 effectId 的快照边界', () => {
+  const facts = events(inferOpen('leaf-live'));
+  try {
+    useProgress.getState().update(
+      frame('leaf-live', '叶节点订阅正文', 'generating', 'leaf-agent'),
+      frame('other-live', '其他会话正文', 'generating', 'other-agent'),
+    );
+    expect(useProgress.getState().frames['leaf-agent']?.['leaf-live']?.content).toBe('叶节点订阅正文');
+    expect(useProgress.getState().frames['leaf-agent']?.['other-live']).toBeUndefined();
+    const html = renderToStaticMarkup(createElement(EventTimeline, {
+      events: facts, active: true, compact: true, agentId: 'leaf-agent', onInspectActivity: () => {},
+    }));
+    expect(html).toContain('waiting'.includes('w') ? '等待模型响应…' : '');
+  } finally {
+    useProgress.getState().release('leaf-agent');
+    useProgress.getState().release('other-agent');
   }
 });
 

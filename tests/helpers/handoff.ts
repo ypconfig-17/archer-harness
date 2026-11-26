@@ -1,10 +1,18 @@
-/** 合法交接 fixture 绑定实际摘要源快照，不伪造质量评测结论。 */
+/** 合法 Markdown 交接 fixture，用于验证摘要边界、预算与连续继承。 */
 import type { InferEffect, Message } from '@archer/contracts';
+
 export function handoffFor(effect: InferEffect, text = 'Observed evidence; continue checking.') {
   const input = JSON.parse(effect.messages[1]!.content) as { sourceStart: number; messages: Message[] };
-  const index = input.messages.findIndex(message => message.content.length > 0);
-  return JSON.stringify({ version: 2,
-    findings: index < 0 ? [] : [{ text, evidence: [{ messageIndex: input.sourceStart + index, quote: input.messages[index]!.content.slice(0, 32) }] }],
-    hypotheses: index < 0 ? ['Source contains no textual evidence.'] : [], rejectedApproaches: [], decisions: [], blockers: [], nextActions: [],
-  });
+  const sample = input.messages.find(message => message.content.length > 0)?.content.slice(0, 32) ?? 'No textual snippet';
+  return [
+    '## Goal',
+    'Continue the active task while preserving original user constraints.',
+    '',
+    '## Progress',
+    `### Done`,
+    `- [x] ${text} (ref: ${sample})`,
+    '',
+    '## Next Steps',
+    '- Proceed with remaining verification.',
+  ].join('\n');
 }

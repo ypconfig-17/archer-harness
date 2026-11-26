@@ -8,11 +8,17 @@
  *   - 不提供文件系统、进程或网络隔离。
  */
 
-import { exec } from 'node:child_process';
+import { exec, execFile } from 'node:child_process';
 import { realpathSync, statSync } from 'node:fs';
 import * as path from 'node:path';
 import type { JsonValue, SchemaDescriptor } from '@archer/contracts';
 import { OperationRejected } from '@archer/contracts';
+import {
+  buildShellEnv,
+  resolveSandboxedExec,
+  type ShellEnvMode,
+  type ShellSandboxOptions,
+} from './shell-sandbox.js';
 import {
   SHELL_CANCELLED_OR_TIMEOUT,
   SHELL_COMMAND_EMPTY,
@@ -34,6 +40,12 @@ export interface ShellProviderOptions {
   maxBuffer?: number;
   /** 覆盖继承的宿主进程环境变量 */
   env?: NodeJS.ProcessEnv;
+  /** 环境变量透传模式；开启 OS 沙箱时默认 `'minimal'`，否则默认 `'inherit'` */
+  envMode?: ShellEnvMode;
+  /** 在 `'minimal'` 模式下额外允许从宿主继承的环境变量名 */
+  allowEnv?: readonly string[];
+  /** 可选 OS 级沙箱配置 */
+  sandbox?: ShellSandboxOptions;
 }
 
 interface ShellPayload {
@@ -75,6 +87,9 @@ export class ShellProvider {
   private readonly defaultTimeoutMs: number;
   private readonly maxBuffer: number;
   private readonly extraEnv: NodeJS.ProcessEnv;
+  private readonly envMode: ShellEnvMode;
+  private readonly allowEnv: readonly string[];
+  private readonly sandbox: ShellSandboxOptions;
 
   constructor(rootDir: string, options: ShellProviderOptions = {}) {
     if (!path.isAbsolute(rootDir)) {
@@ -87,6 +102,9 @@ export class ShellProvider {
     this.defaultTimeoutMs = options.timeoutMs ?? 30_000;
     this.maxBuffer = options.maxBuffer ?? 10 * 1024 * 1024;
     this.extraEnv = options.env ?? {};
+    this.sandbox = options.sandbox ?? {};
+    this.envMode = options.envMode ?? (this.sandbox.mode === 'os' ? 'minimal' : 'inherit');
+    this.allowEnv = options.allowEnv ?? [];
   }
 
   /** 提供给 Tool Contract 的载荷 schema */
@@ -95,10 +113,7 @@ export class ShellProvider {
   }
 
   private environment(): NodeJS.ProcessEnv {
-    return {
-      ...process.env,
-      ...this.extraEnv,
-    };
+    return buildShellEnv(process.env, this.extraEnv, this.envMode, this.allowEnv);
   }
 
   async execute(input: unknown, signal: AbortSignal): Promise<JsonValue> {
@@ -135,6 +150,7 @@ export class ShellProvider {
       1,
       Math.min(payload.timeout ?? this.defaultTimeoutMs, 5 * 60 * 1000),
     );
+    const sandboxed = resolveSandboxedExec(payload.command, this.rootDir, this.sandbox);
 
     const result = await new Promise<{
       stdout: string;
@@ -143,58 +159,65 @@ export class ShellProvider {
       killed: boolean;
       spawnError: string | null;
     }>((resolve) => {
-      exec(
-        payload.command,
-        {
-          cwd,
-          timeout,
-          maxBuffer: this.maxBuffer,
-          env: this.environment(),
-          signal,
-        },
-        (error, stdout, stderr) => {
-          const execError = error as
-            | (Error & { code?: number | string; killed?: boolean })
-            | null;
-          if (execError && execError.killed) {
-            resolve({
-              stdout: stdout ?? '',
-              stderr: stderr ?? '',
-              exitCode: 124,
-              killed: true,
-              spawnError: null,
-            });
-            return;
-          }
-          if (execError && typeof execError.code === 'number') {
-            resolve({
-              stdout: stdout ?? '',
-              stderr: stderr ?? '',
-              exitCode: execError.code,
-              killed: false,
-              spawnError: null,
-            });
-            return;
-          }
-          if (execError) {
-            resolve({
-              stdout: stdout ?? '',
-              stderr: stderr ?? '',
-              exitCode: 1,
-              killed: false,
-              spawnError: execError.message,
-            });
-            return;
-          }
+      const execOptions = {
+        cwd,
+        timeout,
+        maxBuffer: this.maxBuffer,
+        env: this.environment(),
+        signal,
+      };
+      const handleCallback = (
+        error: Error | null,
+        stdout: string,
+        stderr: string,
+      ) => {
+        const execError = error as
+          | (Error & { code?: number | string; killed?: boolean })
+          | null;
+        if (execError && execError.killed) {
           resolve({
             stdout: stdout ?? '',
             stderr: stderr ?? '',
-            exitCode: 0,
+            exitCode: 124,
+            killed: true,
+            spawnError: null,
+          });
+          return;
+        }
+        if (execError && typeof execError.code === 'number') {
+          resolve({
+            stdout: stdout ?? '',
+            stderr: stderr ?? '',
+            exitCode: execError.code,
             killed: false,
             spawnError: null,
           });
-        },
-      );
+          return;
+        }
+        if (execError) {
+          resolve({
+            stdout: stdout ?? '',
+            stderr: stderr ?? '',
+            exitCode: 1,
+            killed: false,
+            spawnError: execError.message,
+          });
+          return;
+        }
+        resolve({
+          stdout: stdout ?? '',
+          stderr: stderr ?? '',
+          exitCode: 0,
+          killed: false,
+          spawnError: null,
+        });
+      };
+
+      if (sandboxed) {
+        execFile(sandboxed.file, sandboxed.args, execOptions, handleCallback);
+      } else {
+        exec(payload.command, execOptions, handleCallback);
+      }
     });
 
     if (result.killed) {

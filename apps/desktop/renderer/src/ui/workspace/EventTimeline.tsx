@@ -14,6 +14,7 @@ import type { InferenceProgress, Snapshot } from '@archer/contracts';
 /** 正式消息来自已提交事实，生成中的正文使用独立的临时预览。 */
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 import { ElapsedTime } from './ElapsedTime';
+import { useEffectProgress } from '../../store/progress';
 
 import { AppliedChange, OutputBlock } from './ToolOutput';
 import { InspectChanges, TaskInsights } from './TaskInsights';
@@ -57,8 +58,18 @@ function AgentHeader({ startedAt }: { startedAt?: number }) {
   );
 }
 
+/** 优先使用显式注入的测试进度；生产环境只按 effectId 订阅叶节点快照。 */
+function useInferenceFrame(
+  agentId: string | undefined,
+  effectId: string | undefined,
+  progress?: Record<string, Snapshot<InferenceProgress>>,
+): Snapshot<InferenceProgress> | undefined {
+  const live = useEffectProgress(progress ? undefined : agentId, effectId);
+  return progress ? (effectId ? progress[effectId] : undefined) : live;
+}
+
 export function EventTimeline({
-  events, active, progress, onInspectChanges, cancellingTurnId, executionPaused = false, pendingInteraction, compact = false, onInspectActivity, onInspectInvocation, displayTime,
+  events, active, agentId, progress, onInspectChanges, cancellingTurnId, executionPaused = false, pendingInteraction, compact = false, onInspectActivity, onInspectInvocation, displayTime,
 }: {
   /** 固定预览可显式注入展示时钟，正式页面省略后按本机时间更新。 */
   displayTime?: number;
@@ -71,6 +82,7 @@ export function EventTimeline({
   onInspectChanges?(turnId: string, path?: string): void;
   events: readonly TimelineEvent[];
   active: boolean;
+  agentId?: string;
   progress?: Record<string, Snapshot<InferenceProgress>>;
 }) {
   const items = useMemo(() => buildItems(events), [events]);
@@ -123,7 +135,7 @@ export function EventTimeline({
             {compact && group.items.some(item => item.kind === 'activity') && (
               <ActivityFlow compact onInspectActivity={onInspectActivity}
                 items={sections.flatMap(section => section.kind === 'activity' && section.turnId === group.id ? section.items : [])}
-                turn={turns.get(group.id)} progress={progress} />
+                turn={turns.get(group.id)} />
             )}
           </div>
         )}
@@ -131,8 +143,8 @@ export function EventTimeline({
     if (item.kind === 'activity') {
       // 累计摘要只出现一次；活动仍在原发生处呈现，不能搬到人工交互之前。
       return <div key={item.seq}>
-        {compact ? <ConversationActivity turnId={item.turnId} onInspectInvocation={onInspectInvocation} items={item.items} turn={turns.get(item.turnId)} progress={progress} />
-          : <ActivityFlow items={item.items} turn={turns.get(item.turnId)} progress={progress} />}
+        {compact ? <ConversationActivity turnId={item.turnId} onInspectInvocation={onInspectInvocation} items={item.items} turn={turns.get(item.turnId)} agentId={agentId} progress={progress} />
+          : <ActivityFlow items={item.items} turn={turns.get(item.turnId)} agentId={agentId} progress={progress} />}
       </div>;
     }
     if (item.kind === 'user') return <Message role="user" key={item.seq}
@@ -174,7 +186,7 @@ export function EventTimeline({
     const pending = pendingInteraction?.turnId === item.turnId && pendingInteraction.effectId === entry.effectId;
     if (pending) return <div className="timeline-interaction" key={item.seq}>{pendingInteraction.content}</div>;
     if (entry.effectType === 'INFER') return <div className="timeline-operation" key={item.seq}>
-      <ProcessNote entry={entry} progress={progress} final={turn?.finalEffectId === entry.effectId} />
+      <ProcessNote entry={entry} agentId={agentId} progress={progress} final={turn?.finalEffectId === entry.effectId} />
       <OperationCard entry={entry} />
     </div>;
     const plan = plans.get(entry.effectId);
@@ -187,7 +199,7 @@ export function EventTimeline({
   })}
         {/* 阶段提示属于当前工作轮，避免落在整轮外侧叠加底部留白。 */}
         {index === groups.length - 1 && active && currentTurn?.endedAt === undefined && !pendingInteraction && (
-          <ExecutionStatus entries={currentEntries} progress={progress}
+          <ExecutionStatus entries={currentEntries} agentId={agentId} progress={progress}
             cancelling={Boolean(cancellingTurnId)} paused={executionPaused} />
         )}
       </AgentTurn>
@@ -201,44 +213,68 @@ export function EventTimeline({
   </div></InspectChanges.Provider></TimelineClock.Provider>;
 }
 
+/** 未提交的在途推理片段单独订阅自身 effectId，避免正文流式帧触发已提交段落与工具组重渲染。 */
+function StreamingWorkSegment({ entry, calls, agentId, progress, turnId, onInspectInvocation }: {
+  entry: EffectEntry;
+  calls: EffectEntry[];
+  agentId?: string;
+  progress?: Record<string, Snapshot<InferenceProgress>>;
+  turnId: string;
+  onInspectInvocation?(key: string): void;
+}) {
+  const frame = useInferenceFrame(agentId, entry.effectId, progress);
+  const content = inferenceContent(entry, frame);
+  if (!content.text && !calls.length) return null;
+  const streaming = !content.result && frame?.phase === 'generating';
+  const preview = content.result || !frame ? undefined : previewState(frame);
+  return (
+    <section className={`conversation-work-segment${content.text ? ' has-prose' : ''}`}>
+      {content.text && <ProgressParagraph text={content.text} preview={preview} streaming={streaming} effectId={entry.effectId} />}
+      {calls.length > 0 && <ActivityGroup entries={calls} onInspect={onInspectInvocation ? effectId => onInspectInvocation(`${turnId}/${effectId}`) : undefined} />}
+    </section>
+  );
+}
+
 /** 公开文本划定阅读段落；推理不充当反馈，也不跨越段落聚合工具。 */
-function ConversationActivity({ items, turn, progress, onInspectInvocation, turnId }: {
+function ConversationActivity({ items, turn, agentId, progress, onInspectInvocation, turnId }: {
   turnId: string;
   onInspectInvocation?(key: string): void;
   items: readonly ActivityItem[];
   turn?: TurnPresentation;
+  agentId?: string;
   progress?: Record<string, Snapshot<InferenceProgress>>;
 }) {
-  const blocks: { key: string; text?: string; preview?: string; streaming?: boolean; calls: EffectEntry[] }[] = [];
+  type ActivityBlock =
+    | { kind: 'static'; key: string; text?: string; calls: EffectEntry[] }
+    | { kind: 'open-infer'; key: string; entry: EffectEntry; calls: EffectEntry[] };
+  const blocks: ActivityBlock[] = [];
   for (const item of items) {
     if (item.kind !== 'effect') continue;
     if (item.entry.effectType === 'INFER') {
-      const frame = progress?.[item.entry.effectId];
-      const content = inferenceContent(item.entry, frame);
-      if (item.entry.effectId !== turn?.finalEffectId && content.text) {
-        // 未提交的临时流只作为当前正文位置的预览，必须标明它还不是正式事实。
-        blocks.push({
-          key: item.entry.effectId,
-          text: content.text,
-          // 只有仍在生成且尚未提交的正文使用流式模式，终态事实优先。
-          streaming: !content.result && frame?.phase === 'generating',
-          ...(content.result || !frame ? {} : { preview: previewState(frame) }),
-          calls: [],
-        });
+      if (item.entry.effectId === turn?.finalEffectId) continue;
+      if (!item.entry.end) {
+        blocks.push({ kind: 'open-infer', key: item.entry.effectId, entry: item.entry, calls: [] });
+        continue;
+      }
+      const content = inferenceContent(item.entry);
+      if (content.text) {
+        blocks.push({ kind: 'static', key: item.entry.effectId, text: content.text, calls: [] });
       }
       continue;
     }
     let block = blocks.at(-1);
     if (!block) {
-      block = { key: item.entry.effectId, calls: [] };
+      block = { kind: 'static', key: item.entry.effectId, calls: [] };
       blocks.push(block);
     }
     block.calls.push(item.entry);
   }
-  return <>{blocks.map(block => <section className={`conversation-work-segment${block.text ? ' has-prose' : ''}`} key={block.key}>
-    {block.text && <ProgressParagraph text={block.text} preview={block.preview} streaming={block.streaming} effectId={block.key} />}
-    {block.calls.length > 0 && <ActivityGroup entries={block.calls} onInspect={onInspectInvocation ? effectId => onInspectInvocation(`${turnId}/${effectId}`) : undefined} />}
-  </section>)}</>;
+  return <>{blocks.map(block => block.kind === 'open-infer'
+    ? <StreamingWorkSegment key={block.key} entry={block.entry} calls={block.calls} agentId={agentId} progress={progress} turnId={turnId} onInspectInvocation={onInspectInvocation} />
+    : <section className={`conversation-work-segment${block.text ? ' has-prose' : ''}`} key={block.key}>
+      {block.text && <ProgressParagraph text={block.text} effectId={block.key} />}
+      {block.calls.length > 0 && <ActivityGroup entries={block.calls} onInspect={onInspectInvocation ? effectId => onInspectInvocation(`${turnId}/${effectId}`) : undefined} />}
+    </section>)}</>;
 }
 
 /**
@@ -246,11 +282,12 @@ function ConversationActivity({ items, turn, progress, onInspectInvocation, turn
  * 没有公开反馈时只显示中性工具组，不根据命令或计划推断阶段名称。
  */
 /** 平铺活动只有一层阅读结构；早期/已结束记录按需展开，重要节点由外层保持原位。 */
-function ActivityFlow({ items, turn, progress, compact, onInspectActivity }: {
+function ActivityFlow({ items, turn, agentId, progress, compact, onInspectActivity }: {
   compact?: boolean;
   onInspectActivity?(): void;
   items: readonly ActivityItem[];
   turn?: TurnPresentation;
+  agentId?: string;
   progress?: Record<string, Snapshot<InferenceProgress>>;
 }) {
   // 简版按原顺序展示真实调用；展开留在对话，只有独立入口进入完整调试视图。
@@ -259,16 +296,21 @@ function ActivityFlow({ items, turn, progress, compact, onInspectActivity }: {
     // 没有工具调用的公开反馈不生成零调用摘要，完整事实仍可从活动视图读取。
     if (!calls.length) return null;
     const attention = calls.filter(entry => ['error', 'warning'].includes(operationState(entry).tone)).length;
-    // 状态只说明此片段的调用结果，不推断整轮任务是否完成。
+    // 状态只说明此片段的调用结果；进行中的 Turn 在调用间隙保持「执行中」，避免摘要文案长短反复切换引发折行跳动。
     const running = calls.some(entry => !entry.end);
     const tone = attention > 0 ? 'warning' : running ? 'running' : 'ok';
-    const label = attention > 0 ? `${attention} 项需关注` : running ? '执行中' : `此前 ${calls.length} 次调用已完成`;
+    const label = attention > 0
+      ? `${attention} 项需关注`
+      : running || turn?.endedAt === undefined
+        ? '执行中'
+        : `此前 ${calls.length} 次调用已完成`;
     return <ExecutionSummary calls={calls} turn={turn} tone={tone} label={label} onInspectActivity={onInspectActivity} />;
   }
   const ended = turn?.endedAt !== undefined;
   const { earlier, recent } = activityWindow(items, ended);
   const isVisible = (item: ActivityItem) => {
     if (item.kind === 'notice' || item.entry.effectType !== 'INFER') return true;
+    if (!item.entry.end) return item.entry.effectId !== turn?.finalEffectId;
     const content = inferenceContent(item.entry, progress?.[item.entry.effectId]);
     return !!content.reasoning || item.entry.effectId !== turn?.finalEffectId && !!content.text;
   };
@@ -280,7 +322,7 @@ function ActivityFlow({ items, turn, progress, compact, onInspectActivity }: {
     {list.map(item => {
       if (item.kind === 'notice') return <p key={item.seq} className="activity-notice">{item.text}</p>;
       return item.entry.effectType === 'INFER'
-        ? <InferenceActivity key={item.seq} entry={item.entry} frame={progress?.[item.entry.effectId]}
+        ? <InferenceActivity key={item.seq} entry={item.entry} agentId={agentId} progress={progress}
             final={item.entry.effectId === turn?.finalEffectId} />
         : <OperationCard key={item.seq} entry={item.entry} />;
     })}
@@ -316,7 +358,7 @@ function ExecutionSummary({ calls, turn, tone, label, onInspectActivity }: {
   const changedFiles = new Set(taskChanges(calls).map(change => change.path)).size;
   return <TurnSummary
     ariaLabel="本轮执行摘要"
-    label={<><Icon name="clock" size="sm" />{label}</>}
+    label={<><Icon name={tone === 'warning' ? 'alert' : 'clock'} size="sm" />{label}</>}
     tone={tone === 'warning' ? 'warning' : tone === 'running' ? 'running' : 'muted'}
     calls={calls.length}
     duration={turn?.startedAt !== undefined ? <TimelineDuration startedAt={turn.startedAt} endedAt={turn.endedAt} /> : undefined}
@@ -326,11 +368,13 @@ function ExecutionSummary({ calls, turn, tone, label, onInspectActivity }: {
 }
 
 /** 推理与工具按所属效果原位交错；思考、公开进度各用统一 Trace 行。 */
-function InferenceActivity({ entry, frame, final = false }: {
+function InferenceActivity({ entry, agentId, progress, final = false }: {
   entry: EffectEntry;
-  frame?: Snapshot<InferenceProgress>;
+  agentId?: string;
+  progress?: Record<string, Snapshot<InferenceProgress>>;
   final?: boolean;
 }) {
+  const frame = useInferenceFrame(agentId, entry.end ? undefined : entry.effectId, progress);
   const content = inferenceContent(entry, frame);
   const text = final ? undefined : content.text;
   if (!text && !content.reasoning) return null;
@@ -436,12 +480,13 @@ function TurnStats({ turn, entries, outcome }: {
 }
 
 /** 公开过程正文与思考分开呈现，内部思考不能替代模型对用户的进度说明。 */
-function ProcessNote({ entry, progress, final = false }: {
+function ProcessNote({ entry, agentId, progress, final = false }: {
   entry: EffectEntry;
+  agentId?: string;
   progress?: Record<string, Snapshot<InferenceProgress>>;
   final?: boolean;
 }) {
-  const frame = progress?.[entry.effectId];
+  const frame = useInferenceFrame(agentId, entry.end ? undefined : entry.effectId, progress);
   const { result, reasoning, text: content } = inferenceContent(entry, frame);
   const text = final ? '' : content;
   if (!text && !reasoning) return null;
@@ -502,11 +547,10 @@ function PlanEventRow({ record: { plan: declaration, previous, kind, versions },
 function HumanRecord({ entry, command = false }: { entry: EffectEntry; command?: boolean }) {
   const effect = entry.effect;
   const input = effect?.type === 'CALL' ? record(effect.input) : {};
-  const question = effect?.type === 'ASK_HUMAN' ? effect.reason : typeof input.reason === 'string' ? input.reason : entry.humanRequest?.reason;
+  const question = typeof input.reason === 'string' ? input.reason : entry.humanRequest?.reason;
   const end = entry.end;
-  const result = end?.type === 'effect.completed'
-    ? end.data.effectType === 'ASK_HUMAN' ? end.data.result
-      : end.data.effectType === 'CALL' && !command ? record(end.data.result.value) : undefined
+  const result = end?.type === 'effect.completed' && end.data.effectType === 'CALL' && !command
+    ? record(end.data.result.value)
     : undefined;
   const answered = result && typeof result.approved === 'boolean';
   const response = result && typeof result.response === 'string' ? result.response : '';
@@ -529,15 +573,16 @@ function HumanRecord({ entry, command = false }: { entry: EffectEntry; command?:
 }
 
 /** 整条执行流只有一个当前状态，等待卡片已表达暂停时不重复显示。 */
-function ExecutionStatus({ entries, progress, cancelling, paused }: {
+function ExecutionStatus({ entries, agentId, progress, cancelling, paused }: {
   entries: EffectEntry[];
+  agentId?: string;
   progress?: Record<string, Snapshot<InferenceProgress>>;
   cancelling: boolean;
   paused: boolean;
 }) {
   const current = [...entries].reverse().find(entry => !entry.abandonedReason && (!entry.end || entry.end.type === 'effect.unknown'));
   const state = current ? operationState(current) : undefined;
-  const frame = current ? progress?.[current.effectId] : undefined;
+  const frame = useInferenceFrame(agentId, current?.effectType === 'INFER' ? current.effectId : undefined, progress);
   const contextActivity = current?.effectType === 'INFER' ? contextStatus(current) : undefined;
   if (contextActivity && current && frame?.phase !== 'interrupted') {
     return <ContextCompactionStatus entry={current} cancelling={cancelling} paused={paused} />;
@@ -655,9 +700,45 @@ function OperationResult({ entry }: { entry: EffectEntry }) {
     </div>;
     const change = fileChange(entry);
     if (change) return <AppliedChange before={change.before} after={change.after} path={change.path} />;
+    if (entry.effect?.type === 'CALL' && entry.effect.target.capabilityId === 'delegate') {
+      const delegated = record(data.result.value);
+      if (typeof delegated.output === 'string' && delegated.output) {
+        return <OutputBlock text={delegated.output} />;
+      }
+    }
     return <OutputBlock text={String(record(data.result.value).output ?? JSON.stringify(data.result.value))} />;
   }
-  if (data.effectType === 'ASK_HUMAN') return <p>{data.result.approved ? '已回答' : '已拒绝回答'}{data.result.response ? ` · ${data.result.response}` : ''}</p>;
+  if (data.effectType === 'CALL_BATCH') {
+    const calls = entry.effect?.type === 'CALL_BATCH' ? entry.effect.calls : [];
+    return (
+      <div className="execution-batch-results">
+        {data.result.results.map((item, index) => {
+          const call = calls[index];
+          const input = call ? record(call.input) : {};
+          const label = typeof input.path === 'string'
+            ? input.path
+            : typeof input.pattern === 'string'
+              ? input.pattern
+              : typeof input.task === 'string'
+                ? input.task
+                : call?.toolName ?? `调用 #${index + 1}`;
+          if (item.status === 'failed') {
+            return (
+              <p key={call?.toolCallId ?? index} className="execution-muted">
+                {`${label} · 失败：${item.error.message}`}
+              </p>
+            );
+          }
+          const detail = item.result.isError ? '未成功' : '已完成';
+          return (
+            <p key={call?.toolCallId ?? index} className="execution-muted">
+              {`${label} · ${detail}`}
+            </p>
+          );
+        })}
+      </div>
+    );
+  }
   return <OutputBlock text={JSON.stringify(data.result, null, 2)} />;
 }
 

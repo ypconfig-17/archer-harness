@@ -1,5 +1,10 @@
 /* 上下文扫描页：顶部请求指标，左栏字符条带与分组条目，右栏请求事实；分栏可拖动。 */
 .context-panel {
+  --ctx-conversation: var(--accent-default);
+  --ctx-results: color-mix(in srgb, var(--info) 78%, var(--text) 12%);
+  --ctx-declarations: color-mix(in srgb, var(--warning) 82%, var(--muted) 18%);
+  --ctx-system: color-mix(in srgb, var(--text) 46%, transparent);
+  --ctx-references: color-mix(in srgb, var(--accent-default) 45%, var(--muted) 55%);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -10,9 +15,9 @@
 
 .context-head {
   display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  padding: var(--space-4) var(--workspace-inset) var(--space-3);
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--workspace-inset);
   border-bottom: 1px solid var(--border-soft);
 }
 
@@ -21,8 +26,8 @@
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   border-radius: var(--radius-small);
   background: var(--accent-subtle);
   color: var(--accent-text);
@@ -31,8 +36,7 @@
 .context-head-text {
   display: flex;
   flex: 1;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
   min-width: 0;
 }
 
@@ -41,20 +45,13 @@
   font: var(--type-section);
 }
 
-.context-head-text p {
-  margin: 0;
-  color: var(--muted);
-  font: var(--type-caption);
-}
-
-/* 请求选择、位置与翻页保持单行；加载范围另起一行，不挤压标题。 */
+/* 请求选择、位置与翻页保持紧凑单行；窄窗口再自然换行。 */
 .context-request {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
   gap: var(--space-1) var(--space-2);
-  max-width: 56%;
 }
 
 .context-select {
@@ -66,9 +63,8 @@
   font: var(--type-caption);
 }
 
-.context-select select {
-  flex: none;
-  min-width: 168px;
+.context-request-trigger {
+  min-width: 184px;
 }
 
 .context-position {
@@ -78,17 +74,16 @@
 }
 
 .context-range {
-  flex-basis: 100%;
   margin: 0;
-  text-align: right;
   color: var(--muted);
   font: var(--type-caption);
+  white-space: nowrap;
 }
 
 .context-metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  padding: var(--space-3) var(--workspace-inset) var(--space-2);
+  padding: var(--space-2) var(--workspace-inset);
   border-bottom: 1px solid var(--border-soft);
 }
 
@@ -127,7 +122,7 @@
 }
 
 .context-views-tabs {
-  margin: 0 var(--workspace-inset);
+  padding: 0 var(--workspace-inset);
 }
 
 .context-views {
@@ -161,7 +156,7 @@
 .context-scan {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
   padding: var(--space-3) var(--space-4) var(--space-5) var(--workspace-inset);
 }
 
@@ -170,6 +165,12 @@
   flex-direction: column;
   gap: var(--space-2);
   min-width: 0;
+}
+
+/* 左栏与右栏保持一致的 1px 细分隔节奏，避免区块浮在白底上。 */
+.context-section + .context-section {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-soft);
 }
 
 .context-section-head {
@@ -222,20 +223,40 @@
   transform: rotate(90deg);
 }
 
-/* 横向条带只用 CSS 宽度表达占比；颜色从语义 Token 读取，随主题与强调色一起变化。 */
+/* 顶部 100% 堆叠总览条：先建立整体占比直觉，再在下方逐项定位。 */
+.context-composition-strip {
+  display: flex;
+  gap: 1px;
+  width: 100%;
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--subtle);
+}
+
+.context-composition-seg {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+}
+
+/* 横向条带只用 CSS 宽度表达占比；颜色从克制的语义混色读取，随主题与强调色一起变化。 */
 .context-bars {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
 }
 
+/* 覆盖共享 Button 默认固定高度，避免两行标签与字符统计被裁切或压住相邻行。 */
 .context-bar-row {
   display: grid;
-  grid-template-columns: 8px minmax(120px, 1.1fr) minmax(90px, 1.6fr) 88px;
+  grid-template-columns: 8px minmax(116px, 1fr) minmax(96px, 1.4fr) 88px;
   align-items: center;
   gap: var(--space-3);
   width: 100%;
-  padding: 5px var(--space-2);
+  height: auto;
+  min-height: 40px;
+  padding: 4px var(--space-2);
   border: 0;
   border-radius: var(--radius-small);
   background: transparent;
@@ -305,29 +326,39 @@
   font: var(--type-caption);
 }
 
+.context-composition-seg.is-conversation,
 .context-bar-dot.is-conversation,
-.context-bar-fill.is-conversation {
-  background: var(--accent-default);
+.context-bar-fill.is-conversation,
+.context-trend-seg.is-conversation {
+  background: var(--ctx-conversation);
 }
 
+.context-composition-seg.is-results,
 .context-bar-dot.is-results,
-.context-bar-fill.is-results {
-  background: var(--success);
+.context-bar-fill.is-results,
+.context-trend-seg.is-results {
+  background: var(--ctx-results);
 }
 
+.context-composition-seg.is-declarations,
 .context-bar-dot.is-declarations,
-.context-bar-fill.is-declarations {
-  background: var(--warning);
+.context-bar-fill.is-declarations,
+.context-trend-seg.is-declarations {
+  background: var(--ctx-declarations);
 }
 
+.context-composition-seg.is-system,
 .context-bar-dot.is-system,
-.context-bar-fill.is-system {
-  background: var(--info);
+.context-bar-fill.is-system,
+.context-trend-seg.is-system {
+  background: var(--ctx-system);
 }
 
+.context-composition-seg.is-references,
 .context-bar-dot.is-references,
-.context-bar-fill.is-references {
-  background: var(--danger);
+.context-bar-fill.is-references,
+.context-trend-seg.is-references {
+  background: var(--ctx-references);
 }
 
 /* Token 趋势：柱高取真实 usage，分段只用请求快照字符占比，不引入图表库。 */
@@ -337,12 +368,11 @@
 }
 
 .context-trend-window {
-  width: 116px;
   margin-left: auto;
 }
 
-.context-trend-window select {
-  width: 100%;
+.context-trend-trigger {
+  min-width: 108px;
 }
 
 .context-trend-body {
@@ -392,7 +422,7 @@
 .context-trend-chart {
   display: grid;
   grid-template-columns: 38px minmax(0, 1fr);
-  grid-template-rows: 132px auto;
+  grid-template-rows: 108px auto;
   gap: 0 var(--space-2);
   min-width: 0;
   padding-top: var(--space-5);
@@ -418,6 +448,26 @@
   grid-template-columns: repeat(var(--trend-count), minmax(0, 1fr));
   align-items: end;
   min-width: 0;
+}
+
+/* 三条水平参考线对齐 Y 轴顶/中/底刻度，避免柱高脱离左侧数字。 */
+.context-trend-grid {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.context-trend-grid > span {
+  display: block;
+  width: 100%;
+  border-top: 1px dashed var(--border-soft);
+}
+
+.context-trend-grid > span:last-child {
+  border-top-style: solid;
 }
 
 .context-trend-bar {
@@ -448,7 +498,11 @@
   width: min(62%, 34px);
   min-height: 2px;
   overflow: hidden;
-  border-radius: 3px;
+  border-radius: 2px;
+}
+
+.context-trend-bar.is-current {
+  background: linear-gradient(to top, var(--accent-subtle), transparent 65%);
 }
 
 .context-trend-bar.is-current .context-trend-stack {
@@ -465,26 +519,6 @@
   width: min(62%, 34px);
   height: 2px;
   border-top: 1px dashed var(--border-soft);
-}
-
-.context-trend-seg.is-conversation {
-  background: var(--accent-default);
-}
-
-.context-trend-seg.is-results {
-  background: var(--success);
-}
-
-.context-trend-seg.is-declarations {
-  background: var(--warning);
-}
-
-.context-trend-seg.is-system {
-  background: var(--info);
-}
-
-.context-trend-seg.is-references {
-  background: var(--danger);
 }
 
 .context-trend-overlay {
@@ -567,6 +601,15 @@
 
 .context-trend-labels .is-current {
   color: var(--text);
+  font-weight: var(--weight-medium);
+}
+
+.context-trend-labels .is-start {
+  justify-self: start;
+}
+
+.context-trend-labels .is-end {
+  justify-self: end;
 }
 
 .context-trend-labels .is-sparse {
@@ -595,17 +638,8 @@
 }
 
 .context-search {
-  display: flex;
   flex: 1;
-  align-items: center;
-  gap: var(--space-2);
   min-width: 180px;
-  color: var(--secondary);
-}
-
-.context-search input {
-  width: 100%;
-  min-width: 0;
 }
 
 .context-groups {
@@ -728,13 +762,33 @@
 }
 
 /* 详情标题只接收程序化焦点供读屏定位，不显示输入框式焦点框。 */
+.context-detail-back {
+  margin-left: calc(var(--space-2) * -1);
+  color: var(--secondary);
+}
+
+.context-detail-title {
+  margin: 0;
+  color: var(--text);
+  font: var(--type-folder);
+}
+
 .context-detail-title:focus {
   outline: none;
+}
+
+.context-adopted-summary {
+  margin-top: var(--space-1);
 }
 
 .context-state {
   color: var(--muted);
   font: var(--type-caption);
+}
+
+.context-state.is-failed {
+  color: var(--danger);
+  font-weight: var(--weight-medium);
 }
 
 .context-detail-subtitle {
@@ -773,6 +827,7 @@
   margin: 0;
   overflow-wrap: anywhere;
   color: var(--secondary);
+  font-variant-numeric: tabular-nums;
 }
 
 .context-note {

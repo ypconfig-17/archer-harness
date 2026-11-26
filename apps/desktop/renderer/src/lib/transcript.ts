@@ -71,8 +71,7 @@ export function turnPresentations(items: readonly TimelineItem[]): Map<string, T
 }
 
 export function isHumanInteraction(entry: EffectEntry): boolean {
-  return entry.effect?.type === 'ASK_HUMAN'
-    || entry.effect?.type === 'CALL' && entry.effect.interaction === 'human';
+  return entry.effect?.type === 'CALL' && entry.effect.interaction === 'human';
 }
 
 export type ActivityItem = Extract<TimelineItem, { kind: 'effect' | 'notice' }>;

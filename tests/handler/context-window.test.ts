@@ -197,7 +197,7 @@ it('容量充足时增长触发仍生成并采用摘要，采用后未覆盖历�
   expect(adopted).toHaveLength(1);
   expect(requests).toHaveLength(2);
   expect(requests[1]!.messages[0]!).toMatchObject({ role: 'user' });
-  expect(requests[1]!.messages[0]!.content).toContain('"version":2');
+  expect(requests[1]!.messages[0]!.content).toContain('## Goal');
 });
 it('动态能力不支持计量时继续普通推理，不伪造窗口容量', async () => {
   const requests: InferEffect[] = [];
@@ -316,4 +316,34 @@ it.each(['no-plan', 'invalid', 'no-gain', 'limit', 'recovered-limit'] as const)(
       status: 'failed', error: { code: 'TOKEN_BUDGET_EXCEEDED' },
     });
   }
+});
+
+it('未显式指定摘要推理等级时自动选用模型支持的最低思考档，不继承主任务 high 推理', async () => {
+  const { planCompaction } = await import('../../packages/handler/src/compaction.js');
+  const source: InferEffect = {
+    type: 'INFER',
+    target,
+    promptPrefixCount: 1,
+    config: { reasoning: 'high', contextProfile: compactProfile({ reserveTokens: 0, keepRecentTokens: 100 }) },
+    messages: [
+      { role: 'system', content: 'Sys' },
+      { role: 'user', content: 'Req' },
+      { role: 'assistant', content: 'A1', toolCalls: [{ id: 'c1', name: 'read', input: {} }] },
+      { role: 'tool', toolCallId: 'c1', toolName: 'read', content: 'R1'.repeat(200) },
+      { role: 'assistant', content: 'A2', toolCalls: [{ id: 'c2', name: 'read', input: {} }] },
+      { role: 'tool', toolCallId: 'c2', toolName: 'read', content: 'R2'.repeat(200) },
+    ],
+  };
+  const model: Inference = {
+    measure: request => ({
+      contextWindow: 128_000,
+      maxOutputTokens: 64_000,
+      estimatedInputTokens: JSON.stringify(request.messages).length,
+      method: 'test-bytes',
+      lowestReasoning: 'low',
+    }),
+    infer: async () => ({ content: 'ok' }),
+  };
+  const planned = planCompaction(source, executionContext(model, [], []), 100);
+  expect(planned?.request.config?.reasoning).toBe('low');
 });

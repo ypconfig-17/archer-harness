@@ -35,14 +35,14 @@ export function eventNavigation(events: readonly TimelineEvent[], filter: EventF
         : capabilityLabel(tool)
       : undefined;
     const human = fact.type === 'command.accepted' || fact.type === 'turn.authorization.changed'
-      || (fact.type === 'effect.resumed' && fact.data.kind === 'human') || effectType === 'ASK_HUMAN';
+      || (fact.type === 'effect.resumed' && fact.data.kind === 'human');
     return {
       event, view, turnId, effectId, state,
       title: effectType === 'INFER' ? '模型推理' : summary?.title ?? (effectId ? '操作记录（声明未加载）' : '任务记录'),
       target: summary?.target,
       toolKey: entry?.effect?.type === 'CALL' ? JSON.stringify([entry.effect.target.providerId, entry.effect.target.capabilityId, entry.effect.target.contractId, entry.effect.target.revision]) : undefined,
       toolLabel,
-      tools: effectType === 'CALL',
+      tools: effectType === 'CALL' || effectType === 'CALL_BATCH',
       inference: effectType === 'INFER',
       failure: view.tone === 'error',
       attention: view.tone === 'error' || view.tone === 'warning',
