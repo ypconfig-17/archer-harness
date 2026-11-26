@@ -118,6 +118,7 @@ it('超大结果只在真实请求中节选，回放后仍能分页读到完整�
     await agent.prompt('Read original.');
     expect(visible).toContain('Tool output excerpt');
     expect(visible).toContain('history_read');
+    expect(visible).toContain(original.slice(-8));
     expect(visible.length).toBeLessThan(6000);
     const state = replayAgent(agent.id, await journal.read(agent.id))!;
     const snapshot = committedHistory(state);

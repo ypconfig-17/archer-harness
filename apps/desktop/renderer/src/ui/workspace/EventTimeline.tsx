@@ -358,7 +358,7 @@ function ExecutionSummary({ calls, turn, tone, label, onInspectActivity }: {
   const changedFiles = new Set(taskChanges(calls).map(change => change.path)).size;
   return <TurnSummary
     ariaLabel="本轮执行摘要"
-    label={<><Icon name="clock" size="sm" />{label}</>}
+    label={<><Icon name={tone === 'warning' ? 'alert' : 'clock'} size="sm" />{label}</>}
     tone={tone === 'warning' ? 'warning' : tone === 'running' ? 'running' : 'muted'}
     calls={calls.length}
     duration={turn?.startedAt !== undefined ? <TimelineDuration startedAt={turn.startedAt} endedAt={turn.endedAt} /> : undefined}

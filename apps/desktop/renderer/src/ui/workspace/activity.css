@@ -532,11 +532,16 @@ button.invocation-row:hover {
 }
 
 /* 摘要列承担全部收缩；状态、耗时保持单行，长命令不能撑高调用行。
-   紧凑模式沿用活动行的内容与列规则，只移除时间、类型和用量列。 */
+   紧凑模式沿用活动行的内容与列规则，只移除时间、类型和用量列，并左对齐紧跟状态与耗时。 */
 .invocation-row-compact {
-  grid-template-columns: minmax(0, 1fr) max-content max-content;
+  grid-template-columns: minmax(0, auto) max-content max-content;
+  width: fit-content;
+  max-width: 100%;
   min-width: 0;
   border-bottom: 0;
+}
+.conversation-tool-group > .invocation-row-compact {
+  padding-left: 0;
 }
 .invocation-name > .ui-icon,
 .invocation-name > strong {

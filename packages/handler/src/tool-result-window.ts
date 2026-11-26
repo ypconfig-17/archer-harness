@@ -55,15 +55,26 @@ export function boundToolResults(
     let low = 0;
     let high = message.content.length - 1;
     let selected: InferEffect | undefined;
+    // 对半保留开头上下文与末尾关键报错/汇总，避免命令末尾的错误栈被一刀切掉。
+    const formatHeadTail = (keepChars: number): string => {
+      const headBudget = Math.ceil(keepChars / 2);
+      const tailBudget = keepChars - headBudget;
+      let headEnd = headBudget;
+      const headCode = message.content.charCodeAt(headEnd - 1);
+      if (headEnd > 0 && headCode >= 0xD800 && headCode <= 0xDBFF) headEnd--;
+      let tailStart = Math.max(headEnd, message.content.length - tailBudget);
+      const tailCode = message.content.charCodeAt(tailStart);
+      if (tailStart < message.content.length && tailCode >= 0xDC00 && tailCode <= 0xDFFF) tailStart++;
+      const head = message.content.slice(0, headEnd);
+      const tail = tailStart < message.content.length ? message.content.slice(tailStart) : '';
+      return tail ? `${head}${notice}\n${tail}` : `${head}${notice}`;
+    };
     while (low <= high) {
       const middle = Math.floor((low + high) / 2);
-      let end = middle;
-      const code = message.content.charCodeAt(end - 1);
-      if (code >= 0xD800 && code <= 0xDBFF) end--;
       const candidate = {
         ...projected,
         messages: projected.messages.map((value, position) => position === index
-          ? { ...value, content: message.content.slice(0, end) + notice }
+          ? { ...value, content: formatHeadTail(middle) }
           : value),
       };
       const measured = measureWindow(candidate, context.inference);

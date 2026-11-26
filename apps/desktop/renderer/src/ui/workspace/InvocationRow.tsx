@@ -26,7 +26,7 @@ export function InvocationRow({ entry, compact = false, selected, onSelect, onKe
       <small title={display.target} data-command={display.icon === 'terminal' ? 'true' : undefined}>{display.target}</small>
     </span>
     <span data-tone={state.tone}>{state.label}</span>
-    <span>{duration === undefined ? '—' : durationText(duration)}</span>
+    {(!compact || duration !== undefined) && <span>{duration === undefined ? '—' : durationText(duration)}</span>}
     {!compact && <span>{usage ? `${usage.promptTokens.toLocaleString()} / ${usage.completionTokens.toLocaleString()}` : '—'}</span>}
   </>;
   // 两处点击均选择同一调用身份；未提供详情入口时保留普通文本。
