@@ -9,7 +9,7 @@ import 'dotenv/config';
 import './stream-diagnostics.js';
 import * as path from 'node:path';
 import { buildServer } from './app.js';
-import { createArcher } from '@archer/runtime';
+import { createArcher, createSubagentProvider } from '@archer/runtime';
 import { createCamp, provider, offer, INFERENCE, INFERENCE_PREPARE } from '@archer/camp';
 import { toolsProvider, historyProvider, shellProvider, projectContextProvider } from '@archer/providers';
 import { skillsProvider, defaultSkillsRoots } from '@archer/skills';
@@ -36,8 +36,9 @@ async function main(): Promise<void> {
   const inference = modelSettings.inference;
 
   const recoveryRecords = new RecoveryRecords(dataDir);
-  const camp = await createCamp({ providers: [toolsProvider(), historyProvider(), shellProvider(), projectContextProvider(),
+  const camp: Awaited<ReturnType<typeof createCamp>> = await createCamp({ providers: [toolsProvider(), historyProvider(), shellProvider(), projectContextProvider(),
     skillsProvider({ roots: defaultSkillsRoots(dataDir) }), journalProvider(dataDir),
+    createSubagentProvider({ camp: () => camp, scope: { readOnlyTools: true } }),
     provider('inference', { model: offer(INFERENCE, { description: '使用宿主配置的模型服务进行推理。' }, inference) }, { identity: { source: 'server-model-settings' } }),
   ] });
   const archer = createArcher({ camp, preparations: camp.list(INFERENCE_PREPARE).filter(item => item.ref.providerId === 'project').map(item => item.ref),

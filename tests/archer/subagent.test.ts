@@ -47,8 +47,7 @@ describe('Subagent 委托 Provider', () => {
       },
     };
 
-    const campHolder: { current?: Awaited<ReturnType<typeof createCamp>> } = {};
-    const camp = await createCamp({
+    const camp: Awaited<ReturnType<typeof createCamp>> = await createCamp({
       providers: [
         provider('fs', {
           read: tool({
@@ -70,28 +69,13 @@ describe('Subagent 委托 Provider', () => {
         provider('ai', {
           model: offer(INFERENCE, { description: 'Model' }, inference),
         }),
-        {
+        createSubagentProvider({
           id: 'subagent',
-          create: () =>
-            createSubagentProvider({
-              id: 'subagent',
-              camp: {
-                get signal() {
-                  return campHolder.current!.signal;
-                },
-                providers: () => campHolder.current!.providers(),
-                list: (c) => campHolder.current!.list(c),
-                resolve: (r, c) => campHolder.current!.resolve(r, c),
-                acquire: () => campHolder.current!.acquire(),
-                refreshProvider: (id) => campHolder.current!.refreshProvider(id),
-                close: () => campHolder.current!.close(),
-              },
-              scope: { readOnlyTools: true },
-            }),
-        },
+          camp: () => camp,
+          scope: { readOnlyTools: true },
+        }),
       ],
     });
-    campHolder.current = camp;
 
     const app = createArcher({ camp });
     running.push(app);

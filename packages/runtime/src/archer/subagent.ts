@@ -22,8 +22,8 @@ import { createArcher } from './container.js';
 export interface SubagentProviderOptions {
   /** Provider ID，默认 `'subagent'` */
   id?: string;
-  /** 父级 Camp；子 Agent 仅能访问裁剪后的视图 */
-  camp: Camp;
+  /** 父级 Camp 或延迟获取函数；子 Agent 仅能访问裁剪后的视图 */
+  camp: Camp | (() => Camp);
   /** 可选：显式指定子 Agent 使用的推理能力引用 */
   inference?: CapabilityRef;
   /** 可选：显式指定子 Agent 使用的持久化日志能力引用；缺省为每次调用独立的内存日志 */
@@ -170,9 +170,10 @@ export function createSubagentProvider(options: SubagentProviderOptions): Provid
               ? payload.instructions.trim()
               : undefined;
 
+          const parentCamp = typeof options.camp === 'function' ? options.camp() : options.camp;
           const deny = new Set(options.scope?.denyCapabilities ?? []);
           deny.add(`${providerId}:delegate`);
-          const scopedCamp = scopeCamp(options.camp, {
+          const scopedCamp = scopeCamp(parentCamp, {
             ...options.scope,
             readOnlyTools,
             denyCapabilities: [...deny],
@@ -225,6 +226,13 @@ export function createSubagentProvider(options: SubagentProviderOptions): Provid
         },
       }),
     },
-    { identity: { provider: providerId, readOnlyTools } },
+    {
+      identity: {
+        name: '子 Agent 委托',
+        description: '通过裁剪后的只读能力视图派发隔离的子任务，并返回最终结果。',
+        provider: providerId,
+        readOnlyTools,
+      },
+    },
   );
 }
